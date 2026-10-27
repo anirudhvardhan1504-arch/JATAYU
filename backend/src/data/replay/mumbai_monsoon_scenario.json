@@ -1,0 +1,266 @@
+{
+  "scenarioId": "mumbai_monsoon_2023",
+  "title": "Mumbai Coastal Konkan Monsoon Surge (July 2023 Extreme Deluge)",
+  "historicalEventDate": "2023-07-26",
+  "summary": "Severe monsoon surge resulting in 215mm rainfall in 24 hours, coinciding with high astronomical tide, causing Mithi river catchment submergence and railway disruption.",
+  "location": {
+    "name": "Mumbai Bandra-Kurla Complex",
+    "latitude": 19.0600,
+    "longitude": 72.8656,
+    "district": "Mumbai Suburban",
+    "state": "Maharashtra"
+  },
+  "weather": {
+    "location": { "latitude": 19.0600, "longitude": 72.8656, "name": "Mumbai Bandra-Kurla Complex" },
+    "timestamp": "2023-07-26T14:00:00Z",
+    "fetchedAt": "2023-07-26T14:00:00Z",
+    "temperatureC": 27.5,
+    "apparentTemperatureC": 32.5,
+    "relativeHumidityPercent": 96,
+    "precipitationMm": 36.0,
+    "rainMm": 36.0,
+    "showersMm": 0,
+    "windSpeedKmh": 45.0,
+    "windDirectionDegrees": 250,
+    "windGustsKmh": 68.0,
+    "surfacePressureHpa": 998.0,
+    "weatherCode": 65,
+    "weatherDescription": "Torrential monsoon rain with high tide lock",
+    "soilMoisture0To7cm": 0.44,
+    "soilMoisture7To28cm": 0.41,
+    "isStale": false,
+    "sourceType": "DEMO_DATA",
+    "sourceAttribution": "JATAYU Recorded Demo Replay (Mumbai Monsoon 2023)",
+    "units": {
+      "temperature": "°C",
+      "relativeHumidity": "%",
+      "precipitation": "mm/h",
+      "rain": "mm/h",
+      "showers": "mm/h",
+      "windSpeed": "km/h",
+      "windDirection": "°",
+      "windGusts": "km/h",
+      "surfacePressure": "hPa",
+      "soilMoisture": "m³/m³"
+    }
+  },
+  "forecast": {
+    "location": { "latitude": 19.0600, "longitude": 72.8656, "name": "Mumbai Bandra-Kurla Complex" },
+    "elevation": 8,
+    "generationTimeMs": 10,
+    "fetchedAt": "2023-07-26T14:00:00Z",
+    "current": {
+      "location": { "latitude": 19.0600, "longitude": 72.8656, "name": "Mumbai Bandra-Kurla Complex" },
+      "timestamp": "2023-07-26T14:00:00Z",
+      "fetchedAt": "2023-07-26T14:00:00Z",
+      "temperatureC": 27.5,
+      "apparentTemperatureC": 32.5,
+      "relativeHumidityPercent": 96,
+      "precipitationMm": 36.0,
+      "rainMm": 36.0,
+      "showersMm": 0,
+      "windSpeedKmh": 45.0,
+      "windDirectionDegrees": 250,
+      "windGustsKmh": 68.0,
+      "surfacePressureHpa": 998.0,
+      "weatherCode": 65,
+      "weatherDescription": "Torrential monsoon rain with high tide lock",
+      "soilMoisture0To7cm": 0.44,
+      "soilMoisture7To28cm": 0.41,
+      "isStale": false,
+      "sourceType": "DEMO_DATA",
+      "sourceAttribution": "JATAYU Recorded Demo Replay (Mumbai Monsoon 2023)",
+      "units": {
+        "temperature": "°C",
+        "relativeHumidity": "%",
+        "precipitation": "mm/h",
+        "rain": "mm/h",
+        "showers": "mm/h",
+        "windSpeed": "km/h",
+        "windDirection": "°",
+        "windGusts": "km/h",
+        "surfacePressure": "hPa",
+        "soilMoisture": "m³/m³"
+      }
+    },
+    "hourly": [],
+    "accumulations": {
+      "past24hRainfallMm": 215.0,
+      "next24hRainfallMm": 140.0,
+      "next72hRainfallMm": 220.0
+    },
+    "soilProfile": {
+      "moisture0To7cm": 0.44,
+      "moisture7To28cm": 0.41,
+      "saturationTier": "SATURATED",
+      "description": "Reclaimed coastal terrain saturated. Drainage constrained during 4.2m high tide."
+    },
+    "dataSource": {
+      "provider": "Recorded IMD Colaba / Santacruz Telemetry",
+      "model": "Archive Replay July 2023",
+      "type": "DEMO_DATA",
+      "note": "Pre-recorded historical meteorological snapshot for offline demonstration."
+    }
+  },
+  "alerts": {
+    "fetchedAt": "2023-07-26T14:00:00Z",
+    "source": "IMD Mumbai Regional Meteorological Centre Bulletin",
+    "feedStatus": "DEMO_REPLAY",
+    "itemCount": 1,
+    "geographicResolution": {
+      "coordinates": { "latitude": 19.0600, "longitude": 72.8656 },
+      "resolvedDistrict": "Mumbai Suburban",
+      "matchMethod": "EXACT_DISTRICT"
+    },
+    "alerts": [
+      {
+        "id": "IMD-MUM-ORANGE-01",
+        "category": "RAINFALL",
+        "severity": "WARNING",
+        "headline": "ORANGE WARNING: Heavy to very heavy rainfall with high tide flooding",
+        "description": "Very heavy rainfall across Mumbai Suburban and Thane districts. 4.32m high tide expected at 14:45 IST, leading to coastal waterlogging.",
+        "issuedAt": "2023-07-26T08:00:00Z",
+        "effectiveUntil": "2023-07-27T08:00:00Z",
+        "affectedArea": {
+          "name": "Mumbai Suburban",
+          "location": { "latitude": 19.0600, "longitude": 72.8656 },
+          "matchMethod": "EXACT_DISTRICT"
+        },
+        "recommendedActions": [
+          "Avoid subway passages at Milan, Andheri, and Khar",
+          "Work from home recommended; do not venture near seafront promenades",
+          "Call BMC Disaster Control Room at 1916 or Emergency 112"
+        ],
+        "sourceType": "DEMO_DATA",
+        "sourceAgency": "India Meteorological Department / BMC Disaster Management",
+        "isOfficialWarning": true,
+        "status": "ACTIVE"
+      }
+    ]
+  },
+  "risk": {
+    "location": { "latitude": 19.0600, "longitude": 72.8656, "name": "Mumbai Bandra-Kurla Complex" },
+    "assessedAt": "2023-07-26T14:00:00Z",
+    "dataTimestamp": "2023-07-26T14:00:00Z",
+    "isStale": false,
+    "overallRiskLevel": "CRITICAL",
+    "riskScore": 82,
+    "dataCompleteness": "FULL",
+    "dataConfidence": "HIGH",
+    "factors": {
+      "rainfallIntensity": {
+        "name": "Rainfall Intensity",
+        "score": 80,
+        "weight": 0.35,
+        "weightedScore": 28.0,
+        "observedValue": 36.0,
+        "unit": "mm/h",
+        "benchmark": "Very Heavy Rain Benchmark (>30mm/h)",
+        "basis": "AUTHORITATIVE_METEOROLOGY",
+        "status": "MEASURED",
+        "notes": "Intense tropical monsoon squall lines sweeping eastward"
+      },
+      "rainfallAccumulation": {
+        "name": "Antecedent Rainfall",
+        "score": 88,
+        "weight": 0.25,
+        "weightedScore": 22.0,
+        "observedValue": 215.0,
+        "unit": "mm",
+        "benchmark": "Extreme 24h Accumulation (>200mm)",
+        "basis": "AUTHORITATIVE_METEOROLOGY",
+        "status": "MEASURED",
+        "notes": "215mm 24-hour total overwhelmed local pumping stations"
+      },
+      "soilSaturation": {
+        "name": "Soil Saturation",
+        "score": 85,
+        "weight": 0.2,
+        "weightedScore": 17.0,
+        "observedValue": 0.44,
+        "unit": "m³/m³",
+        "benchmark": "Volumetric Saturation Benchmark (>0.38 m³/m³)",
+        "basis": "ENGINEERING_ASSUMPTION",
+        "status": "MEASURED",
+        "notes": "Coastal marsh and reclaimed soils fully saturated"
+      },
+      "topographicVulnerability": {
+        "name": "Topography",
+        "score": 75,
+        "weight": 0.2,
+        "weightedScore": 15.0,
+        "observedValue": 8.0,
+        "unit": "m",
+        "benchmark": "Coastal Infill AMSL (<10m)",
+        "basis": "ENGINEERING_ASSUMPTION",
+        "status": "MEASURED",
+        "notes": "Tidal backflow in Mithi River limits gravity drainage"
+      }
+    },
+    "metrics": {
+      "peakIntensity1hMm": 36.0,
+      "past24hRainfallMm": 215.0,
+      "next24hRainfallMm": 140.0,
+      "next72hRainfallMm": 220.0,
+      "soilMoistureVolumetricPercent": 44.0,
+      "elevationMeters": 8.0
+    },
+    "explanation": {
+      "summary": "Severe waterlogging caused by heavy monsoon downpour coinciding with 4.3m high tide.",
+      "primaryDrivers": ["Antecedent Rainfall (215mm)", "Rainfall Intensity (36mm/h)", "Tidal Outfall Inundation"],
+      "meteorologicalContext": "Offshore monsoon trough along Konkan coast triggering severe convective bands",
+      "missingInputs": [],
+      "modelAssumptions": ["Tidal flap gates closed during astronomical peak"],
+      "limitations": ["Indicative screening prototype only; heed BMC public advisories"]
+    },
+    "disclaimer": {
+      "isHydraulicallyValidated": false,
+      "modelType": "INDICATIVE_RAINFALL_DRIVEN_HEURISTIC",
+      "statement": "Indicative screening prototype only. Follow official BMC directives.",
+      "validationStatus": "UNVALIDATED_PROTOTYPE"
+    },
+    "sourceType": "DEMO_DATA",
+    "sourceAttribution": "JATAYU Recorded Demo Replay (Mumbai Monsoon 2023)"
+  },
+  "facilities": [
+    {
+      "id": "BMC-RELIEF-001",
+      "name": "BMC Disaster Management Headquarters Shelter",
+      "category": "EVACUATION_CENTRE",
+      "latitude": 18.9400,
+      "longitude": 72.8353,
+      "address": "BMC HQ, Mahapalika Marg, Fort, Mumbai 400001",
+      "contactPhone": "1916",
+      "totalCapacity": 600,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "Municipal emergency command post. Capacity and real-time occupancy UNKNOWN; call BMC 1916 or 112 before moving."
+    },
+    {
+      "id": "BMC-RELIEF-002",
+      "name": "Bandra Kurla Complex (BKC) Exhibition Relief Center",
+      "category": "EVACUATION_CENTRE",
+      "latitude": 19.0620,
+      "longitude": 72.8680,
+      "address": "MMRDA Grounds, BKC, Bandra East, Mumbai 400051",
+      "contactPhone": "022-26590001",
+      "totalCapacity": 4000,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "High-capacity elevated pavilion. Mobile rescue units stationed."
+    },
+    {
+      "id": "BMC-HOSP-003",
+      "name": "King Edward Memorial (KEM) Hospital",
+      "category": "HOSPITAL",
+      "latitude": 19.0028,
+      "longitude": 72.8427,
+      "address": "Acharya Donde Marg, Parel, Mumbai 400012",
+      "contactPhone": "108",
+      "totalCapacity": 1800,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "Major municipal tertiary hospital. Disaster casualty ward operational."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "status": "EXPERIMENTAL_UNVALIDATED",
+  "horizon_hours": 3,
+  "peak_depth_m": 39.68,
+  "flooded_cells_pct": 94.69,
+  "deep_channel_cells_pct": 18.9,
+  "mean_depth_m": 0.68,
+  "generated_at": "2026-10-26T06:55:15.551081+00:00",
+  "crs": "EPSG:4326",
+  "reach_length_km": 28.01,
+  "model_engine": "SFINCS v2.5.0-beta Hautacam",
+  "grid_resolution_m": 30.0,
+  "disclaimer": "EXPERIMENTAL RESEARCH OUTPUT \u2014 Strictly not for operational directives, civil defense, or evacuation advisories."
+}

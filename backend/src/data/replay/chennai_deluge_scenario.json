@@ -1,0 +1,289 @@
+{
+  "scenarioId": "chennai_deluge_2023",
+  "title": "Chennai Coastal Deluge (Cyclone Michaung Storm Surge)",
+  "historicalEventDate": "2023-12-04",
+  "summary": "Severe cyclonic storm Michaung brought 450mm+ rainfall over 48 hours to Chennai coastal basin, inundating low-lying sectors along Adyar and Cooum rivers.",
+  "location": {
+    "name": "Chennai Central",
+    "latitude": 13.0827,
+    "longitude": 80.2707,
+    "district": "Chennai",
+    "state": "Tamil Nadu"
+  },
+  "weather": {
+    "location": { "latitude": 13.0827, "longitude": 80.2707, "name": "Chennai Central" },
+    "timestamp": "2023-12-04T12:00:00Z",
+    "fetchedAt": "2023-12-04T12:00:00Z",
+    "temperatureC": 26.8,
+    "apparentTemperatureC": 31.4,
+    "relativeHumidityPercent": 94,
+    "precipitationMm": 42.0,
+    "rainMm": 42.0,
+    "showersMm": 0,
+    "windSpeedKmh": 52.0,
+    "windDirectionDegrees": 75,
+    "windGustsKmh": 85.0,
+    "surfacePressureHpa": 992.0,
+    "weatherCode": 65,
+    "weatherDescription": "Heavy continuous rainfall with cyclonic squall",
+    "soilMoisture0To7cm": 0.46,
+    "soilMoisture7To28cm": 0.43,
+    "isStale": false,
+    "sourceType": "DEMO_DATA",
+    "sourceAttribution": "JATAYU Recorded Demo Replay (Michaung Archive)",
+    "units": {
+      "temperature": "°C",
+      "relativeHumidity": "%",
+      "precipitation": "mm/h",
+      "rain": "mm/h",
+      "showers": "mm/h",
+      "windSpeed": "km/h",
+      "windDirection": "°",
+      "windGusts": "km/h",
+      "surfacePressure": "hPa",
+      "soilMoisture": "m³/m³"
+    }
+  },
+  "forecast": {
+    "location": { "latitude": 13.0827, "longitude": 80.2707, "name": "Chennai Central" },
+    "elevation": 6,
+    "generationTimeMs": 10,
+    "fetchedAt": "2023-12-04T12:00:00Z",
+    "current": {
+      "location": { "latitude": 13.0827, "longitude": 80.2707, "name": "Chennai Central" },
+      "timestamp": "2023-12-04T12:00:00Z",
+      "fetchedAt": "2023-12-04T12:00:00Z",
+      "temperatureC": 26.8,
+      "apparentTemperatureC": 31.4,
+      "relativeHumidityPercent": 94,
+      "precipitationMm": 42.0,
+      "rainMm": 42.0,
+      "showersMm": 0,
+      "windSpeedKmh": 52.0,
+      "windDirectionDegrees": 75,
+      "windGustsKmh": 85.0,
+      "surfacePressureHpa": 992.0,
+      "weatherCode": 65,
+      "weatherDescription": "Heavy continuous rainfall with cyclonic squall",
+      "soilMoisture0To7cm": 0.46,
+      "soilMoisture7To28cm": 0.43,
+      "isStale": false,
+      "sourceType": "DEMO_DATA",
+      "sourceAttribution": "JATAYU Recorded Demo Replay (Michaung Archive)",
+      "units": {
+        "temperature": "°C",
+        "relativeHumidity": "%",
+        "precipitation": "mm/h",
+        "rain": "mm/h",
+        "showers": "mm/h",
+        "windSpeed": "km/h",
+        "windDirection": "°",
+        "windGusts": "km/h",
+        "surfacePressure": "hPa",
+        "soilMoisture": "m³/m³"
+      }
+    },
+    "hourly": [],
+    "accumulations": {
+      "past24hRainfallMm": 285.0,
+      "next24hRainfallMm": 165.0,
+      "next72hRainfallMm": 290.0
+    },
+    "soilProfile": {
+      "moisture0To7cm": 0.46,
+      "moisture7To28cm": 0.43,
+      "saturationTier": "SATURATED",
+      "description": "Soil is completely saturated (0.46 m³/m³). 100% surface runoff condition."
+    },
+    "dataSource": {
+      "provider": "Recorded Cyclone Michaung Telemetry",
+      "model": "Archive Replay ECMWF/IMD",
+      "type": "DEMO_DATA",
+      "note": "Pre-recorded historical meteorological snapshot for offline demonstration."
+    }
+  },
+  "alerts": {
+    "fetchedAt": "2023-12-04T12:00:00Z",
+    "source": "IMD Regional Special Tropical Cyclone Advisory Bulletin",
+    "feedStatus": "DEMO_REPLAY",
+    "itemCount": 2,
+    "geographicResolution": {
+      "coordinates": { "latitude": 13.0827, "longitude": 80.2707 },
+      "resolvedDistrict": "Chennai",
+      "matchMethod": "EXACT_DISTRICT"
+    },
+    "alerts": [
+      {
+        "id": "IMD-MICHAUNG-RED-01",
+        "category": "CYCLONE",
+        "severity": "EMERGENCY",
+        "headline": "RED WARNING: Severe Cyclonic Storm Michaung with extremely heavy downpours",
+        "description": "Squally winds 90-100 kmph gusting to 110 kmph and widespread extremely heavy rainfall exceeding 200mm over North Coastal Tamil Nadu. Severe inundation of low-lying urban areas.",
+        "issuedAt": "2023-12-04T06:00:00Z",
+        "effectiveUntil": "2023-12-05T12:00:00Z",
+        "affectedArea": {
+          "name": "Chennai",
+          "location": { "latitude": 13.0827, "longitude": 80.2707 },
+          "matchMethod": "EXACT_DISTRICT"
+        },
+        "recommendedActions": [
+          "Citizens strictly advised to stay indoors on upper floors",
+          "Disconnect electrical mains if water enters premises",
+          "Keep mobile phones charged and emergency dry rations ready",
+          "Contact Greater Chennai Corporation Control Room 1913 or State Emergency 1070"
+        ],
+        "sourceType": "DEMO_DATA",
+        "sourceAgency": "India Meteorological Department (Cyclone Warning Division)",
+        "isOfficialWarning": true,
+        "status": "ACTIVE"
+      },
+      {
+        "id": "IMD-MICHAUNG-FLOOD-02",
+        "category": "FLOOD",
+        "severity": "WARNING",
+        "headline": "FLASH FLOOD WARNING: Overflow warning along Adyar and Cooum River basins",
+        "description": "Discharge from Chembarambakkam and Poondi reservoirs into Adyar and Kosasthalaiyar rivers. Riverine roads and low-level bridges are submerged.",
+        "issuedAt": "2023-12-04T08:30:00Z",
+        "effectiveUntil": "2023-12-05T08:30:00Z",
+        "affectedArea": {
+          "name": "Chennai Metropolitan Area",
+          "location": { "latitude": 13.0827, "longitude": 80.2707 },
+          "matchMethod": "EXACT_DISTRICT"
+        },
+        "recommendedActions": [
+          "Avoid Kotturpuram, Jafferkhanpet, and Saidapet riverfront corridors",
+          "Do not drive through standing flood water"
+        ],
+        "sourceType": "DEMO_DATA",
+        "sourceAgency": "State Disaster Management Authority (TNSDMA)",
+        "isOfficialWarning": true,
+        "status": "ACTIVE"
+      }
+    ]
+  },
+  "risk": {
+    "location": { "latitude": 13.0827, "longitude": 80.2707, "name": "Chennai Central" },
+    "assessedAt": "2023-12-04T12:00:00Z",
+    "dataTimestamp": "2023-12-04T12:00:00Z",
+    "isStale": false,
+    "overallRiskLevel": "CRITICAL",
+    "riskScore": 88,
+    "dataCompleteness": "FULL",
+    "dataConfidence": "HIGH",
+    "factors": {
+      "rainfallIntensity": {
+        "name": "Rainfall Intensity",
+        "score": 90,
+        "weight": 0.35,
+        "weightedScore": 31.5,
+        "observedValue": 42.0,
+        "unit": "mm/h",
+        "benchmark": "IMD Very Heavy Rain Benchmark (>30mm/h)",
+        "basis": "AUTHORITATIVE_METEOROLOGY",
+        "status": "MEASURED",
+        "notes": "Severe convective squall cells over coastal metropolitan core"
+      },
+      "rainfallAccumulation": {
+        "name": "Antecedent Rainfall",
+        "score": 95,
+        "weight": 0.25,
+        "weightedScore": 23.75,
+        "observedValue": 285.0,
+        "unit": "mm",
+        "benchmark": "IMD Extreme Accumulation (>200mm/24h)",
+        "basis": "AUTHORITATIVE_METEOROLOGY",
+        "status": "MEASURED",
+        "notes": "285mm antecedent accumulation exceeded stormwater drain design capacity"
+      },
+      "soilSaturation": {
+        "name": "Soil Saturation",
+        "score": 90,
+        "weight": 0.2,
+        "weightedScore": 18.0,
+        "observedValue": 0.46,
+        "unit": "m³/m³",
+        "benchmark": "Volumetric Saturation Benchmark (>0.38 m³/m³)",
+        "basis": "ENGINEERING_ASSUMPTION",
+        "status": "MEASURED",
+        "notes": "Root zone fully saturated. No further ground infiltration capacity."
+      },
+      "topographicVulnerability": {
+        "name": "Topography",
+        "score": 75,
+        "weight": 0.2,
+        "weightedScore": 15.0,
+        "observedValue": 4.5,
+        "unit": "m",
+        "benchmark": "Coastal Plain Benchmark (<10m AMSL)",
+        "basis": "ENGINEERING_ASSUMPTION",
+        "status": "MEASURED",
+        "notes": "Low-lying coastal alluvium with micro-depressions and tidal backwater effect"
+      }
+    },
+    "metrics": {
+      "peakIntensity1hMm": 42.0,
+      "past24hRainfallMm": 285.0,
+      "next24hRainfallMm": 165.0,
+      "next72hRainfallMm": 290.0,
+      "soilMoistureVolumetricPercent": 46.0,
+      "elevationMeters": 4.5
+    },
+    "explanation": {
+      "summary": "Critical surface flooding and riverine overflow due to extreme antecedent rain (285mm) and full soil saturation.",
+      "primaryDrivers": ["Antecedent Rainfall (285mm)", "Rainfall Intensity (42mm/h)", "Complete Soil Saturation (46%)"],
+      "meteorologicalContext": "Cyclone Michaung eyewall convection bands producing persistent heavy rain bands",
+      "missingInputs": [],
+      "modelAssumptions": ["Topographic drainage bottleneck at coastal outfalls during high tide"],
+      "limitations": ["Indicative screening only; not an official municipal evacuation mandate"]
+    },
+    "disclaimer": {
+      "isHydraulicallyValidated": false,
+      "modelType": "INDICATIVE_RAINFALL_DRIVEN_HEURISTIC",
+      "statement": "Indicative screening prototype only. Follow official TN-SDMA and GCC instructions.",
+      "validationStatus": "UNVALIDATED_PROTOTYPE"
+    },
+    "sourceType": "DEMO_DATA",
+    "sourceAttribution": "JATAYU Recorded Demo Replay (Michaung Archive)"
+  },
+  "facilities": [
+    {
+      "id": "GCC-RELIEF-001",
+      "name": "Ripon Building GCC Central Emergency Relief Camp",
+      "category": "EVACUATION_CENTRE",
+      "latitude": 13.0827,
+      "longitude": 80.2707,
+      "address": "Raja Muthiah Rd, Kannappar Thidal, Periamet, Chennai 600003",
+      "contactPhone": "1913",
+      "totalCapacity": 1200,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "Municipal headquarters shelter. Bedding and dry food distribution staged. Capacity and real-time occupancy UNKNOWN; call GCC 1913 or 112 before moving."
+    },
+    {
+      "id": "GCC-RELIEF-002",
+      "name": "Jawaharlal Nehru Indoor Stadium Evacuation Hub",
+      "category": "EVACUATION_CENTRE",
+      "latitude": 13.0844,
+      "longitude": 80.2766,
+      "address": "Raja Muthiah Rd, Periamet, Chennai 600003",
+      "contactPhone": "044-25619001",
+      "totalCapacity": 3500,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "Large multi-purpose indoor stadium serving North Chennai. Medical desk active. Call to verify gate access."
+    },
+    {
+      "id": "GCC-HOSP-003",
+      "name": "Rajiv Gandhi Government General Hospital (RGGGH)",
+      "category": "HOSPITAL",
+      "latitude": 13.0801,
+      "longitude": 80.2789,
+      "address": "EVR Periyar Salai, Park Town, Chennai 600003",
+      "contactPhone": "108",
+      "totalCapacity": 2000,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "Level 1 Trauma and Emergency Hospital. Backup diesel generators deployed on elevated platforms."
+    }
+  ]
+}

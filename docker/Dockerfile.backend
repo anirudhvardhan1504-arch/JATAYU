@@ -1,0 +1,69 @@
+# syntax=docker/dockerfile:1
+
+# ==============================================================================
+# Stage 1: Build TypeScript backend application
+# ==============================================================================
+FROM node:24-alpine AS builder
+
+WORKDIR /app
+
+# Copy root workspace manifests and lockfile
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+
+# Deterministically install all workspace dependencies
+RUN npm ci
+
+# Copy backend TypeScript source code, scripts, and configs
+COPY backend/tsconfig.json ./backend/
+COPY backend/scripts/ ./backend/scripts/
+COPY backend/src/ ./backend/src/
+
+# Compile TypeScript and bundle geo and research dataset assets into dist
+RUN npm --workspace=backend run build && \
+    mkdir -p ./backend/dist/data/geo ./backend/dist/data/research && \
+    cp -r ./backend/src/data/geo/* ./backend/dist/data/geo/ && \
+    if [ -d "./backend/src/data/research" ]; then cp -r ./backend/src/data/research/* ./backend/dist/data/research/; fi
+
+# ==============================================================================
+# Stage 2: Minimal Production Runner
+# ==============================================================================
+FROM node:24-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=5000
+ENV JATAYU_AUTH_DB=/data/jatayu_auth.db
+
+# Create persistent storage directory with non-root ownership
+RUN mkdir -p /data && chown -R node:node /data
+
+# Copy workspace manifests for production-only dependencies
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+
+# Install only production dependencies
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy compiled backend distribution from builder stage
+COPY --from=builder /app/backend/dist ./backend/dist
+
+# Secure file ownership for non-root runtime
+RUN chown -R node:node /app
+
+USER node
+
+EXPOSE 5000
+
+VOLUME ["/data"]
+
+# Lightweight container health check using native Node.js fetch (no extra packages needed)
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://localhost:5000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
+
+WORKDIR /app/backend
+
+# Direct execution ensures Node.js process receives SIGTERM/SIGINT signals immediately
+CMD ["node", "dist/index.js"]

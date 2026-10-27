@@ -1,0 +1,266 @@
+{
+  "scenarioId": "hyderabad_musi_2020",
+  "title": "Hyderabad Musi River Inundation (October 2020 Cloudburst)",
+  "historicalEventDate": "2020-10-13",
+  "summary": "Record cloudburst of 190mm in 24 hours led to catastrophic flash floods across Hyderabad, causing the Musi River to overflow into adjoining residential colonies.",
+  "location": {
+    "name": "Hyderabad Old City",
+    "latitude": 17.3850,
+    "longitude": 78.4867,
+    "district": "Hyderabad",
+    "state": "Telangana"
+  },
+  "weather": {
+    "location": { "latitude": 17.3850, "longitude": 78.4867, "name": "Hyderabad Old City" },
+    "timestamp": "2020-10-13T18:00:00Z",
+    "fetchedAt": "2020-10-13T18:00:00Z",
+    "temperatureC": 23.2,
+    "apparentTemperatureC": 25.0,
+    "relativeHumidityPercent": 98,
+    "precipitationMm": 38.0,
+    "rainMm": 38.0,
+    "showersMm": 0,
+    "windSpeedKmh": 28.0,
+    "windDirectionDegrees": 110,
+    "windGustsKmh": 45.0,
+    "surfacePressureHpa": 952.0,
+    "weatherCode": 65,
+    "weatherDescription": "Intense continuous cloudburst downpour",
+    "soilMoisture0To7cm": 0.45,
+    "soilMoisture7To28cm": 0.42,
+    "isStale": false,
+    "sourceType": "DEMO_DATA",
+    "sourceAttribution": "JATAYU Recorded Demo Replay (Hyderabad Cloudburst 2020)",
+    "units": {
+      "temperature": "°C",
+      "relativeHumidity": "%",
+      "precipitation": "mm/h",
+      "rain": "mm/h",
+      "showers": "mm/h",
+      "windSpeed": "km/h",
+      "windDirection": "°",
+      "windGusts": "km/h",
+      "surfacePressure": "hPa",
+      "soilMoisture": "m³/m³"
+    }
+  },
+  "forecast": {
+    "location": { "latitude": 17.3850, "longitude": 78.4867, "name": "Hyderabad Old City" },
+    "elevation": 505,
+    "generationTimeMs": 10,
+    "fetchedAt": "2020-10-13T18:00:00Z",
+    "current": {
+      "location": { "latitude": 17.3850, "longitude": 78.4867, "name": "Hyderabad Old City" },
+      "timestamp": "2020-10-13T18:00:00Z",
+      "fetchedAt": "2020-10-13T18:00:00Z",
+      "temperatureC": 23.2,
+      "apparentTemperatureC": 25.0,
+      "relativeHumidityPercent": 98,
+      "precipitationMm": 38.0,
+      "rainMm": 38.0,
+      "showersMm": 0,
+      "windSpeedKmh": 28.0,
+      "windDirectionDegrees": 110,
+      "windGustsKmh": 45.0,
+      "surfacePressureHpa": 952.0,
+      "weatherCode": 65,
+      "weatherDescription": "Intense continuous cloudburst downpour",
+      "soilMoisture0To7cm": 0.45,
+      "soilMoisture7To28cm": 0.42,
+      "isStale": false,
+      "sourceType": "DEMO_DATA",
+      "sourceAttribution": "JATAYU Recorded Demo Replay (Hyderabad Cloudburst 2020)",
+      "units": {
+        "temperature": "°C",
+        "relativeHumidity": "%",
+        "precipitation": "mm/h",
+        "rain": "mm/h",
+        "showers": "mm/h",
+        "windSpeed": "km/h",
+        "windDirection": "°",
+        "windGusts": "km/h",
+        "surfacePressure": "hPa",
+        "soilMoisture": "m³/m³"
+      }
+    },
+    "hourly": [],
+    "accumulations": {
+      "past24hRainfallMm": 192.0,
+      "next24hRainfallMm": 75.0,
+      "next72hRainfallMm": 110.0
+    },
+    "soilProfile": {
+      "moisture0To7cm": 0.45,
+      "moisture7To28cm": 0.42,
+      "saturationTier": "SATURATED",
+      "description": "Deccan granitic soils saturated. Rapid overland runoff to Musi tributaries."
+    },
+    "dataSource": {
+      "provider": "Recorded Telangana IMD / GHMC Telemetry",
+      "model": "Archive Replay October 2020",
+      "type": "DEMO_DATA",
+      "note": "Pre-recorded historical meteorological snapshot for offline demonstration."
+    }
+  },
+  "alerts": {
+    "fetchedAt": "2020-10-13T18:00:00Z",
+    "source": "IMD Hyderabad Met Centre Special Flash Flood Advisory",
+    "feedStatus": "DEMO_REPLAY",
+    "itemCount": 1,
+    "geographicResolution": {
+      "coordinates": { "latitude": 17.3850, "longitude": 78.4867 },
+      "resolvedDistrict": "Hyderabad",
+      "matchMethod": "EXACT_DISTRICT"
+    },
+    "alerts": [
+      {
+        "id": "IMD-HYD-RED-01",
+        "category": "FLOOD",
+        "severity": "EMERGENCY",
+        "headline": "RED WARNING: Catastrophic urban flash flooding across Hyderabad and Musi catchment",
+        "description": "Deep depression over Telangana has yielded unprecedented extreme rainfall. Himayat Sagar and Osman Sagar reservoirs gates opened.",
+        "issuedAt": "2020-10-13T15:00:00Z",
+        "effectiveUntil": "2020-10-14T18:00:00Z",
+        "affectedArea": {
+          "name": "Hyderabad",
+          "location": { "latitude": 17.3850, "longitude": 78.4867 },
+          "matchMethod": "EXACT_DISTRICT"
+        },
+        "recommendedActions": [
+          "Evacuate vulnerable riverbank settlements immediately to GHMC relief shelters",
+          "Do not attempt to cross submerged causeways or low bridges across Musi River",
+          "Contact GHMC Disaster Management Control Room at 040-21111111 or 112"
+        ],
+        "sourceType": "DEMO_DATA",
+        "sourceAgency": "India Meteorological Department / Telangana State Disaster Management",
+        "isOfficialWarning": true,
+        "status": "ACTIVE"
+      }
+    ]
+  },
+  "risk": {
+    "location": { "latitude": 17.3850, "longitude": 78.4867, "name": "Hyderabad Old City" },
+    "assessedAt": "2020-10-13T18:00:00Z",
+    "dataTimestamp": "2020-10-13T18:00:00Z",
+    "isStale": false,
+    "overallRiskLevel": "CRITICAL",
+    "riskScore": 84,
+    "dataCompleteness": "FULL",
+    "dataConfidence": "HIGH",
+    "factors": {
+      "rainfallIntensity": {
+        "name": "Rainfall Intensity",
+        "score": 85,
+        "weight": 0.35,
+        "weightedScore": 29.75,
+        "observedValue": 38.0,
+        "unit": "mm/h",
+        "benchmark": "Very Heavy Rain Benchmark (>30mm/h)",
+        "basis": "AUTHORITATIVE_METEOROLOGY",
+        "status": "MEASURED",
+        "notes": "Intense convective burst over Hyderabad urban agglomeration"
+      },
+      "rainfallAccumulation": {
+        "name": "Antecedent Rainfall",
+        "score": 90,
+        "weight": 0.25,
+        "weightedScore": 22.5,
+        "observedValue": 192.0,
+        "unit": "mm",
+        "benchmark": "Extreme Accumulation Benchmark (>150mm/24h)",
+        "basis": "AUTHORITATIVE_METEOROLOGY",
+        "status": "MEASURED",
+        "notes": "192mm in 24 hours overwhelmed local storm drains and tanks"
+      },
+      "soilSaturation": {
+        "name": "Soil Saturation",
+        "score": 85,
+        "weight": 0.2,
+        "weightedScore": 17.0,
+        "observedValue": 0.45,
+        "unit": "m³/m³",
+        "benchmark": "Volumetric Saturation Benchmark (>0.38 m³/m³)",
+        "basis": "ENGINEERING_ASSUMPTION",
+        "status": "MEASURED",
+        "notes": "Rocky terrain with shallow soils quickly reached complete saturation"
+      },
+      "topographicVulnerability": {
+        "name": "Topography",
+        "score": 75,
+        "weight": 0.2,
+        "weightedScore": 15.0,
+        "observedValue": 505.0,
+        "unit": "m",
+        "benchmark": "Valley Bottleneck AMSL",
+        "basis": "ENGINEERING_ASSUMPTION",
+        "status": "MEASURED",
+        "notes": "Urban basin funnels directly into narrow Musi River bottleneck"
+      }
+    },
+    "metrics": {
+      "peakIntensity1hMm": 38.0,
+      "past24hRainfallMm": 192.0,
+      "next24hRainfallMm": 75.0,
+      "next72hRainfallMm": 110.0,
+      "soilMoistureVolumetricPercent": 45.0,
+      "elevationMeters": 505.0
+    },
+    "explanation": {
+      "summary": "Severe urban flash flooding resulting from historic cloudburst and Musi River cresting.",
+      "primaryDrivers": ["Antecedent Rainfall (192mm)", "Rainfall Intensity (38mm/h)", "Urban Basin Runoff"],
+      "meteorologicalContext": "Deep depression over western Telangana producing record cloudburst precipitation",
+      "missingInputs": [],
+      "modelAssumptions": ["Overland runoff into Musi River channel without retention"],
+      "limitations": ["Indicative screening model only; follow official GHMC directives"]
+    },
+    "disclaimer": {
+      "isHydraulicallyValidated": false,
+      "modelType": "INDICATIVE_RAINFALL_DRIVEN_HEURISTIC",
+      "statement": "Indicative screening prototype only. Follow official GHMC directives.",
+      "validationStatus": "UNVALIDATED_PROTOTYPE"
+    },
+    "sourceType": "DEMO_DATA",
+    "sourceAttribution": "JATAYU Recorded Demo Replay (Hyderabad Cloudburst 2020)"
+  },
+  "facilities": [
+    {
+      "id": "GHMC-RELIEF-001",
+      "name": "GHMC Disaster Management Central Shelter (Khairatabad)",
+      "category": "EVACUATION_CENTRE",
+      "latitude": 17.4126,
+      "longitude": 78.4608,
+      "address": "GHMC Head Office, Khairatabad, Hyderabad 500004",
+      "contactPhone": "040-21111111",
+      "totalCapacity": 800,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "Central emergency dispatch and shelter facility. Capacity and real-time occupancy UNKNOWN; call GHMC Control Room 040-21111111 or 112 before moving."
+    },
+    {
+      "id": "GHMC-RELIEF-002",
+      "name": "Lal Bahadur Shastri Stadium Indoor Relief Camp",
+      "category": "EVACUATION_CENTRE",
+      "latitude": 17.4002,
+      "longitude": 78.4746,
+      "address": "LB Stadium, Fateh Maidan, Hyderabad 500001",
+      "contactPhone": "040-23232040",
+      "totalCapacity": 2500,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "Large indoor arena serving central Hyderabad. Relief teams staged on site."
+    },
+    {
+      "id": "GHMC-HOSP-003",
+      "name": "Osmania General Hospital",
+      "category": "HOSPITAL",
+      "latitude": 17.3789,
+      "longitude": 78.4745,
+      "address": "Afzal Gunj, Hyderabad 500012",
+      "contactPhone": "108",
+      "totalCapacity": 1100,
+      "currentAvailability": "UNKNOWN",
+      "sourceProvenance": "PRE_VERIFIED_OFFICIAL_REGISTRY",
+      "notes": "Heritage hospital near Musi bank. Ground floor evacuation protocols implemented; emergency services operational."
+    }
+  ]
+}

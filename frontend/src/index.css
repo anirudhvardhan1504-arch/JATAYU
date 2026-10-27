@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg-base: #FBFBF9;
+    --color-text-main: #0F172A;
+    --color-border-subtle: #E2E8F0;
+  }
+
+  body {
+    background-color: #FBFBF9;
+    color: #0F172A;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+}
+
+/* Operational clean panel styles */
+.operational-panel {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+}
+
+.operational-panel-dark {
+  background-color: #0F172A;
+  border: 1px solid #1E293B;
+  color: #F8FAFC;
+}
+
+/* Monospace telemetry styles */
+.font-telemetry {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* MapLibre canvas full reset */
+.maplibregl-canvas {
+  outline: none;
+}

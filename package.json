@@ -1,0 +1,22 @@
+{
+  "name": "jatayu",
+  "version": "0.1.0",
+  "description": "JATAYU — AI-powered disaster intelligence and response platform",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm --workspace=backend run dev\" \"npm --workspace=frontend run dev\"",
+    "build": "npm --workspace=backend run build && npm --workspace=frontend run build",
+    "test": "npm --workspace=backend run test && npm --workspace=frontend run test",
+    "typecheck": "npm --workspace=backend run typecheck && npm --workspace=frontend run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

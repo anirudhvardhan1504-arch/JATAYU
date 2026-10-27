@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.env
+.demo_credentials*
+
+# Build outputs
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# SQLite Databases
+*.db
+*.db-journal
+*.db-wal
+backend/data/*.db*
+data/*.db*
+
+# Research and pilot geospatial datasets (Phase 2I)
+data/research/
+*.tif
+*.tiff
+*.geotiff
+*.shp
+*.shx
+*.dbf
+*.prj
+*.gdb
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Editor / OS
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db

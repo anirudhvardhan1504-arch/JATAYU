@@ -1,0 +1,56 @@
+name: JATAYU CI Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-test:
+    name: Build, Validate & Test Monorepo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Deterministically Install Dependencies
+        run: npm ci
+
+      - name: Monorepo Typecheck
+        run: npm run typecheck
+
+      - name: Monorepo Build & Asset Bundling
+        run: npm run build
+
+      - name: Verify Runtime Geo, Research & Replay Assets in Dist
+        run: |
+          test -f backend/dist/data/geo/verified_facilities.json || (echo "Missing verified_facilities.json in dist" && exit 1)
+          test -f backend/dist/data/geo/flood_vulnerability_points.json || (echo "Missing flood_vulnerability_points.json in dist" && exit 1)
+          test -f backend/dist/data/geo/imd_district_synonyms.json || (echo "Missing imd_district_synonyms.json in dist" && exit 1)
+          test -f backend/dist/data/geo/india_districts_simplified.geojson || (echo "Missing india_districts_simplified.geojson in dist" && exit 1)
+          test -f backend/dist/data/research/adyar_corridor_s2_inundation_contours.geojson || (echo "Missing adyar_corridor_s2_inundation_contours.geojson in dist" && exit 1)
+          test -f backend/dist/data/research/adyar_corridor_s2_meta.json || (echo "Missing adyar_corridor_s2_meta.json in dist" && exit 1)
+          test -f backend/dist/data/replay/chennai_deluge_scenario.json || (echo "Missing chennai_deluge_scenario.json in dist" && exit 1)
+          test -f backend/dist/data/replay/hyderabad_musi_scenario.json || (echo "Missing hyderabad_musi_scenario.json in dist" && exit 1)
+          test -f backend/dist/data/replay/mumbai_monsoon_scenario.json || (echo "Missing mumbai_monsoon_scenario.json in dist" && exit 1)
+          echo "[CI] All 9 runtime assets verified in backend/dist/data/"
+
+      - name: Run Monorepo Test Suite
+        run: npm run test
+
+      - name: Verify Docker Container Builds
+        run: |
+          docker compose build --no-cache
+          echo "[CI] Docker container images built successfully."

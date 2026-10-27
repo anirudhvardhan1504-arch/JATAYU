@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1
+
+# ==============================================================================
+# Stage 1: Build production frontend assets with Vite
+# ==============================================================================
+FROM node:24-alpine AS builder
+
+WORKDIR /app
+
+# Copy root workspace manifests and lockfile
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+
+# Deterministically install all workspace dependencies
+RUN npm ci
+
+# Copy frontend source code, styles, public assets, and configs
+COPY frontend/ ./frontend/
+
+# Build static production bundle with lazy-loaded Cesium chunks and assets
+RUN npm --workspace=frontend run build
+
+# ==============================================================================
+# Stage 2: Serve static bundle via Nginx reverse proxy
+# ==============================================================================
+FROM nginx:alpine AS runner
+
+# Copy customized Nginx reverse proxy configuration
+COPY docker/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy compiled static assets from builder stage
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+# Health check using built-in Alpine wget
+HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -q --spider http://127.0.0.1:80/api/health || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]
