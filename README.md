@@ -112,7 +112,11 @@ npm install
 ### Step 2: Configure Environment Variables
 Copy `.env.example` to `backend/.env`:
 ```bash
+# Linux / macOS / Git Bash:
 cp .env.example backend/.env
+
+# Windows PowerShell:
+Copy-Item .env.example backend/.env
 ```
 *(Optional)* Add your OpenRouter API key inside `backend/.env`:
 ```env
@@ -122,11 +126,11 @@ OPENROUTER_MODEL=anthropic/claude-3.5-sonnet:beta
 > **Note**: An OpenRouter key is **NOT required** for scaffolding. If omitted, the platform gracefully informs the commander and runs with structured operational briefings.
 
 ### Step 3: Run Development Server
-Start both backend and frontend concurrently:
+Start both backend and frontend concurrently from the repository root:
 ```bash
 npm run dev
 ```
-- **Frontend Console**: [http://localhost:3000](http://localhost:3000)
+- **Frontend Console**: [http://localhost:3000](http://localhost:3000) (default Vite port) or [http://localhost:8080](http://localhost:8080)
 - **Backend API**: [http://localhost:5000](http://localhost:5000)
 - **Health Endpoint**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
 
@@ -135,8 +139,8 @@ npm run dev
 # Type check both workspaces (TypeScript)
 npm run typecheck
 
-# Run test suites (293 passed, 2 skipped, 0 failures across 27 test files)
-npm run test
+# Run test suites (Frontend + Backend)
+npm test
 
 # Production build (Frontend Vite bundle + Backend asset packaging)
 npm run build
@@ -144,7 +148,7 @@ npm run build
 
 ### Step 5: Demo Replay Mode (Offline Evaluation)
 JATAYU includes a built-in **Controlled Demo Replay Mode** with versioned historical fixtures:
-- Access via URL parameter: `http://localhost:8080/?demo=replay`
+- Access via URL parameter: `http://localhost:3000/?demo=replay` (or `http://localhost:8080/?demo=replay`)
 - Or click **Launch Recorded Demo Replay** in the top banner of the application.
 - Choose between:
   - **Chennai Deluge:** Cyclone Michaung (Dec 2023)
@@ -155,11 +159,12 @@ JATAYU includes a built-in **Controlled Demo Replay Mode** with versioned histor
 For live competitive evaluation and hackathon juries, follow the minute-by-minute presentation script:
 - [Three-Minute Demo Runbook](file:///C:/Users/Anirudh/OneDrive/Desktop/Jatayu/docs/submission/phase_3h_three_minute_demo_runbook.md)
 
-### Step 7: Demo Researcher Credentials
-To test the role-gated research tier (Adyar SFINCS hydrodynamic model & 3D Earth Globe):
-- **Username:** `researcher@jatayu.gov.in`
-- **Password:** `ResearcherDemo2026!`
-- **Role:** `researcher`
+### Step 7: Local Demo Evaluator Access (RBAC Verification)
+To verify the role-gated research tier (Adyar SFINCS hydrodynamic model & 3D Earth Globe) in local development:
+- Click **COMMAND SIGN IN** in the top navigation bar.
+- On `localhost` or `127.0.0.1`, a pre-configured evaluation card is rendered in the login modal: click **⚡ Quick Fill Demo Researcher** to automatically populate credentials.
+- Click **VERIFY IDENTITY** to authenticate and issue an in-memory JWT with the `RESEARCHER` role.
+- *Security Guard:* This evaluation helper is rendered strictly on `localhost` / `127.0.0.1` and is disabled in production deployments.
 
 ### Step 8: Docker Container Stack (Production / Staging)
 Launch the containerized staging environment:
@@ -172,6 +177,9 @@ docker compose up -d --build
   ```bash
   docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
   ```
+
+### Step 9: Contributing & Team Collaboration
+For branch naming conventions (`feat/`, `fix/`, `docs/`), PR review procedures, and safety compliance, consult the [Contributing Guide](file:///C:/Users/Anirudh/OneDrive/Desktop/Jatayu/CONTRIBUTING.md).
 
 ---
 

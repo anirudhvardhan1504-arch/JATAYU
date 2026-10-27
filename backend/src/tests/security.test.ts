@@ -94,13 +94,14 @@ describe('JATAYU Phase 3H: Security, Input Validation & External Resilience', ()
       const lat = 13.0827;
       const lon = 80.2707;
 
-      // Mock global fetch
+      // Mock global fetch with a current observation timestamp in Open-Meteo format (YYYY-MM-DDTHH:mm)
+      const currentIsoMinute = new Date().toISOString().slice(0, 16);
       const mockSuccessData = {
         latitude: lat,
         longitude: lon,
         utc_offset_seconds: 0,
         current: {
-          time: '2026-10-27T10:00',
+          time: currentIsoMinute,
           interval: 900,
           temperature_2m: 29.5,
           relative_humidity_2m: 80,
