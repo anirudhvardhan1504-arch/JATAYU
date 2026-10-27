@@ -22,7 +22,9 @@ export default defineConfig({
   plugins: [
     react(),
     cesium({
+      cesiumBuildRootPath: '../node_modules/cesium/Build',
       cesiumBuildPath: '../node_modules/cesium/Build/Cesium/',
+      devMinifyCesium: true,
     }),
     cesiumDeferredLoaderPlugin(),
   ],
