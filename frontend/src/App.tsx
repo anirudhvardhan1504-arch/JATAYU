@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from
 import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './pages/HomePage';
 import { OverviewPage } from './pages/OverviewPage';
+import { ForecastPage } from './pages/ForecastPage';
 import { LiveMapPage } from './pages/LiveMapPage';
 import { RiskAssessmentPage } from './pages/RiskAssessmentPage';
 import { AlertsPage } from './pages/AlertsPage';
@@ -301,7 +302,7 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
           />
         )}
 
-        {(activeTab === 'overview' || activeTab === 'weather') && (
+        {activeTab === 'overview' && (
           <OverviewPage
             location={selectedLocation}
             weather={weather}
@@ -315,6 +316,20 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
           />
         )}
 
+        {activeTab === 'weather' && (
+          <ForecastPage
+            location={selectedLocation}
+            onSelectLocation={setSelectedLocation}
+            weather={weather}
+            forecast={forecast}
+            alertFeed={alertFeed}
+            isLoading={isLoading}
+            error={weatherError}
+            onSelectTab={setActiveTab}
+            onRetry={loadData}
+          />
+        )}
+
         {activeTab === 'map' && (
           <LiveMapPage
             location={selectedLocation}
@@ -324,6 +339,7 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
             riskAssessment={riskAssessment}
             alertFeed={alertFeed}
             isLoading={isLoading}
+            onSelectTab={setActiveTab}
           />
         )}
 

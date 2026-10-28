@@ -9,6 +9,14 @@
     --color-border-subtle: #E2E8F0;
   }
 
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     background-color: #FBFBF9;
     color: #0F172A;

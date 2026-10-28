@@ -40,6 +40,12 @@ yarn-debug.log*
 yarn-error.log*
 *.log
 
+# Scratch and local test artifacts
+scratch/
+/*.png
+/*.jpg
+/*.jpeg
+
 # Editor / OS
 .vscode/
 .idea/

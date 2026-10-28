@@ -19,6 +19,7 @@ function cesiumDeferredLoaderPlugin(): Plugin {
 }
 
 export default defineConfig({
+  envDir: '../',
   plugins: [
     react(),
     cesium({

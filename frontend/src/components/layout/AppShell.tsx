@@ -31,7 +31,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Operational status bar is only displayed on advanced operator console tabs
+  // Operational status bar is only displayed on tactical dashboard tabs (not 3D command globe)
   const isOperatorTab = [
     'overview',
     'map',
@@ -39,11 +39,10 @@ export const AppShell: React.FC<AppShellProps> = ({
     'alerts',
     'ai',
     'preparedness',
-    'command3d',
   ].includes(activeTab);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-warm-100 text-slate-900 font-sans">
+    <div className="flex flex-col h-screen w-full max-w-full overflow-hidden bg-warm-100 text-slate-900 font-sans">
       {/* Top Banner / Operational Status Bar (Restrained: only on operator tabs) */}
       {isOperatorTab && (
         <OperationalStatusBar
@@ -91,8 +90,22 @@ export const AppShell: React.FC<AppShellProps> = ({
           />
 
           {/* Dynamic Scrollable Page Body */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-warm-100">
-            <div className="max-w-7xl mx-auto space-y-6">{children}</div>
+          <main
+            className={`flex-1 ${
+              activeTab === 'map' || activeTab === 'command3d'
+                ? 'overflow-hidden p-0 relative bg-navy-950'
+                : 'overflow-y-auto p-4 sm:p-6 lg:p-8 bg-warm-100'
+            }`}
+          >
+            <div
+              className={
+                activeTab === 'map' || activeTab === 'command3d'
+                  ? 'w-full h-full'
+                  : 'max-w-7xl mx-auto space-y-6'
+              }
+            >
+              {children}
+            </div>
           </main>
         </div>
       </div>

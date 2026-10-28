@@ -21,6 +21,9 @@ interface TacticalMapProps {
   simulationGeojson?: GeoJSON.FeatureCollection | null;
   simulationMeta?: SimulationMetadata | null;
   onToggleSimulation?: (visible: boolean) => void;
+  activeRadarTileUrl?: string | null;
+  activeRadarTimestamp?: number | null;
+  onRadarLoaded?: (info: RainViewerRadarInfo) => void;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -39,6 +42,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   simulationGeojson = null,
   simulationMeta = null,
   onToggleSimulation,
+  activeRadarTileUrl = null,
+  activeRadarTimestamp = null,
+  onRadarLoaded,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -60,6 +66,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         if (!isSubscribed) return;
         if (info) {
           setRadarInfo(info);
+          if (onRadarLoaded) onRadarLoaded(info);
         } else {
           setRadarError('Global radar feed offline or unreachable');
         }
@@ -336,6 +343,20 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [radarInfo]);
 
+  // Synchronize dynamic radar tile URL (e.g. when timeline frame scrubs)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !activeRadarTileUrl) return;
+    try {
+      const src = map.getSource('rainviewer-radar') as any;
+      if (src && typeof src.setTiles === 'function') {
+        src.setTiles([activeRadarTileUrl]);
+      }
+    } catch {
+      // Ignored if map is in transition
+    }
+  }, [activeRadarTileUrl]);
+
   // Synchronize Radar Opacity
   useEffect(() => {
     const map = mapRef.current;
@@ -546,7 +567,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                 <div className="flex justify-between">
                   <span>FRAME TIME:</span>
                   <span className="text-slate-200">
-                    {new Date(radarInfo.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date((activeRadarTimestamp || radarInfo.timestamp) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 <div className="text-[9px] text-slate-500">Source: RainViewer Open Composite</div>

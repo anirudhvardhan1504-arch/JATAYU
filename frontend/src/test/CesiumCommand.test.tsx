@@ -40,6 +40,13 @@ vi.mock('cesium', () => {
     Math: {
       toRadians: vi.fn((deg) => (deg * Math.PI) / 180),
     },
+    Ion: {
+      defaultAccessToken: '',
+    },
+    Terrain: {
+      fromWorldTerrain: vi.fn(),
+    },
+    EllipsoidTerrainProvider: vi.fn(),
   };
 });
 
