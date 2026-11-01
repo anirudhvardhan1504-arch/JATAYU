@@ -26,24 +26,55 @@ export function provisionDemoResearcher(): { success: boolean; accounts: Array<{
     );
   }
 
-  // 2. Identify target database
-  const defaultDbPath = path.resolve(process.cwd(), 'data/jatayu_auth.db');
-  const dbPath = process.env.JATAYU_AUTH_DB || defaultDbPath;
-
-  if (!fs.existsSync(dbPath)) {
-    // If running inside container /data vs host ./data
-    const altPath = '/data/jatayu_auth.db';
-    if (fs.existsSync(altPath)) {
-      return runProvisioningOnDb(altPath);
-    }
-    throw new Error(`[ERROR] Target SQLite database not found at ${dbPath}`);
-  }
-
-  return runProvisioningOnDb(dbPath);
-}
-
-function runProvisioningOnDb(dbPath: string): { success: boolean; accounts: Array<{ username: string; role: string }> } {
-  const db = new DatabaseSync(dbPath);
+  // 2. Identify target database
+  const defaultDbPath = path.resolve(process.cwd(), 'data/jatayu_auth.db');
+  let dbPath = process.env.JATAYU_AUTH_DB ? path.resolve(process.cwd(), process.env.JATAYU_AUTH_DB) : defaultDbPath;
+
+  if (!fs.existsSync(dbPath)) {
+    const nestedBackend = path.resolve(process.cwd(), 'backend', 'data/jatayu_auth.db');
+    const altPath = '/data/jatayu_auth.db';
+    if (fs.existsSync(nestedBackend)) {
+      dbPath = nestedBackend;
+    } else if (fs.existsSync(altPath)) {
+      dbPath = altPath;
+    } else {
+      const targetDir = path.dirname(dbPath);
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+    }
+  }
+
+  return runProvisioningOnDb(dbPath);
+}
+
+function runProvisioningOnDb(dbPath: string): { success: boolean; accounts: Array<{ username: string; role: string }> } {
+  const targetDir = path.dirname(dbPath);
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+  const db = new DatabaseSync(dbPath);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL COLLATE NOCASE,
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      is_disabled INTEGER NOT NULL DEFAULT 0,
+      role_version INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      key TEXT PRIMARY KEY,
+      failed_count INTEGER NOT NULL DEFAULT 0,
+      locked_until INTEGER NOT NULL DEFAULT 0,
+      last_attempt_at INTEGER NOT NULL
+    );
+  `);
 
   // Accounts to provision with RESEARCHER role
   const accountsToProvision = [

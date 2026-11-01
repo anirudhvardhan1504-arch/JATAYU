@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'node:path';
+import fs from 'node:fs';
 
 dotenv.config();
 
@@ -32,9 +33,13 @@ const rawCorsOrigin = process.env.CORS_ORIGIN?.trim();
 export function parseAllowedOrigins(corsOriginEnv?: string, env = nodeEnv): string[] {
   const defaultDevOrigins = [
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:5173',
+    'http://localhost:8080',
     'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
     'http://127.0.0.1:5173',
+    'http://127.0.0.1:8080',
   ];
 
   if (!corsOriginEnv || corsOriginEnv.trim().length === 0) {
@@ -74,8 +79,16 @@ if (nodeEnv === 'production') {
 const jwtSecret = rawJwtSecret || 'jatayu-development-local-only-jwt-secret-min-32-chars';
 const allowedOrigins = parseAllowedOrigins(rawCorsOrigin, nodeEnv);
 
-const defaultDbPath = path.join(process.cwd(), 'data', 'jatayu_auth.db');
-const dbPath = process.env.JATAYU_AUTH_DB?.trim() || defaultDbPath;
+function resolveAuthDbPath(configured?: string): string {
+  if (configured && path.isAbsolute(configured)) return configured;
+  const rel = configured || path.join('data', 'jatayu_auth.db');
+  const direct = path.resolve(process.cwd(), rel);
+  if (fs.existsSync(direct)) return direct;
+  const nested = path.resolve(process.cwd(), 'backend', rel);
+  if (fs.existsSync(nested)) return nested;
+  return direct;
+}
+const dbPath = resolveAuthDbPath(process.env.JATAYU_AUTH_DB?.trim());
 
 export const config: AppConfig = {
   port: parseInt(process.env.PORT || '5000', 10),

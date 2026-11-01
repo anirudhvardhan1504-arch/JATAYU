@@ -18,6 +18,8 @@ function cesiumDeferredLoaderPlugin(): Plugin {
   };
 }
 
+const backendTarget = process.env.VITE_BACKEND_URL || (process.env.PORT ? `http://localhost:${process.env.PORT}` : 'http://localhost:5001');
+
 export default defineConfig({
   envDir: '../',
   plugins: [
@@ -33,8 +35,20 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: backendTarget,
         changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-maplibre': ['maplibre-gl'],
+          'vendor-recharts': ['recharts'],
+          'vendor-lucide': ['lucide-react'],
+        },
       },
     },
   },

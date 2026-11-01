@@ -9,8 +9,18 @@ try {
 import { app } from './app.js';
 import { config } from './config.js';
 import { createShutdownHandler } from './shutdown.js';
+import { provisionDemoResearcher } from './scripts/provision_demo_researcher.js';
 
 export function startServer(port = config.port) {
+  if (config.nodeEnv !== 'production' || process.env.ALLOW_LOCAL_DEMO_PROVISIONING === 'true') {
+    try {
+      provisionDemoResearcher();
+      console.log('[JATAYU] Verified demo credentials for qa_commander (RESEARCHER)');
+    } catch (err: any) {
+      console.warn('[JATAYU] Demo provisioning note:', err.message);
+    }
+  }
+
   const server = app.listen(port, () => {
     console.log(`[JATAYU] Backend service running on http://localhost:${port}`);
     console.log(`[JATAYU] Health check: http://localhost:${port}/api/health`);
