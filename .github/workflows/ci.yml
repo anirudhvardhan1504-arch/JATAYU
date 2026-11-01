@@ -51,6 +51,8 @@ jobs:
         run: npm run test
 
       - name: Verify Docker Container Builds
+        env:
+          JWT_SECRET: "ci-validation-dummy-secret-at-least-32-chars-long"
         run: |
           docker compose build --no-cache
           echo "[CI] Docker container images built successfully."
