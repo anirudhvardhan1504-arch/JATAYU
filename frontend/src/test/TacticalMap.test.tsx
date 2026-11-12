@@ -14,6 +14,8 @@ const mockSetPaintProperty = vi.fn();
 const mockSetLayoutProperty = vi.fn();
 const mockGetSource = vi.fn();
 const mockGetLayer = vi.fn();
+const mockRemoveSource = vi.fn();
+const mockRemoveLayer = vi.fn();
 const mockRemove = vi.fn();
 const mockOn = vi.fn();
 const mockOnce = vi.fn();
@@ -44,6 +46,8 @@ vi.mock('maplibre-gl', () => {
         addLayer: mockAddLayer,
         getSource: mockGetSource,
         getLayer: mockGetLayer,
+        removeSource: mockRemoveSource,
+        removeLayer: mockRemoveLayer,
         setPaintProperty: mockSetPaintProperty,
         setLayoutProperty: mockSetLayoutProperty,
         isStyleLoaded: mockIsStyleLoaded,
@@ -67,10 +71,16 @@ describe('TacticalMap Component Unit & Integration Tests', () => {
       addedSources[id] = { setData: vi.fn(), ...def };
     });
     mockGetSource.mockImplementation((id: string) => addedSources[id]);
+    mockRemoveSource.mockImplementation((id: string) => {
+      delete addedSources[id];
+    });
     mockAddLayer.mockImplementation((layer: any) => {
       addedLayers[layer.id] = layer;
     });
     mockGetLayer.mockImplementation((id: string) => addedLayers[id]);
+    mockRemoveLayer.mockImplementation((id: string) => {
+      delete addedLayers[id];
+    });
   });
 
   it('initializes MapLibre instance, navigation control, and center marker', async () => {
@@ -539,5 +549,87 @@ describe('LiveMapPage Integration Tests', () => {
     expect(screen.queryByRole('button', { name: 'MUTED' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'ACTIVE' })).not.toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('initializes NASA GIBS satellite raster source and layer in MapLibre', async () => {
+    render(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={80}
+        satelliteProductKey="ir"
+      />
+    );
+
+    // Verify source registration
+    expect(addedSources['nasa-gibs-satellite']).toBeDefined();
+    expect(addedSources['nasa-gibs-satellite'].tiles[0]).toContain('Himawari_AHI_Band13_Clean_Infrared');
+    expect(addedSources['nasa-gibs-satellite'].maxzoom).toBe(6);
+
+    // Verify layer registration
+    expect(addedLayers['nasa-gibs-satellite-layer']).toBeDefined();
+    expect(addedLayers['nasa-gibs-satellite-layer'].type).toBe('raster');
+    expect(addedLayers['nasa-gibs-satellite-layer'].paint['raster-opacity']).toBe(0.8);
+    expect(addedLayers['nasa-gibs-satellite-layer'].layout.visibility).toBe('visible');
+  });
+
+  it('updates satellite layer when product key or opacity changes', async () => {
+    const { rerender } = render(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={70}
+        satelliteProductKey="ir"
+      />
+    );
+
+    expect(addedSources['nasa-gibs-satellite'].tiles[0]).toContain('Himawari_AHI_Band13_Clean_Infrared');
+
+    // Switch to VIIRS HD
+    rerender(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={90}
+        satelliteProductKey="viirs"
+      />
+    );
+
+    expect(addedSources['nasa-gibs-satellite'].tiles[0]).toContain('VIIRS_NOAA20_CorrectedReflectance_TrueColor');
+    expect(addedSources['nasa-gibs-satellite'].maxzoom).toBe(9);
+    expect(mockSetPaintProperty).toHaveBeenCalledWith('nasa-gibs-satellite-layer', 'raster-opacity', 0.9);
+  });
+
+  it('interactively toggles satellite mode and channels in LiveMapPage', async () => {
+    render(
+      <LiveMapPage
+        location={mockLocation}
+        onSelectLocation={vi.fn()}
+      />
+    );
+
+    // By default satellite is hidden
+    const satToggleBtn = screen.getAllByRole('button', { name: 'HIDDEN' })[0];
+    fireEvent.click(satToggleBtn);
+
+    // Should now show Live channels & mode options
+    expect(screen.getByText('Live (10m)')).toBeInTheDocument();
+    expect(screen.getByText('HD (250m)')).toBeInTheDocument();
+    expect(screen.getByText('Infrared (10.4 µm)')).toBeInTheDocument();
+    expect(screen.getByText('Visible (0.64 µm)')).toBeInTheDocument();
+    expect(screen.getByText('Air Mass RGB')).toBeInTheDocument();
+
+    // Click Visible channel -> daylight notice
+    fireEvent.click(screen.getByText('Visible (0.64 µm)'));
+    expect(screen.getByText(/Optical band requires solar illumination/i)).toBeInTheDocument();
+
+    // Switch to HD mode
+    fireEvent.click(screen.getByText('HD (250m)'));
+    expect(screen.getByText('VIIRS NOAA-20')).toBeInTheDocument();
+    expect(screen.getByText('MODIS Terra')).toBeInTheDocument();
+    expect(screen.getByText('250m at equator')).toBeInTheDocument();
   });
 });

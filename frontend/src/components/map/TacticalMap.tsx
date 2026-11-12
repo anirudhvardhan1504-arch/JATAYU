@@ -1,9 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Layers, ShieldAlert, Crosshair, RotateCcw, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Layers, ShieldAlert, Crosshair, RotateCcw, AlertTriangle, Eye, EyeOff, Globe } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { getLatestRadarInfo, RainViewerRadarInfo } from '../../services/radar';
 import { SimulationMetadata } from '../../services/research';
+import {
+  SatelliteProductKey,
+  SATELLITE_PRODUCTS,
+  getSatelliteTileUrl,
+} from '../../services/satellite';
 
 export interface TacticalMapProps {
   center: [number, number]; // [lon, lat]
@@ -16,6 +21,11 @@ export interface TacticalMapProps {
   radarOpacity?: number; // 0 - 100
   showRadar?: boolean;
   onToggleRadar?: (visible: boolean) => void;
+  satelliteOpacity?: number; // 0 - 100
+  showSatellite?: boolean;
+  onToggleSatellite?: (visible: boolean) => void;
+  satelliteProductKey?: SatelliteProductKey;
+  satelliteTileUrl?: string | null;
   initialCenter?: [number, number];
   showSimulation?: boolean;
   simulationGeojson?: GeoJSON.FeatureCollection | null;
@@ -39,6 +49,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   radarOpacity = 80,
   showRadar = true,
   onToggleRadar,
+  satelliteOpacity = 75,
+  showSatellite = false,
+  onToggleSatellite,
+  satelliteProductKey = 'ir',
+  satelliteTileUrl = null,
   initialCenter = [72.8777, 19.076],
   showSimulation = false,
   simulationGeojson = null,
@@ -391,6 +406,94 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [showRadar]);
 
+  // Synchronize NASA GIBS Satellite Layer when product or tile URL changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const satConfig = SATELLITE_PRODUCTS[satelliteProductKey] || SATELLITE_PRODUCTS.ir;
+    const satTileUrl = satelliteTileUrl || getSatelliteTileUrl(satConfig.key);
+
+    const setupSatellite = () => {
+      try {
+        if (map.getLayer('nasa-gibs-satellite-layer')) {
+          map.removeLayer('nasa-gibs-satellite-layer');
+        }
+        if (map.getSource('nasa-gibs-satellite')) {
+          map.removeSource('nasa-gibs-satellite');
+        }
+
+        map.addSource('nasa-gibs-satellite', {
+          type: 'raster',
+          tiles: [satTileUrl],
+          tileSize: 256,
+          minzoom: satConfig.minZoom,
+          maxzoom: satConfig.maxZoom,
+          attribution: satConfig.attribution,
+        });
+
+        const beforeLayer = map.getLayer('rainviewer-radar-layer')
+          ? 'rainviewer-radar-layer'
+          : map.getLayer('adyar-simulation-fill')
+          ? 'adyar-simulation-fill'
+          : undefined;
+
+        map.addLayer(
+          {
+            id: 'nasa-gibs-satellite-layer',
+            type: 'raster',
+            source: 'nasa-gibs-satellite',
+            paint: {
+              'raster-opacity': satelliteOpacity / 100,
+            },
+            layout: {
+              visibility: showSatellite ? 'visible' : 'none',
+            },
+          },
+          beforeLayer
+        );
+      } catch (err) {
+        console.warn('Satellite layer setup error:', err);
+      }
+    };
+
+    if (!map.isStyleLoaded()) {
+      map.once('load', setupSatellite);
+    } else {
+      setupSatellite();
+    }
+  }, [satelliteProductKey, satelliteTileUrl]);
+
+  // Synchronize Satellite Opacity
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || typeof map.getLayer !== 'function') return;
+    try {
+      if (map.getLayer('nasa-gibs-satellite-layer')) {
+        map.setPaintProperty?.('nasa-gibs-satellite-layer', 'raster-opacity', satelliteOpacity / 100);
+      }
+    } catch {
+      // Ignored
+    }
+  }, [satelliteOpacity]);
+
+  // Synchronize Satellite Visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || typeof map.getLayer !== 'function') return;
+    try {
+      if (map.getLayer('nasa-gibs-satellite-layer')) {
+        map.setLayoutProperty?.(
+          'nasa-gibs-satellite-layer',
+          'visibility',
+          showSatellite ? 'visible' : 'none'
+        );
+      }
+    } catch {
+      // Ignored
+    }
+  }, [showSatellite]);
+
   // Synchronize Simulation Layer Data and Setup
   useEffect(() => {
     const map = mapRef.current;
@@ -592,6 +695,28 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                   {radarError}
                 </div>
               ) : null}
+
+              {/* Satellite Layer Toggle */}
+              <div className="pt-2 border-t border-navy-800 space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="text-[11px]">NASA GIBS Satellite</span>
+                  </div>
+                  <button
+                    onClick={() => onToggleSatellite && onToggleSatellite(!showSatellite)}
+                    className="p-1 hover:bg-navy-800 rounded text-slate-300 cursor-pointer"
+                    title={showSatellite ? 'Hide satellite imagery' : 'Show satellite imagery'}
+                  >
+                    {showSatellite ? <Eye className="w-3.5 h-3.5 text-cyan-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
+                  </button>
+                </div>
+                {showSatellite && (
+                  <div className="text-[9px] text-slate-400 font-mono">
+                    {SATELLITE_PRODUCTS[satelliteProductKey]?.shortLabel || 'Infrared'} • {satelliteOpacity}%
+                  </div>
+                )}
+              </div>
 
               {/* SFINCS Hydraulic Simulation Layer */}
               {(simulationGeojson || onToggleSimulation) && (

@@ -12,13 +12,19 @@ import {
   Database,
   Lock,
   ExternalLink,
-  AlertTriangle,
   ShieldAlert,
   Building2,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 import { SimulationResponse } from '../../services/research';
+import {
+  SatelliteMode,
+  LiveSatelliteChannel,
+  HDSatelliteProduct,
+  SECTOR_VIEWING_CHARACTERISTICS,
+  getEstimatedLiveObservationTime,
+} from '../../services/satellite';
 
 export interface LayerSidebarProps {
   isOpen: boolean;
@@ -30,6 +36,15 @@ export interface LayerSidebarProps {
   onChangeRadarOpacity: (opacity: number) => void;
   showSatellite: boolean;
   onToggleSatellite: (show: boolean) => void;
+  satelliteOpacity?: number;
+  onChangeSatelliteOpacity?: (opacity: number) => void;
+  satelliteMode?: SatelliteMode;
+  onChangeSatelliteMode?: (mode: SatelliteMode) => void;
+  satelliteChannel?: LiveSatelliteChannel;
+  onChangeSatelliteChannel?: (channel: LiveSatelliteChannel) => void;
+  hdProduct?: HDSatelliteProduct;
+  onChangeHDProduct?: (product: HDSatelliteProduct) => void;
+  activeSectorName?: string;
 
   // Category B: Forecast Maps
   showPrecipLayer: boolean;
@@ -69,6 +84,15 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
   onChangeRadarOpacity,
   showSatellite,
   onToggleSatellite,
+  satelliteOpacity = 75,
+  onChangeSatelliteOpacity,
+  satelliteMode = 'live',
+  onChangeSatelliteMode,
+  satelliteChannel = 'ir',
+  onChangeSatelliteChannel,
+  hdProduct = 'viirs',
+  onChangeHDProduct,
+  activeSectorName,
   showPrecipLayer,
   onTogglePrecipLayer,
   showWindLayer,
@@ -103,6 +127,13 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
   };
 
   const isSectionOpen = (section: 'A' | 'B' | 'C') => expandedSection === 'ALL' || expandedSection === section;
+
+  const sectorViewing = activeSectorName
+    ? Object.entries(SECTOR_VIEWING_CHARACTERISTICS).find(([key]) =>
+        activeSectorName.toLowerCase().includes(key.toLowerCase())
+      )?.[1]
+    : null;
+  const liveObs = getEstimatedLiveObservationTime();
 
   return (
     <aside
@@ -185,30 +216,189 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
               )}
             </div>
 
-            {/* Layer A.2: Satellite Imagery */}
-            <div className="space-y-1.5 bg-navy-950/70 p-2 rounded-lg border border-navy-800/80">
+            {/* Layer A.2: Satellite Imagery (NASA GIBS Live & HD) */}
+            <div className="space-y-2 bg-navy-950/70 p-2 rounded-lg border border-navy-800/80">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Globe className="w-3 h-3 text-cyan-400" />
-                  <span className="font-bold text-slate-300 text-[11px]">Satellite IR Imagery</span>
+                  <span className="font-bold text-white text-[11px]">Satellite Imagery</span>
                 </div>
                 <button
                   onClick={() => onToggleSatellite(!showSatellite)}
-                  className="px-1.5 py-0.2 rounded text-[9px] font-bold border bg-navy-800 text-slate-400 border-navy-700 cursor-pointer"
+                  className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
+                    showSatellite
+                      ? 'bg-cyan-600/30 text-cyan-300 border-cyan-500'
+                      : 'bg-navy-800 text-slate-500 border-navy-700'
+                  }`}
                 >
-                  {showSatellite ? 'ENABLED' : 'DISABLED'}
+                  {showSatellite ? 'VISIBLE' : 'HIDDEN'}
                 </button>
               </div>
-              {/* Transparent Status */}
-              <div className="p-1.5 bg-amber-950/40 border border-amber-600/40 rounded text-[9px] text-amber-300 space-y-0.5">
-                <div className="flex items-center gap-1 font-bold">
-                  <AlertTriangle className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                  <span>PROVIDER OFFLINE / AWAITING INTEGRATION</span>
-                </div>
-                <p className="text-slate-400 leading-tight">
-                  INSAT-3D / Himawari IR imagery stream is currently awaiting direct ISRO/JMA API credentials. No simulated satellite frames are rendered.
-                </p>
+              <div className="text-[9px] text-slate-400 leading-tight">
+                NASA GIBS geostationary & optical composites
               </div>
+
+              {showSatellite && (
+                <div className="pt-1.5 border-t border-navy-800/80 space-y-2">
+                  {/* Mode Selector: LIVE vs HD */}
+                  <div className="space-y-1">
+                    <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
+                      Mode
+                    </div>
+                    <div className="grid grid-cols-2 gap-1">
+                      <button
+                        onClick={() => onChangeSatelliteMode && onChangeSatelliteMode('live')}
+                        className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                          satelliteMode === 'live'
+                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 shadow-xs'
+                            : 'bg-navy-900 text-slate-400 border-navy-700 hover:text-white'
+                        }`}
+                      >
+                        Live (10m)
+                      </button>
+                      <button
+                        onClick={() => onChangeSatelliteMode && onChangeSatelliteMode('hd')}
+                        className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                          satelliteMode === 'hd'
+                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 shadow-xs'
+                            : 'bg-navy-900 text-slate-400 border-navy-700 hover:text-white'
+                        }`}
+                      >
+                        HD (250m)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Channel / Product Selection */}
+                  {satelliteMode === 'live' ? (
+                    <div className="space-y-1">
+                      <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
+                        Geostationary Channel
+                      </div>
+                      <div className="grid grid-cols-1 gap-1">
+                        <button
+                          onClick={() => onChangeSatelliteChannel && onChangeSatelliteChannel('ir')}
+                          className={`px-2 py-1 rounded text-[9.5px] font-medium border text-left flex items-center justify-between transition-colors cursor-pointer ${
+                            satelliteChannel === 'ir'
+                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
+                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                          }`}
+                        >
+                          <span>Infrared (10.4 µm)</span>
+                          <span className="text-[8.5px] text-cyan-400/80">Day & Night</span>
+                        </button>
+                        <button
+                          onClick={() => onChangeSatelliteChannel && onChangeSatelliteChannel('visible')}
+                          className={`px-2 py-1 rounded text-[9.5px] font-medium border text-left flex items-center justify-between transition-colors cursor-pointer ${
+                            satelliteChannel === 'visible'
+                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
+                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                          }`}
+                        >
+                          <span>Visible (0.64 µm)</span>
+                          <span className="text-[8.5px] text-amber-400">Daylight Only</span>
+                        </button>
+                        <button
+                          onClick={() => onChangeSatelliteChannel && onChangeSatelliteChannel('airmass')}
+                          className={`px-2 py-1 rounded text-[9.5px] font-medium border text-left flex items-center justify-between transition-colors cursor-pointer ${
+                            satelliteChannel === 'airmass'
+                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
+                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                          }`}
+                        >
+                          <span>Air Mass RGB</span>
+                          <span className="text-[8.5px] text-teal-400/80">Jet Streams</span>
+                        </button>
+                      </div>
+
+                      {/* Visible Daylight Notice */}
+                      {satelliteChannel === 'visible' && (
+                        <div className="p-1.5 bg-amber-950/40 border border-amber-600/40 rounded text-[8.5px] text-amber-300 leading-tight">
+                          ⚠️ Optical band requires solar illumination. Dark/black during Indian nighttime (12:00-01:00 UTC).
+                        </div>
+                      )}
+
+                      {/* Live Metadata & Processing Latency Notice */}
+                      <div className="p-1.5 bg-navy-900/80 border border-navy-800 rounded text-[8.5px] text-slate-400 space-y-0.5">
+                        <div className="flex justify-between text-slate-300">
+                          <span>Observation:</span>
+                          <span className="font-mono text-cyan-300">{liveObs.observationTimeLabel}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Processing Latency:</span>
+                          <span className="text-amber-400">~40 min delay</span>
+                        </div>
+                        <div className="text-[8px] text-slate-500 pt-0.5 border-t border-navy-800">
+                          Provider: NASA GIBS / JMA Himawari-9 AHI
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
+                        Daily True Color Product
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        <button
+                          onClick={() => onChangeHDProduct && onChangeHDProduct('viirs')}
+                          className={`px-2 py-1 rounded text-[9.5px] font-medium border text-center transition-colors cursor-pointer ${
+                            hdProduct === 'viirs'
+                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
+                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                          }`}
+                        >
+                          VIIRS NOAA-20
+                        </button>
+                        <button
+                          onClick={() => onChangeHDProduct && onChangeHDProduct('modis')}
+                          className={`px-2 py-1 rounded text-[9.5px] font-medium border text-center transition-colors cursor-pointer ${
+                            hdProduct === 'modis'
+                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
+                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                          }`}
+                        >
+                          MODIS Terra
+                        </button>
+                      </div>
+
+                      <div className="p-1.5 bg-navy-900/80 border border-navy-800 rounded text-[8.5px] text-slate-400 space-y-0.5">
+                        <div className="flex justify-between text-slate-300">
+                          <span>Resolution:</span>
+                          <span className="text-cyan-300 font-bold">250m at equator</span>
+                        </div>
+                        <div className="text-[8px] text-slate-500 leading-tight pt-0.5 border-t border-navy-800">
+                          Daily polar swath mosaic. Not an animated geostationary feed.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Satellite Opacity Slider */}
+                  <div className="space-y-1 pt-1 border-t border-navy-800/80">
+                    <div className="flex justify-between text-[10px] text-slate-400">
+                      <span>Satellite Opacity:</span>
+                      <span className="font-bold text-white">{satelliteOpacity}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      value={satelliteOpacity}
+                      onChange={(e) => onChangeSatelliteOpacity && onChangeSatelliteOpacity(Number(e.target.value))}
+                      className="w-full accent-cyan-500 h-1 bg-navy-800 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Sector Viewing Geometry Context (e.g. Mumbai limb foreshortening) */}
+                  {sectorViewing && (
+                    <div className="p-1.5 bg-navy-900/90 border border-navy-800 rounded text-[8px] text-slate-400 leading-tight">
+                      <div className="font-bold text-slate-300 mb-0.5">Sector Geometry:</div>
+                      <div>{sectorViewing.viewingAngle}</div>
+                      <div className="text-slate-400 mt-0.5">{sectorViewing.qualityNote}</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

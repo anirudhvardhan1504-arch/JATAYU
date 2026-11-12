@@ -3,6 +3,8 @@ import { ChevronDown, ChevronUp, Layers } from 'lucide-react';
 
 export interface WeatherLegendProps {
   showRadar?: boolean;
+  showSatellite?: boolean;
+  satelliteProductKey?: 'ir' | 'visible' | 'airmass' | 'viirs' | 'modis';
   showSimulation?: boolean;
   activeForecastLayer?: 'precipitation' | 'wind' | 'temperature' | 'humidity' | 'pressure' | null;
   className?: string;
@@ -10,6 +12,8 @@ export interface WeatherLegendProps {
 
 export const WeatherLegend: React.FC<WeatherLegendProps> = ({
   showRadar = true,
+  showSatellite = false,
+  satelliteProductKey = 'ir',
   showSimulation = false,
   activeForecastLayer = null,
   className = '',
@@ -17,7 +21,7 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // If nothing with a legend is enabled, don't display
-  if (!showRadar && !showSimulation && !activeForecastLayer) {
+  if (!showRadar && !showSatellite && !showSimulation && !activeForecastLayer) {
     return null;
   }
 
@@ -57,6 +61,41 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
                 <span>50 (Hvy)</span>
                 <span>65+</span>
               </div>
+            </div>
+          )}
+
+          {/* 1b. Satellite Imagery Legend */}
+          {showSatellite && (
+            <div className="pt-1.5 border-t border-navy-800">
+              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
+                <span className="font-semibold text-cyan-400">
+                  {satelliteProductKey === 'ir'
+                    ? 'SATELLITE CLEAN IR (Band 13)'
+                    : satelliteProductKey === 'airmass'
+                    ? 'AIR MASS RGB COMPOSITE'
+                    : 'OPTICAL TRUE COLOR'}
+                </span>
+                <span className="text-slate-500">GIBS</span>
+              </div>
+              {satelliteProductKey === 'ir' ? (
+                <>
+                  <div className="w-full h-2 rounded bg-gradient-to-r from-[#1E293B] via-[#475569] via-[#0284C7] via-[#DC2626] to-[#FFFFFF]" />
+                  <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+                    <span>+30°C</span>
+                    <span>0°C</span>
+                    <span>-40°C</span>
+                    <span>-80°C (Tops)</span>
+                  </div>
+                </>
+              ) : satelliteProductKey === 'airmass' ? (
+                <div className="text-[8px] text-slate-400 leading-tight">
+                  <span className="text-emerald-400">■ Warm air</span> &bull; <span className="text-sky-400">■ Cold polar</span> &bull; <span className="text-amber-400">■ Dry intrusion</span>
+                </div>
+              ) : (
+                <div className="text-[8px] text-slate-400 leading-tight">
+                  Corrected solar reflectance (optical natural color)
+                </div>
+              )}
             </div>
           )}
 

@@ -26,6 +26,12 @@ import {
   IndicativeFloodRiskAssessment,
   AlertFeedResponse,
 } from '../types';
+import {
+  SatelliteMode,
+  LiveSatelliteChannel,
+  HDSatelliteProduct,
+  SatelliteProductKey,
+} from '../services/satellite';
 
 export interface LiveMapPageProps {
   location: { name: string; lat: number; lon: number };
@@ -70,6 +76,13 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   const [showRadar, setShowRadar] = useState(true);
   const [radarOpacity, setRadarOpacity] = useState(80);
   const [showSatellite, setShowSatellite] = useState(false);
+  const [satelliteOpacity, setSatelliteOpacity] = useState(75);
+  const [satelliteMode, setSatelliteMode] = useState<SatelliteMode>('live');
+  const [satelliteChannel, setSatelliteChannel] = useState<LiveSatelliteChannel>('ir');
+  const [hdProduct, setHdProduct] = useState<HDSatelliteProduct>('viirs');
+
+  const activeSatelliteProductKey: SatelliteProductKey =
+    satelliteMode === 'live' ? satelliteChannel : hdProduct;
 
   // Category B: Forecast Maps State
   const [showPrecipLayer, setShowPrecipLayer] = useState(true);
@@ -303,6 +316,10 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           radarOpacity={radarOpacity}
           showRadar={showRadar}
           onToggleRadar={setShowRadar}
+          satelliteOpacity={satelliteOpacity}
+          showSatellite={showSatellite}
+          onToggleSatellite={setShowSatellite}
+          satelliteProductKey={activeSatelliteProductKey}
           showSimulation={showSimulation}
           simulationGeojson={simulationData?.geojson ?? simulationData?.contours ?? null}
           simulationMeta={simulationData?.metadata ?? null}
@@ -325,6 +342,15 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         onChangeRadarOpacity={setRadarOpacity}
         showSatellite={showSatellite}
         onToggleSatellite={setShowSatellite}
+        satelliteOpacity={satelliteOpacity}
+        onChangeSatelliteOpacity={setSatelliteOpacity}
+        satelliteMode={satelliteMode}
+        onChangeSatelliteMode={setSatelliteMode}
+        satelliteChannel={satelliteChannel}
+        onChangeSatelliteChannel={setSatelliteChannel}
+        hdProduct={hdProduct}
+        onChangeHDProduct={setHdProduct}
+        activeSectorName={location.name}
         showPrecipLayer={showPrecipLayer}
         onTogglePrecipLayer={setShowPrecipLayer}
         showWindLayer={showWindLayer}
@@ -363,6 +389,8 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
       <div className="absolute bottom-14 right-3 z-20">
         <WeatherLegend
           showRadar={showRadar}
+          showSatellite={showSatellite}
+          satelliteProductKey={activeSatelliteProductKey}
           showSimulation={showSimulation}
           activeForecastLayer={activeForecastLegend}
         />
