@@ -163,39 +163,39 @@ export const Topbar: React.FC<TopbarProps> = ({
   ].includes(activeTab);
 
   return (
-    <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30 shadow-subtle">
+    <header className="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 flex items-center justify-between gap-2 sm:gap-3 sticky top-0 z-30 shadow-subtle select-none overflow-hidden">
       {/* Left: Mobile Toggle & Brand/Context */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
         {onToggleMobileMenu && (
           <button
             onClick={onToggleMobileMenu}
-            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 md:hidden"
+            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 md:hidden cursor-pointer"
             aria-label="Toggle Navigation Menu"
           >
             <Menu className="w-5 h-5" />
           </button>
         )}
 
-        <div className="hidden sm:block">
+        <div className="hidden sm:block flex-shrink-0">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-sm text-navy-900 font-mono tracking-wider">
               {t('brand.name')}
             </span>
-            <span className="text-[10px] text-slate-400 font-sans hidden lg:inline">
+            <span className="text-[10px] text-slate-400 font-sans hidden 2xl:inline">
               • AI Disaster Intelligence
             </span>
           </div>
         </div>
 
         {isOperatorTab && (
-          <span className="text-xs font-mono text-slate-500 border-l border-slate-200 pl-2 hidden md:inline">
+          <span className="text-xs font-mono text-slate-500 border-l border-slate-200 pl-2 hidden lg:inline flex-shrink-0">
             {t('topbar.consolePrefix')} / {activeTab}
           </span>
         )}
 
-        {/* Public Quick Navigation Links (Desktop) */}
-        {onSelectTab && (
-          <nav className="hidden md:flex items-center gap-1 ml-2">
+        {/* Public Quick Navigation Links (Only on Public Portal or ultra-wide displays) */}
+        {!isOperatorTab && onSelectTab && (
+          <nav className="hidden 2xl:flex items-center gap-1 ml-2 flex-shrink-0">
             {[
               { id: 'home' as NavigationTab, label: t('nav.home'), icon: <Home className="w-3.5 h-3.5" /> },
               { id: 'weather' as NavigationTab, label: t('nav.weatherWarnings'), icon: <CloudRain className="w-3.5 h-3.5" /> },
@@ -206,11 +206,12 @@ export const Topbar: React.FC<TopbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id)}
-                className={`px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+                className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap ${
                   activeTab === item.id
                     ? 'bg-blue-50 text-blue-700 font-semibold'
                     : 'text-slate-600 hover:text-navy-900 hover:bg-slate-50'
                 }`}
+                title={item.label}
               >
                 {item.icon}
                 <span>{item.label}</span>
@@ -220,9 +221,9 @@ export const Topbar: React.FC<TopbarProps> = ({
         )}
       </div>
 
-      {/* Center: Universal Location Search & GPS */}
-      <div className="flex items-center gap-2 flex-1 max-w-md min-w-[200px]" ref={searchRef}>
-        <div className="relative flex-1">
+      {/* Center: Universal Location Search & Sector Preset */}
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-1 max-w-xs sm:max-w-sm md:max-w-md min-w-0 mx-1 sm:mx-2" ref={searchRef}>
+        <div className="relative flex-1 min-w-[90px] sm:min-w-[120px]">
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
             <input
@@ -233,7 +234,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 if (searchResults.length > 0) setIsDropdownOpen(true);
               }}
               placeholder={t('home.searchPlaceholder')}
-              className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-md text-navy-900 focus:outline-none focus:border-blue-500 focus:bg-white font-sans placeholder:text-slate-400"
+              className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-300 rounded-md text-navy-900 focus:outline-none focus:border-blue-500 focus:bg-white font-sans placeholder:text-slate-400 truncate"
             />
             {isSearching && (
               <RefreshCw className="w-3 h-3 text-blue-500 animate-spin absolute right-2.5 top-2.5" />
@@ -285,7 +286,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             const match = PRESET_LOCATIONS.find((loc) => loc.name === e.target.value);
             if (match) onSelectLocation(match);
           }}
-          className="bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-2 py-1.5 text-xs text-navy-900 font-medium cursor-pointer outline-none max-w-[130px] sm:max-w-[160px] truncate"
+          className="bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-2 py-1.5 text-xs text-navy-900 font-medium cursor-pointer outline-none w-[120px] sm:w-[135px] lg:w-[150px] truncate flex-shrink-0"
           title="Select Target Disaster Sector"
         >
           {PRESET_LOCATIONS.map((loc) => (
@@ -296,8 +297,8 @@ export const Topbar: React.FC<TopbarProps> = ({
         </select>
       </div>
 
-      {/* Right: Language Selector, Response Console Toggle, Login */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      {/* Right: Language Selector, Export SITREP, Refresh, Login */}
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 flex-nowrap">
         {/* Language Selector */}
         <LanguageSelector />
 
@@ -305,11 +306,12 @@ export const Topbar: React.FC<TopbarProps> = ({
         {isOperatorTab && onExportSitrep && (
           <button
             onClick={onExportSitrep}
-            className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-500/40 rounded transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-mono font-bold shadow-2xs"
+            className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-500/40 rounded transition-colors cursor-pointer flex items-center gap-1 text-xs font-mono font-bold shadow-2xs whitespace-nowrap flex-shrink-0"
             title={t('sitrep.exportBtn')}
           >
-            <FileText className="w-3.5 h-3.5 text-amber-600" />
-            <span className="hidden sm:inline">{t('sitrep.exportBtn')}</span>
+            <FileText className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+            <span className="hidden 2xl:inline">{t('sitrep.exportBtn')}</span>
+            <span className="inline 2xl:hidden">SITREP</span>
           </button>
         )}
 
@@ -318,33 +320,33 @@ export const Topbar: React.FC<TopbarProps> = ({
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="px-2 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-600 rounded transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5 text-xs font-medium"
+            className="p-1 sm:px-2 sm:py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-600 rounded transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1 text-xs font-medium whitespace-nowrap flex-shrink-0"
             title={t('topbar.refresh')}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{t('topbar.refresh')}</span>
+            <RefreshCw className={`w-3.5 h-3.5 flex-shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden 2xl:inline">{t('topbar.refresh')}</span>
           </button>
         )}
 
-        <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+        <div className="h-4 w-px bg-slate-200 hidden sm:block flex-shrink-0" />
 
         {/* Response Console Button / Role Badge */}
         {isAuthenticated && user ? (
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-navy-900 border border-navy-800 rounded text-xs text-white">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span className="font-mono text-[10px] font-semibold text-slate-200 hidden sm:inline">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-navy-900 border border-navy-800 rounded text-xs text-white flex-shrink-0 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+            <span className="font-mono text-[10px] font-semibold text-slate-200 hidden sm:inline truncate max-w-[100px]">
               {user.displayName || user.username}
             </span>
-            <span className="text-[9px] font-mono px-1 py-0.2 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded uppercase font-bold">
+            <span className="text-[9px] font-mono px-1 py-0.2 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded uppercase font-bold flex-shrink-0">
               {user.role}
             </span>
             <button
               onClick={logout}
-              className="ml-1 text-slate-400 hover:text-red-400 transition-colors flex items-center gap-1 text-[11px] font-mono uppercase"
+              className="ml-1 text-slate-400 hover:text-red-400 transition-colors flex items-center gap-1 text-[11px] font-mono uppercase cursor-pointer flex-shrink-0"
               title="Sign Out"
             >
-              <LogOut className="w-3 h-3" />
-              <span>{t('topbar.logout')}</span>
+              <LogOut className="w-3 h-3 flex-shrink-0" />
+              <span className="hidden sm:inline">{t('topbar.logout')}</span>
             </button>
           </div>
         ) : (
@@ -356,10 +358,10 @@ export const Topbar: React.FC<TopbarProps> = ({
                 onSelectTab('overview');
               }
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-navy-900 hover:bg-navy-800 text-amber-400 text-xs font-mono font-bold rounded border border-navy-700 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-navy-900 hover:bg-navy-800 text-amber-400 text-xs font-mono font-bold rounded border border-navy-700 transition-colors shadow-sm cursor-pointer whitespace-nowrap flex-shrink-0"
             title="Access Authorized Response & Researcher Tools"
           >
-            <Shield className="w-3.5 h-3.5 text-amber-400" />
+            <Shield className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
             <span>{t('topbar.commandSignIn')}</span>
           </button>
         )}

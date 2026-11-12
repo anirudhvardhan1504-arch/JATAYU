@@ -16,7 +16,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ className = 
       title={t('topbar.language')}
     >
       <Languages className="w-3.5 h-3.5 text-navy-700 flex-shrink-0" />
-      <span className="font-mono text-slate-500 font-semibold uppercase text-[10px] hidden sm:inline">
+      <span className="font-mono text-slate-500 font-semibold uppercase text-[10px] hidden 2xl:inline">
         {t('topbar.language')}:
       </span>
       <select

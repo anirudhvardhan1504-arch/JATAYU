@@ -5,7 +5,7 @@ import { Badge } from '../common/Badge';
 import { getLatestRadarInfo, RainViewerRadarInfo } from '../../services/radar';
 import { SimulationMetadata } from '../../services/research';
 
-interface TacticalMapProps {
+export interface TacticalMapProps {
   center: [number, number]; // [lon, lat]
   zoom?: number;
   locationName: string;
@@ -24,6 +24,8 @@ interface TacticalMapProps {
   activeRadarTileUrl?: string | null;
   activeRadarTimestamp?: number | null;
   onRadarLoaded?: (info: RainViewerRadarInfo) => void;
+  variant?: 'standalone' | 'full';
+  hideDefaultControls?: boolean;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -45,6 +47,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   activeRadarTileUrl = null,
   activeRadarTimestamp = null,
   onRadarLoaded,
+  variant = 'standalone',
+  hideDefaultControls = false,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -95,6 +99,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         center: center,
         zoom: zoom,
+        minZoom: 2,
+        maxZoom: 18,
         attributionControl: false,
       });
 
@@ -130,6 +136,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             type: 'raster',
             tiles: [radarInfo.tileUrl],
             tileSize: 256,
+            minzoom: 0,
+            maxzoom: 7,
             attribution: 'Radar data © RainViewer',
           });
 
@@ -304,6 +312,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             type: 'raster',
             tiles: [radarInfo.tileUrl],
             tileSize: 256,
+            minzoom: 0,
+            maxzoom: 7,
             attribution: 'Radar data © RainViewer',
           });
           map.addLayer({
@@ -327,6 +337,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'raster',
         tiles: [radarInfo.tileUrl],
         tileSize: 256,
+        minzoom: 0,
+        maxzoom: 7,
         attribution: 'Radar data © RainViewer',
       });
       map.addLayer({
@@ -499,120 +511,124 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
       )}
 
-      {/* Tactical HUD Header */}
-      <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 max-w-sm pointer-events-none">
-        <div className="bg-navy-900/90 border border-navy-700 pointer-events-auto px-3 py-2 rounded text-slate-200 shadow-md">
-          <div className="flex items-center justify-between gap-3 text-xs mb-1 font-mono">
-            <span className="text-amber-400 font-bold flex items-center gap-1.5 truncate">
-              <Crosshair className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="truncate">{locationName}</span>
-            </span>
-            <Badge variant="navy" size="sm">
-              {center[1].toFixed(3)}°N, {center[0].toFixed(3)}°E
-            </Badge>
+      {/* Tactical HUD Header (rendered in standalone mode) */}
+      {!hideDefaultControls && variant !== 'full' && (
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 max-w-sm pointer-events-none">
+          <div className="bg-navy-900/90 border border-navy-700 pointer-events-auto px-3 py-2 rounded text-slate-200 shadow-md">
+            <div className="flex items-center justify-between gap-3 text-xs mb-1 font-mono">
+              <span className="text-amber-400 font-bold flex items-center gap-1.5 truncate">
+                <Crosshair className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{locationName}</span>
+              </span>
+              <Badge variant="navy" size="sm">
+                {center[1].toFixed(3)}°N, {center[0].toFixed(3)}°E
+              </Badge>
+            </div>
+            <div className="text-[11px] text-slate-400 font-mono flex items-center justify-between gap-4 pt-1 border-t border-navy-800">
+              <span>PRECIP: <strong className="text-slate-200">{rainfallMm} mm/h</strong></span>
+              <span>STATUS: <strong className="text-amber-400">{riskLevel}</strong></span>
+            </div>
           </div>
-          <div className="text-[11px] text-slate-400 font-mono flex items-center justify-between gap-4 pt-1 border-t border-navy-800">
-            <span>PRECIP: <strong className="text-slate-200">{rainfallMm} mm/h</strong></span>
-            <span>STATUS: <strong className="text-amber-400">{riskLevel}</strong></span>
+
+          {/* Disclaimer & Interaction Pill */}
+          <div className="bg-navy-950/90 border border-navy-800 pointer-events-auto px-2.5 py-1 rounded text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
+            <ShieldAlert className="w-3 h-3 text-amber-500 flex-shrink-0" />
+            <span>Click anywhere to inspect coordinates. Indicative risk triage only.</span>
           </div>
         </div>
+      )}
 
-        {/* Disclaimer & Interaction Pill */}
-        <div className="bg-navy-950/90 border border-navy-800 pointer-events-auto px-2.5 py-1 rounded text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
-          <ShieldAlert className="w-3 h-3 text-amber-500 flex-shrink-0" />
-          <span>Click anywhere to inspect coordinates. Indicative risk triage only.</span>
-        </div>
-      </div>
+      {/* Controls Palette: Layer Management & Recenter (rendered in standalone mode) */}
+      {!hideDefaultControls && variant !== 'full' && (
+        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
+          {/* Recenter Button */}
+          <button
+            onClick={handleRecenter}
+            className="bg-navy-900/95 hover:bg-navy-800 border border-navy-700 text-slate-200 px-2.5 py-1.5 rounded shadow-md text-xs font-mono flex items-center gap-1.5 transition-colors"
+            title="Reset to default operational center (Mumbai)"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+            <span>RECENTER</span>
+          </button>
 
-      {/* Controls Palette: Layer Management & Recenter */}
-      <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
-        {/* Recenter Button */}
-        <button
-          onClick={handleRecenter}
-          className="bg-navy-900/95 hover:bg-navy-800 border border-navy-700 text-slate-200 px-2.5 py-1.5 rounded shadow-md text-xs font-mono flex items-center gap-1.5 transition-colors"
-          title="Reset to default operational center (Mumbai)"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-          <span>RECENTER</span>
-        </button>
-
-        {/* Tactical Layers Card (Only genuinely implemented layers) */}
-        <div className="bg-navy-900/95 border border-navy-700 p-2.5 rounded shadow-md text-xs text-slate-300 font-mono min-w-[200px]">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-navy-800 text-slate-400 text-[11px]">
-            <div className="flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span>RADAR OVERLAY</span>
-            </div>
-            {radarLoading && (
-              <span className="text-[10px] text-sky-400 animate-pulse">CONNECTING</span>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px]">Global RainViewer Radar</span>
-              <button
-                onClick={() => onToggleRadar && onToggleRadar(!showRadar)}
-                disabled={!radarInfo}
-                className="p-1 hover:bg-navy-800 rounded text-slate-300 disabled:opacity-40"
-                title={showRadar ? 'Hide radar overlay' : 'Show radar overlay'}
-              >
-                {showRadar ? <Eye className="w-3.5 h-3.5 text-amber-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
-              </button>
+          {/* Tactical Layers Card (Only genuinely implemented layers) */}
+          <div className="bg-navy-900/95 border border-navy-700 p-2.5 rounded shadow-md text-xs text-slate-300 font-mono min-w-[200px]">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-navy-800 text-slate-400 text-[11px]">
+              <div className="flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-amber-400" />
+                <span>RADAR OVERLAY</span>
+              </div>
+              {radarLoading && (
+                <span className="text-[10px] text-sky-400 animate-pulse">CONNECTING</span>
+              )}
             </div>
 
-            {/* Radar status / attribution metadata */}
-            {radarInfo ? (
-              <div className="pt-1.5 border-t border-navy-800 text-[10px] text-slate-400 space-y-0.5">
-                <div className="flex justify-between">
-                  <span>FRAME TIME:</span>
-                  <span className="text-slate-200">
-                    {new Date((activeRadarTimestamp || radarInfo.timestamp) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                <div className="text-[9px] text-slate-500">Source: RainViewer Open Composite</div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px]">Global RainViewer Radar</span>
+                <button
+                  onClick={() => onToggleRadar && onToggleRadar(!showRadar)}
+                  disabled={!radarInfo}
+                  className="p-1 hover:bg-navy-800 rounded text-slate-300 disabled:opacity-40"
+                  title={showRadar ? 'Hide radar overlay' : 'Show radar overlay'}
+                >
+                  {showRadar ? <Eye className="w-3.5 h-3.5 text-amber-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
+                </button>
               </div>
-            ) : radarError ? (
-              <div className="pt-1 border-t border-navy-800 text-[10px] text-amber-400">
-                {radarError}
-              </div>
-            ) : null}
 
-            {/* SFINCS Hydraulic Simulation Layer */}
-            {(simulationGeojson || onToggleSimulation) && (
-              <div className="pt-2 border-t border-navy-800 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-amber-400 font-semibold">Adyar SFINCS S2</span>
-                  <button
-                    onClick={() => onToggleSimulation && onToggleSimulation(!showSimulation)}
-                    className="p-1 hover:bg-navy-800 rounded text-slate-300"
-                    title={showSimulation ? 'Hide hydrodynamic simulation layer' : 'Show hydrodynamic simulation layer'}
-                  >
-                    {showSimulation ? <Eye className="w-3.5 h-3.5 text-amber-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
-                  </button>
-                </div>
-                {showSimulation && (
-                  <div className="space-y-0.5">
-                    <div className="text-[9px] text-amber-500 font-mono flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                      <span>EXPERIMENTAL TIER</span>
-                    </div>
-                    {simulationMeta && (
-                      <div className="text-[9px] text-slate-400 font-mono">
-                        Extent: {simulationMeta.total_inundated_area_km2 !== undefined
-                          ? `${simulationMeta.total_inundated_area_km2} km²`
-                          : simulationMeta.reach_length_km
-                          ? `${simulationMeta.reach_length_km} km reach`
-                          : 'Adyar reach'}
-                      </div>
-                    )}
+              {/* Radar status / attribution metadata */}
+              {radarInfo ? (
+                <div className="pt-1.5 border-t border-navy-800 text-[10px] text-slate-400 space-y-0.5">
+                  <div className="flex justify-between">
+                    <span>FRAME TIME:</span>
+                    <span className="text-slate-200">
+                      {new Date((activeRadarTimestamp || radarInfo.timestamp) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                )}
-              </div>
-            )}
+                  <div className="text-[9px] text-slate-500">Source: RainViewer Open Composite</div>
+                </div>
+              ) : radarError ? (
+                <div className="pt-1 border-t border-navy-800 text-[10px] text-amber-400">
+                  {radarError}
+                </div>
+              ) : null}
+
+              {/* SFINCS Hydraulic Simulation Layer */}
+              {(simulationGeojson || onToggleSimulation) && (
+                <div className="pt-2 border-t border-navy-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-amber-400 font-semibold">Adyar SFINCS S2</span>
+                    <button
+                      onClick={() => onToggleSimulation && onToggleSimulation(!showSimulation)}
+                      className="p-1 hover:bg-navy-800 rounded text-slate-300"
+                      title={showSimulation ? 'Hide hydrodynamic simulation layer' : 'Show hydrodynamic simulation layer'}
+                    >
+                      {showSimulation ? <Eye className="w-3.5 h-3.5 text-amber-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
+                    </button>
+                  </div>
+                  {showSimulation && (
+                    <div className="space-y-0.5">
+                      <div className="text-[9px] text-amber-500 font-mono flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                        <span>EXPERIMENTAL TIER</span>
+                      </div>
+                      {simulationMeta && (
+                        <div className="text-[9px] text-slate-400 font-mono">
+                          Extent: {simulationMeta.total_inundated_area_km2 !== undefined
+                            ? `${simulationMeta.total_inundated_area_km2} km²`
+                            : simulationMeta.reach_length_km
+                            ? `${simulationMeta.reach_length_km} km reach`
+                            : 'Adyar reach'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
