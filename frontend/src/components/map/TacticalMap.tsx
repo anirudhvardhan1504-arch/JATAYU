@@ -19,6 +19,11 @@ import {
   syncForecastScalarLayer,
   removeForecastScalarLayer,
 } from '../../services/forecast-layer';
+import { ContourIntervalHpa } from '../../services/pressure-contours';
+import {
+  syncPressureLayers,
+  removePressureLayers,
+} from '../../services/pressure-layer';
 
 export interface TacticalMapProps {
   center: [number, number]; // [lon, lat]
@@ -56,6 +61,10 @@ export interface TacticalMapProps {
   forecastOpacity?: number; // 0 - 100
   forecastGridData?: ForecastGridResponse | null;
   onToggleForecast?: (visible: boolean) => void;
+  // Phase 3B-3B Pressure Isobar Contours & Extrema
+  showPressureContours?: boolean;
+  pressureContourInterval?: ContourIntervalHpa;
+  onTogglePressureContours?: (visible: boolean) => void;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -93,6 +102,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   forecastOpacity = 80,
   forecastGridData = null,
   onToggleForecast,
+  showPressureContours = false,
+  pressureContourInterval = 4,
+  onTogglePressureContours,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -107,18 +119,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   // Standalone forecast layer internal state management
   const [internalShowForecast, setInternalShowForecast] = useState<boolean | null>(null);
+  const [internalShowPressureContours, setInternalShowPressureContours] = useState<boolean | null>(null);
   const [internalForecastGrid, setInternalForecastGrid] = useState<ForecastGridResponse | null>(null);
   const effectiveShowForecast = internalShowForecast !== null ? internalShowForecast : showForecast;
+  const effectiveShowPressureContours =
+    internalShowPressureContours !== null ? internalShowPressureContours : showPressureContours;
   const effectiveForecastGrid = forecastGridData || internalForecastGrid;
 
-  // Reset internal toggle when parent prop changes
+  // Reset internal toggles when parent props change
   useEffect(() => {
     setInternalShowForecast(null);
   }, [showForecast]);
 
+  useEffect(() => {
+    setInternalShowPressureContours(null);
+  }, [showPressureContours]);
+
   // Auto-fetch forecast grid if turned on in standalone mode without passed data
   useEffect(() => {
-    if (!effectiveShowForecast || effectiveForecastGrid) return;
+    if ((!effectiveShowForecast && !effectiveShowPressureContours) || effectiveForecastGrid) return;
     let isSubscribed = true;
     getForecastGrid('sector', 'mumbai')
       .then((grid) => {
@@ -130,7 +149,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     return () => {
       isSubscribed = false;
     };
-  }, [effectiveShowForecast, effectiveForecastGrid]);
+  }, [effectiveShowForecast, effectiveShowPressureContours, effectiveForecastGrid]);
 
   // Fetch verified RainViewer metadata on mount
   useEffect(() => {
@@ -345,6 +364,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       mapRef.current = map;
 
       return () => {
+        removePressureLayers(map);
         removeForecastScalarLayer(map);
         map.remove();
         mapRef.current = null;
@@ -798,6 +818,32 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     effectiveForecastGrid,
   ]);
 
+  // Synchronize Pressure Isobar Contours & Extrema (Phase 3B-3B)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const applySync = () => {
+      syncPressureLayers(map, {
+        response: effectiveForecastGrid,
+        timestepIndex: forecastTimestepIndex,
+        intervalHpa: pressureContourInterval,
+        visible: effectiveShowPressureContours,
+      });
+    };
+
+    if (!map.isStyleLoaded()) {
+      map.once('load', applySync);
+    } else {
+      applySync();
+    }
+  }, [
+    effectiveShowPressureContours,
+    forecastTimestepIndex,
+    pressureContourInterval,
+    effectiveForecastGrid,
+  ]);
+
   const handleRecenter = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.flyTo({ center: initialCenter, zoom: 10 });
@@ -831,8 +877,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
       )}
 
-      {/* Forecast Scientific Disclosure Banner (Phase 3B-3A) */}
-      {effectiveShowForecast && effectiveForecastGrid && (
+      {/* Forecast Scientific Disclosure Banner (Phase 3B-3A & 3B-3B) */}
+      {(effectiveShowForecast || effectiveShowPressureContours) && effectiveForecastGrid && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-auto max-w-2xl text-center px-2">
           <div className="bg-navy-950/95 border border-sky-500/80 text-sky-200 px-3.5 py-1.5 rounded-lg shadow-xl font-mono text-[11px] space-y-1">
             <div className="flex items-center justify-center gap-2 font-bold text-amber-300">
@@ -847,6 +893,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               <span>Run: {effectiveForecastGrid.metadata.runCycle} ({effectiveForecastGrid.metadata.initializationTime})</span>
               <span>•</span>
               <span className="text-amber-300 font-semibold">T+{forecastTimestepIndex.toString().padStart(2, '0')}h</span>
+              {effectiveShowPressureContours && (
+                <span className="bg-sky-950/90 border border-sky-600/80 text-sky-300 px-1.5 rounded text-[9.5px]">
+                  Isobars: MSLP ({pressureContourInterval} hPa) • Extrema (H/L)
+                </span>
+              )}
               {effectiveForecastGrid.metadata.isFallback && (
                 <span className="bg-amber-900/80 text-amber-300 px-1 rounded text-[9px] font-bold">
                   FAILOVER ACTIVE
@@ -1039,6 +1090,37 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                     <div>{FORECAST_PRODUCTS[forecastProduct]?.shortLabel || 'Precipitation'} • {forecastOpacity}%</div>
                     <div className="text-[8.5px] text-amber-300">
                       Step: T+{forecastTimestepIndex.toString().padStart(2, '0')}h
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Pressure Isobar Contours Layer (Phase 3B-3B) */}
+              <div className="pt-2 border-t border-navy-800 space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                    <span className="text-[11px]">Pressure Isobars (MSLP)</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (onTogglePressureContours) {
+                        onTogglePressureContours(!effectiveShowPressureContours);
+                      } else {
+                        setInternalShowPressureContours(!effectiveShowPressureContours);
+                      }
+                    }}
+                    className="p-1 hover:bg-navy-800 rounded text-slate-300 cursor-pointer"
+                    title={effectiveShowPressureContours ? 'Hide pressure isobars overlay' : 'Show pressure isobars overlay'}
+                  >
+                    {effectiveShowPressureContours ? <Eye className="w-3.5 h-3.5 text-cyan-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
+                  </button>
+                </div>
+                {effectiveShowPressureContours && (
+                  <div className="text-[9px] text-slate-400 font-mono space-y-0.5">
+                    <div>MSLP • {pressureContourInterval} hPa interval</div>
+                    <div className="text-[8.5px] text-sky-300">
+                      Local Extrema: High (H) / Low (L)
                     </div>
                   </div>
                 )}

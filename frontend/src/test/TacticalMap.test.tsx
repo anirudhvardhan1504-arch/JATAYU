@@ -875,5 +875,98 @@ describe('LiveMapPage Integration Tests', () => {
       expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-forecast-scalar-layer');
       expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-forecast-scalar-source');
     });
+
+    it('adds pressure contour lines, labels, and extrema layers before adyar-simulation-fill', () => {
+      // 4-point grid to generate contours and test layer addition
+      const multiNodeData = {
+        ...mockForecastData,
+        nodes: [
+          { ...mockForecastData.nodes[0], modelLat: 18.0, modelLon: 72.0, hourly: mockForecastData.nodes[0].hourly.map((h: any) => ({ ...h, pressureMslHpa: 1004.0 })) },
+          { ...mockForecastData.nodes[0], modelLat: 18.0, modelLon: 74.0, hourly: mockForecastData.nodes[0].hourly.map((h: any) => ({ ...h, pressureMslHpa: 1012.0 })) },
+          { ...mockForecastData.nodes[0], modelLat: 20.0, modelLon: 72.0, hourly: mockForecastData.nodes[0].hourly.map((h: any) => ({ ...h, pressureMslHpa: 1004.0 })) },
+          { ...mockForecastData.nodes[0], modelLat: 20.0, modelLon: 74.0, hourly: mockForecastData.nodes[0].hourly.map((h: any) => ({ ...h, pressureMslHpa: 1012.0 })) },
+        ],
+      };
+
+      const { rerender } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showPressureContours={true}
+          pressureContourInterval={4}
+          forecastTimestepIndex={0}
+          forecastGridData={multiNodeData}
+        />
+      );
+
+      // Verify pressure contour and extrema sources were added
+      expect(mockAddSource).toHaveBeenCalledWith(
+        'jatayu-pressure-contours-source',
+        expect.objectContaining({ type: 'geojson' })
+      );
+      expect(mockAddSource).toHaveBeenCalledWith(
+        'jatayu-pressure-extrema-source',
+        expect.objectContaining({ type: 'geojson' })
+      );
+
+      // Verify layers were added before 'adyar-simulation-fill'
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'jatayu-pressure-contours-line' }),
+        'adyar-simulation-fill'
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'jatayu-pressure-contours-label' }),
+        'adyar-simulation-fill'
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'jatayu-pressure-extrema-circle' }),
+        'adyar-simulation-fill'
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'jatayu-pressure-extrema-label' }),
+        'adyar-simulation-fill'
+      );
+
+      // Verify HUD indicator badge
+      expect(screen.getByText(/Isobars: MSLP \(4 hPa\)/i)).toBeInTheDocument();
+
+      // Toggle off pressure contours
+      rerender(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showPressureContours={false}
+          pressureContourInterval={4}
+          forecastTimestepIndex={0}
+          forecastGridData={multiNodeData}
+        />
+      );
+
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-pressure-contours-line', 'visibility', 'none');
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-pressure-contours-label', 'visibility', 'none');
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-pressure-extrema-circle', 'visibility', 'none');
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-pressure-extrema-label', 'visibility', 'none');
+    });
+
+    it('cleans up pressure contour layers and sources on unmount', () => {
+      const { unmount } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showPressureContours={true}
+          pressureContourInterval={2}
+          forecastTimestepIndex={0}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      unmount();
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-pressure-extrema-label');
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-pressure-extrema-circle');
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-pressure-contours-label');
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-pressure-contours-line');
+      expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-pressure-extrema-source');
+      expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-pressure-contours-source');
+    });
   });
 });
