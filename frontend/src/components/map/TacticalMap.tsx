@@ -30,6 +30,11 @@ import {
 import {
   WindOverlayManager,
 } from '../../services/wind-layer';
+import { ForecastImpactResponse } from '../../services/forecast-impact';
+import {
+  syncForecastImpactLayers,
+  removeForecastImpactLayers,
+} from '../../services/forecast-impact-layer';
 
 export interface TacticalMapProps {
   center: [number, number]; // [lon, lat]
@@ -81,6 +86,12 @@ export interface TacticalMapProps {
   onToggleWindPlay?: (playing: boolean) => void;
   onChangeWindSpeedMultiplier?: (speed: number) => void;
   onChangeWindParticleDensity?: (density: WindParticleDensity) => void;
+  // Phase 3D-2B District Forecast Impact Layer
+  showDistrictImpact?: boolean;
+  districtImpactResponse?: ForecastImpactResponse | null;
+  selectedImpactDistrict?: string | null;
+  districtImpactOpacity?: number; // 0 - 100
+  onSelectImpactDistrict?: (districtName: string, state: string) => void;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -130,6 +141,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   onToggleWindPlay,
   onChangeWindSpeedMultiplier,
   onChangeWindParticleDensity,
+  showDistrictImpact = false,
+  districtImpactResponse = null,
+  selectedImpactDistrict = null,
+  districtImpactOpacity = 65,
+  onSelectImpactDistrict,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -413,6 +429,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         }
         removePressureLayers(map);
         removeForecastScalarLayer(map);
+        removeForecastImpactLayers(map);
         map.remove();
         mapRef.current = null;
         markerRef.current = null;
@@ -923,6 +940,34 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     effectiveWindSpeed,
     forecastTimestepIndex,
     effectiveForecastGrid,
+  ]);
+
+  // Synchronize District Forecast Impact Layers (Phase 3D-2B)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const applySync = () => {
+      syncForecastImpactLayers(map, {
+        response: districtImpactResponse,
+        selectedDistrict: selectedImpactDistrict,
+        opacity: districtImpactOpacity,
+        visible: Boolean(showDistrictImpact),
+        onSelectDistrict: onSelectImpactDistrict,
+      });
+    };
+
+    if (!map.isStyleLoaded()) {
+      map.once('load', applySync);
+    } else {
+      applySync();
+    }
+  }, [
+    showDistrictImpact,
+    districtImpactResponse,
+    selectedImpactDistrict,
+    districtImpactOpacity,
+    onSelectImpactDistrict,
   ]);
 
   const handleRecenter = useCallback(() => {

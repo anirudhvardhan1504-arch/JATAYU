@@ -193,7 +193,7 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
     expect(screen.getByText('NWP 72H FORECAST WINDOW')).toBeDefined();
 
     // Model and run cycle
-    expect(screen.getByText('ECMWF IFS (0.25°)')).toBeDefined();
+    expect(screen.getByText('ECMWF IFS')).toBeDefined();
     expect(screen.getByText('00Z CYCLE')).toBeDefined();
     expect(screen.getByText('Open-Meteo ECMWF Open Data')).toBeDefined();
 

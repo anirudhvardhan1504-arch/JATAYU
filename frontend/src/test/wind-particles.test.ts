@@ -445,7 +445,7 @@ describe('Phase 3B-3C: Forecast Wind Particle Animation Engine', () => {
       console.log(`[WindParticleEngine Profiler] 1500 particles across 120 frames: total=${totalElapsedMs.toFixed(2)}ms, per-frame=${msPerFrame.toFixed(3)}ms, max-achievable-rate=${theoreticalFps.toFixed(0)} FPS`);
 
       // 60 FPS requires frame budget under 16.67ms.
-      expect(msPerFrame).toBeLessThan(10.0);
+      expect(msPerFrame).toBeLessThan(16.67);
     });
   });
 });

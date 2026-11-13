@@ -7,6 +7,9 @@ export interface WeatherLegendProps {
   satelliteProductKey?: 'ir' | 'visible' | 'airmass' | 'viirs' | 'modis';
   showSimulation?: boolean;
   activeForecastLayer?: 'precipitation' | 'wind' | 'temperature' | 'humidity' | 'pressure' | null;
+  // Phase 3D-2B: District Forecast Impact Layer
+  showDistrictImpact?: boolean;
+  isNationalMode?: boolean;
   className?: string;
 }
 
@@ -16,12 +19,14 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
   satelliteProductKey = 'ir',
   showSimulation = false,
   activeForecastLayer = null,
+  showDistrictImpact = false,
+  isNationalMode = false,
   className = '',
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // If nothing with a legend is enabled, don't display
-  if (!showRadar && !showSatellite && !showSimulation && !activeForecastLayer) {
+  if (!showRadar && !showSatellite && !showSimulation && !activeForecastLayer && !showDistrictImpact) {
     return null;
   }
 
@@ -187,6 +192,84 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
                 <span>1005</span>
                 <span>1015</span>
                 <span>1025</span>
+              </div>
+            </div>
+          )}
+
+          {/* 7. District Forecast Impact Legend (Phase 3D-2B) */}
+          {showDistrictImpact && (
+            <div className="pt-1.5 border-t border-navy-800 space-y-1">
+              <div className="p-1 bg-amber-950/40 border border-amber-600/40 rounded text-center">
+                <span className="font-bold text-amber-300 text-[8px] block tracking-wider">
+                  FORECAST RAINFALL — NOT FLOOD INUNDATION
+                </span>
+                <span className="text-[7.5px] text-slate-400">
+                  {isNationalMode
+                    ? 'INDICATIVE NATIONAL SYNOPTIC (1.5° Mesh)'
+                    : 'MESOSCALE SECTOR SAMPLING (0.25° Mesh)'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
+                <span className="font-semibold text-emerald-400">24H RAINFALL HAZARD (IMD)</span>
+                <span className="text-slate-500">T+1..24</span>
+              </div>
+
+              <div className="space-y-0.5 text-[8px]">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#C026D3]" />
+                    <span>Extremely Heavy</span>
+                  </span>
+                  <span className="font-mono text-slate-400">&ge; 204.5 mm</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#DC2626]" />
+                    <span>Very Heavy</span>
+                  </span>
+                  <span className="font-mono text-slate-400">115.6–204.4</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#EA580C]" />
+                    <span>Heavy</span>
+                  </span>
+                  <span className="font-mono text-slate-400">64.5–115.5</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#D97706]" />
+                    <span>Moderate</span>
+                  </span>
+                  <span className="font-mono text-slate-400">15.6–64.4</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#0284C7]" />
+                    <span>Light</span>
+                  </span>
+                  <span className="font-mono text-slate-400">2.5–15.5</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#334155]" />
+                    <span>No Rain</span>
+                  </span>
+                  <span className="font-mono text-slate-400">&lt; 2.5 mm</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#1E293B] border border-slate-600" />
+                    <span>Insufficient Coverage</span>
+                  </span>
+                  <span className="font-mono text-slate-500">No Data</span>
+                </div>
+              </div>
+
+              <div className="pt-0.5 text-[7.5px] text-slate-500 leading-tight">
+                * Single-node districts: localized point sampling.<br />
+                Historical choke points: static Chennai markers only.
               </div>
             </div>
           )}

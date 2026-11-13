@@ -14,6 +14,7 @@ import { MapTimeline } from '../components/map/MapTimeline';
 import { TelemetryDrawer } from '../components/map/TelemetryDrawer';
 import { WeatherLegend } from '../components/map/WeatherLegend';
 import { ForecastImpactDashboard } from '../components/map/ForecastImpactDashboard';
+import { ForecastImpactResponse, getForecastImpact } from '../services/forecast-impact';
 import { AuthContext } from '../context/AuthContext';
 import { fetchAdyarSimulation, SimulationResponse, isGeoJSONFeatureCollection } from '../services/research';
 import {
@@ -136,10 +137,17 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   const [windParticleDensity, setWindParticleDensity] = useState<'light' | 'standard' | 'dense'>('standard');
   const [windSpeedMultiplier, setWindSpeedMultiplier] = useState<number>(1.0);
 
-  // Ingest genuine NWP forecast grid whenever the selected operational sector changes
+  // Phase 3D-2B: District Forecast Impact Layer & Selection
+  const [showDistrictImpactLayer, setShowDistrictImpactLayer] = useState<boolean>(true);
+  const [districtImpactOpacity, setDistrictImpactOpacity] = useState<number>(65);
+  const [selectedDistrictName, setSelectedDistrictName] = useState<string | null>(null);
+  const [districtImpactResponse, setDistrictImpactResponse] = useState<ForecastImpactResponse | null>(null);
+
+  // Ingest genuine NWP forecast grid & impact intelligence whenever operational sector changes
   useEffect(() => {
     let isSubscribed = true;
     const sectorKey = getNearestSectorKey(location.lat, location.lon);
+
     getForecastGrid('sector', sectorKey)
       .then((grid) => {
         if (!isSubscribed || !grid) return;
@@ -148,6 +156,16 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
       .catch((err) => {
         console.warn('[LiveMapPage] Failed to fetch forecast grid:', err);
       });
+
+    getForecastImpact('sector', sectorKey)
+      .then((impact) => {
+        if (!isSubscribed || !impact) return;
+        setDistrictImpactResponse(impact);
+      })
+      .catch((err) => {
+        console.warn('[LiveMapPage] Failed to fetch forecast impact:', err);
+      });
+
     return () => {
       isSubscribed = false;
     };
@@ -505,6 +523,15 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           onToggleWindParticles={setShowWindLayer}
           onChangeWindSpeedMultiplier={setWindSpeedMultiplier}
           onChangeWindParticleDensity={setWindParticleDensity}
+          // Phase 3D-2B District Forecast Impact Integration
+          showDistrictImpact={showDistrictImpactLayer}
+          districtImpactResponse={districtImpactResponse}
+          selectedImpactDistrict={selectedDistrictName}
+          districtImpactOpacity={districtImpactOpacity}
+          onSelectImpactDistrict={(districtName) => {
+            setSelectedDistrictName(districtName);
+            setShowImpactDashboard(true);
+          }}
           variant="full"
           hideDefaultControls={true}
           className="w-full h-full min-h-full rounded-none border-none"
@@ -550,6 +577,11 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         windParticleDensity={windParticleDensity}
         onChangeWindParticleDensity={setWindParticleDensity}
         onOpenForecastImpact={() => setShowImpactDashboard(true)}
+        // Phase 3D-2B District Forecast Impact additions
+        showDistrictImpactLayer={showDistrictImpactLayer}
+        onToggleDistrictImpactLayer={setShowDistrictImpactLayer}
+        districtImpactOpacity={districtImpactOpacity}
+        onChangeDistrictImpactOpacity={setDistrictImpactOpacity}
         isAuthorizedForSimulation={isAuthorized}
         userRole={user?.role}
         showSimulation={showSimulation}
@@ -582,6 +614,8 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           satelliteProductKey={activeSatelliteProductKey}
           showSimulation={showSimulation}
           activeForecastLayer={activeForecastLegend}
+          showDistrictImpact={showDistrictImpactLayer}
+          isNationalMode={districtImpactResponse?.metadata?.mode === 'national'}
         />
       </div>
 
@@ -676,6 +710,8 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         isOpen={showImpactDashboard}
         onClose={() => setShowImpactDashboard(false)}
         activeSectorKey={getNearestSectorKey(location.lat, location.lon)}
+        selectedDistrict={selectedDistrictName}
+        onDataLoaded={(data) => setDistrictImpactResponse(data)}
         onSelectSector={(sectorKey) => {
           const jump = SECTOR_QUICK_JUMPS.find((j) => {
             if (sectorKey === 'mumbai') return j.code === 'MUM';
@@ -690,7 +726,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           }
         }}
         onSelectDistrict={(districtName) => {
-          console.log('[LiveMapPage] Focused on impact district:', districtName);
+          setSelectedDistrictName(districtName);
         }}
       />
     </div>

@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
+  MapPin,
 } from 'lucide-react';
 import { SimulationResponse } from '../../services/research';
 import {
@@ -68,6 +69,11 @@ export interface LayerSidebarProps {
   windParticleDensity?: 'light' | 'standard' | 'dense';
   onChangeWindParticleDensity?: (density: 'light' | 'standard' | 'dense') => void;
   onOpenForecastImpact?: () => void;
+  // Phase 3D-2B District Forecast Impact Layer
+  showDistrictImpactLayer?: boolean;
+  onToggleDistrictImpactLayer?: (show: boolean) => void;
+  districtImpactOpacity?: number;
+  onChangeDistrictImpactOpacity?: (opacity: number) => void;
 
   // Category C: JATAYU Intelligence
   isAuthorizedForSimulation: boolean;
@@ -123,6 +129,10 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
   windParticleDensity = 'standard',
   onChangeWindParticleDensity,
   onOpenForecastImpact,
+  showDistrictImpactLayer = false,
+  onToggleDistrictImpactLayer,
+  districtImpactOpacity = 65,
+  onChangeDistrictImpactOpacity,
   isAuthorizedForSimulation,
   userRole,
   showSimulation,
@@ -578,6 +588,47 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
               </div>
             )}
 
+            {/* District Rainfall Hazard Layer Control (Phase 3D-2B) */}
+            <div className="flex items-center justify-between p-1.5 bg-navy-900/80 rounded border border-navy-800">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-200">District Rainfall Hazard</div>
+                  <div className="text-[9px] text-slate-500">24h IMD Hazard Category Polygons</div>
+                </div>
+              </div>
+              <button
+                onClick={() => onToggleDistrictImpactLayer && onToggleDistrictImpactLayer(!showDistrictImpactLayer)}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                  showDistrictImpactLayer
+                    ? 'bg-amber-600/30 text-amber-300 border-amber-500'
+                    : 'bg-navy-800 text-slate-500 border-navy-700'
+                }`}
+              >
+                {showDistrictImpactLayer ? 'ENABLED' : 'DISABLED'}
+              </button>
+            </div>
+
+            {/* District Impact Opacity Slider */}
+            {showDistrictImpactLayer && (
+              <div className="space-y-1 p-1.5 bg-navy-900/60 rounded border border-navy-800/80">
+                <div className="flex justify-between text-[9.5px] text-slate-400">
+                  <span>District Fill Opacity:</span>
+                  <span className="font-bold text-amber-300">{districtImpactOpacity}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="20"
+                  max="100"
+                  value={districtImpactOpacity}
+                  onChange={(e) =>
+                    onChangeDistrictImpactOpacity && onChangeDistrictImpactOpacity(Number(e.target.value))
+                  }
+                  className="w-full accent-amber-500 h-1 bg-navy-800 rounded-lg cursor-pointer"
+                />
+              </div>
+            )}
+
             {/* Forecast Opacity Slider (rendered if any forecast layer is on) */}
             {(showPrecipLayer || showWindLayer || showTempLayer || showHumidityLayer || showPressureLayer) && (
               <div className="space-y-1 pt-1 border-t border-teal-900/40">
@@ -601,7 +652,9 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
               <div className="p-1.5 bg-navy-900/90 border border-teal-800/50 rounded text-[8.5px] text-slate-400 space-y-0.5">
                 <div className="flex justify-between text-slate-300">
                   <span>Model:</span>
-                  <span className="font-semibold text-teal-300">{forecastGrid.metadata.model}</span>
+                  <span className="font-semibold text-teal-300">
+                    {forecastGrid.metadata.model?.replace(/\s*\([^)]*\)/, '').trim()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Run Cycle:</span>

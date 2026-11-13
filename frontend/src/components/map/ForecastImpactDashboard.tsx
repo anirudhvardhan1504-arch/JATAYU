@@ -28,6 +28,8 @@ export interface ForecastImpactDashboardProps {
   activeSectorKey?: OperationalSectorKey;
   onSelectSector?: (sector: OperationalSectorKey) => void;
   onSelectDistrict?: (district: string, state: string) => void;
+  selectedDistrict?: string | null;
+  onDataLoaded?: (data: ForecastImpactResponse) => void;
   className?: string;
 }
 
@@ -45,6 +47,8 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
   activeSectorKey = 'chennai',
   onSelectSector,
   onSelectDistrict,
+  selectedDistrict = null,
+  onDataLoaded,
   className = '',
 }) => {
   const [mode, setMode] = useState<ForecastGridMode>('sector');
@@ -55,6 +59,13 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
   const [expandedDistrictId, setExpandedDistrictId] = useState<string | null>(null);
+
+  // Sync selectedDistrict prop changes to expansion
+  useEffect(() => {
+    if (selectedDistrict) {
+      setExpandedDistrictId(selectedDistrict.toUpperCase());
+    }
+  }, [selectedDistrict]);
 
   // Sync prop changes
   useEffect(() => {
@@ -71,6 +82,9 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
       try {
         const data = await getForecastImpact(mode, mode === 'sector' ? selectedSector : undefined, refresh);
         setImpactData(data);
+        if (onDataLoaded) {
+          onDataLoaded(data);
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to retrieve forecast impact intelligence';
         setError(msg);
@@ -78,7 +92,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
         setIsLoading(false);
       }
     },
-    [mode, selectedSector]
+    [mode, selectedSector, onDataLoaded]
   );
 
   useEffect(() => {
@@ -102,6 +116,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
   const isNational = activeMode === 'national';
   const metadata = impactData?.metadata;
   const summary = impactData?.summary;
+  const cleanModelName = (metadata?.model || '').replace(/\s*\([^)]*\)/, '').trim();
 
   // Mode-aware coverage counter: derives count strictly from API coverage status
   const coverageCount = useMemo(() => {
@@ -259,7 +274,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               <div>
                 <span className="text-slate-500 block">FORECAST MODEL:</span>
-                <strong className="text-slate-200 font-mono">{metadata.model}</strong>
+                <strong className="text-slate-200 font-mono">{cleanModelName || metadata.model}</strong>
               </div>
               <div>
                 <span className="text-slate-500 block">UPSTREAM PROVIDER:</span>
@@ -426,7 +441,12 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
           )}
 
           {filteredDistricts.map((district) => {
-            const isExpanded = expandedDistrictId === district.district;
+            const isCardSelected = Boolean(
+              selectedDistrict &&
+                (selectedDistrict.toUpperCase() === district.district.toUpperCase() ||
+                  selectedDistrict.toUpperCase().includes(district.district.toUpperCase()))
+            );
+            const isExpanded = expandedDistrictId === district.district || isCardSelected;
             const imdStyle = IMD_RAINFALL_STYLES[district.classification.imdRainfallCategory];
             const densityStyle = SPATIAL_DENSITY_CONFIG[district.coverage.spatialDensity];
             const isSingleNode = district.coverage.spatialDensity === 'SINGLE_NODE_LOCALIZED';
@@ -437,7 +457,11 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
               <div
                 key={district.district}
                 className={`border rounded-xl transition-all overflow-hidden ${
-                  isExpanded ? 'bg-navy-900/95 border-blue-500/60 shadow-lg' : 'bg-navy-900/60 border-navy-800 hover:border-navy-700'
+                  isCardSelected
+                    ? 'bg-navy-900 border-amber-400 ring-2 ring-amber-400/60 shadow-lg'
+                    : isExpanded
+                    ? 'bg-navy-900/95 border-blue-500/60 shadow-lg'
+                    : 'bg-navy-900/60 border-navy-800 hover:border-navy-700'
                 }`}
               >
                 {/* District Card Header */}
@@ -450,6 +474,11 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                       <h3 className="font-bold text-white text-xs tracking-wide">
                         {district.district}
                       </h3>
+                      {isCardSelected && (
+                        <span className="text-[8.5px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded border border-amber-500/50 font-bold">
+                          MAP ACTIVE
+                        </span>
+                      )}
                       <span className="text-[10px] text-slate-400 font-normal">
                         ({district.state})
                       </span>
