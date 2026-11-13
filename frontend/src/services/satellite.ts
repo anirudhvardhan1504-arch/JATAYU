@@ -150,11 +150,24 @@ export const SECTOR_VIEWING_CHARACTERISTICS: Record<string, { viewingAngle: stri
 };
 
 /**
+ * Returns latest completed composite date (YYYY-MM-DD) for daily polar-orbiting products (MODIS/VIIRS).
+ * Downlink and GIBS processing pipelines complete previous day's global mosaic.
+ */
+export function getLatestCompletedCompositeDate(): string {
+  const now = new Date();
+  // If current UTC hour is < 14, today's daily polar mosaic is incomplete; use yesterday
+  if (now.getUTCHours() < 14) {
+    now.setUTCDate(now.getUTCDate() - 1);
+  }
+  return now.toISOString().slice(0, 10);
+}
+
+/**
  * Builds standard NASA GIBS EPSG:3857 WMTS REST tile URL template for MapLibre raster sources.
  *
  * NASA GIBS accepts:
- * - 'default' as {Time} for the latest available observation/composite.
- * - ISO-8601 UTC timestamp or date e.g. '2026-11-12T18:10:00Z' or '2026-11-12'.
+ * - 'default' as {Time} for live geostationary feeds (Himawari-9 AHI).
+ * - Explicit UTC date e.g. '2026-11-12' for daily polar composites (MODIS/VIIRS).
  */
 export function getSatelliteTileUrl(
   productKey: SatelliteProductKey,
@@ -165,7 +178,13 @@ export function getSatelliteTileUrl(
     throw new Error(`Unknown satellite product key: ${productKey}`);
   }
 
-  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${config.layerId}/default/${timeOrDate}/${config.tileMatrixSet}/{z}/{y}/{x}.${config.format}`;
+  // Daily polar composites require completed date to avoid empty / 1665B tiles
+  let effectiveTime = timeOrDate;
+  if (config.mode === 'hd' && timeOrDate === 'default') {
+    effectiveTime = getLatestCompletedCompositeDate();
+  }
+
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${config.layerId}/default/${effectiveTime}/${config.tileMatrixSet}/{z}/{y}/{x}.${config.format}`;
 }
 
 /**

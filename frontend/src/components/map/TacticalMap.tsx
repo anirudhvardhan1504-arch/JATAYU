@@ -356,6 +356,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         maxzoom: 7,
         attribution: 'Radar data © RainViewer',
       });
+      const beforeSim = map.getLayer && map.getLayer('adyar-simulation-fill') ? 'adyar-simulation-fill' : undefined;
       map.addLayer({
         id: 'rainviewer-radar-layer',
         type: 'raster',
@@ -366,7 +367,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         layout: {
           visibility: showRadar ? 'visible' : 'none',
         },
-      });
+      }, beforeSim);
     }
   }, [radarInfo]);
 
@@ -462,7 +463,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     } else {
       setupSatellite();
     }
-  }, [satelliteProductKey, satelliteTileUrl]);
+  }, [satelliteProductKey, satelliteTileUrl, showSatellite]);
 
   // Synchronize Satellite Opacity
   useEffect(() => {
