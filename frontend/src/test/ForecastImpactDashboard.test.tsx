@@ -194,8 +194,13 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
 
     // Model and run cycle
     expect(screen.getByText('ECMWF IFS (0.25°)')).toBeDefined();
-    expect(screen.getByText(/00Z CYCLE/)).toBeDefined();
+    expect(screen.getByText('00Z CYCLE')).toBeDefined();
     expect(screen.getByText('Open-Meteo ECMWF Open Data')).toBeDefined();
+
+    // Distinguish model, native unverified, provider output grid, and JATAYU sampling
+    expect(screen.getByText(/Unavailable \(unverified from upstream metadata\)/i)).toBeDefined();
+    expect(screen.getByText('0.25° regular lat/lon')).toBeDefined();
+    expect(screen.getByText('0.25° (~27 km spacing)')).toBeDefined();
 
     // Operational disclaimer & accumulation semantics
     expect(screen.getByText(/Meteorological hazard forecast only; does NOT simulate hydraulic inundation/i)).toBeDefined();
@@ -208,7 +213,7 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
     await waitFor(() => {
       expect(screen.getByText('3')).toBeDefined(); // Evaluated
       expect(screen.getByText('SUFFICIENT MESOSCALE COVERAGE')).toBeDefined();
-      expect(screen.getByText(/Mesoscale Sampling \(Defensible Spacing ≤ 25 km\)/i)).toBeDefined();
+      expect(screen.getByText(/Mesoscale NWP Sampling \(0\.25° Grid; ~28 km nominal spacing\)/i)).toBeDefined();
       expect(screen.getAllByText('2').length).toBe(2); // Sufficient mesoscale coverage & Heavy or above
     });
   });

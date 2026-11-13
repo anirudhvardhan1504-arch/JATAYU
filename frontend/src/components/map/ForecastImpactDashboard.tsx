@@ -258,7 +258,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
 
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               <div>
-                <span className="text-slate-500 block">MODEL / SOURCE:</span>
+                <span className="text-slate-500 block">FORECAST MODEL:</span>
                 <strong className="text-slate-200 font-mono">{metadata.model}</strong>
               </div>
               <div>
@@ -267,18 +267,22 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
               </div>
               <div>
                 <span className="text-slate-500 block">NATIVE MODEL RESOLUTION:</span>
+                <span className="text-slate-400 font-mono italic">Unavailable (unverified from upstream metadata)</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">PROVIDER OUTPUT GRID:</span>
                 <span className="text-teal-300 font-mono">{metadata.nativeResolution}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">GRID SAMPLING RESOLUTION:</span>
+                <span className="text-slate-500 block">JATAYU SAMPLING RESOLUTION:</span>
                 <span className="text-cyan-300 font-mono">{metadata.gridSamplingResolution}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">INITIALIZATION TIME:</span>
-                <span className="text-slate-300 font-mono">{metadata.initializationTime}</span>
+                <span className="text-slate-500 block">RUN CYCLE / INITIALIZATION:</span>
+                <span className="text-slate-300 font-mono">{metadata.runCycle} ({metadata.initializationTime})</span>
               </div>
-              <div>
-                <span className="text-slate-500 block">VALID FORECAST WINDOW:</span>
+              <div className="col-span-2 pt-1 border-t border-navy-800 flex justify-between text-[9.5px]">
+                <span className="text-slate-500">VALID FORECAST WINDOW:</span>
                 <span className="text-slate-300 font-mono">
                   {metadata.validStartTime} → {metadata.validEndTime}
                 </span>
@@ -337,7 +341,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
               <div className="text-[8.5px] text-slate-500 leading-tight mt-0.5">
                 {isNational
                   ? 'Synoptic Macro-Mesh (Indicative Only; Non-Municipal)'
-                  : 'Mesoscale Sampling (Defensible Spacing ≤ 25 km)'}
+                  : 'Mesoscale NWP Sampling (0.25° Grid; ~28 km nominal spacing)'}
               </div>
             </div>
 
@@ -502,7 +506,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                   <div className="px-3 py-1 bg-purple-950/30 border-y border-purple-800/40 text-[9px] text-purple-300/90 flex items-center gap-1.5 font-sans">
                     <Compass className="w-3 h-3 text-purple-400 flex-shrink-0" />
                     <span>
-                      <strong>Proximity Estimate:</strong> District contains 0 interior nodes; sampled from nearest NWP node within {district.coverage.meanDistanceKm} km of polygon centroid.
+                      <strong>Proximity Estimate:</strong> District contains 0 interior nodes; sampled from nearest NWP node located {district.coverage.meanDistanceKm} km from district centroid (bounded centroid fallback distance ≤ 25 km).
                     </span>
                   </div>
                 )}
