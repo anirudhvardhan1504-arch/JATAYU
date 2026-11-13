@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   CloudRain,
   ShieldAlert,
@@ -74,6 +74,12 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
     }
   }, [activeSectorKey]);
 
+  // Keep latest onDataLoaded callback in a ref to break the infinite re-render loop
+  const onDataLoadedRef = useRef(onDataLoaded);
+  useEffect(() => {
+    onDataLoadedRef.current = onDataLoaded;
+  }, [onDataLoaded]);
+
   // Fetch forecast impact intelligence
   const loadImpactData = useCallback(
     async (refresh: boolean = false) => {
@@ -82,8 +88,8 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
       try {
         const data = await getForecastImpact(mode, mode === 'sector' ? selectedSector : undefined, refresh);
         setImpactData(data);
-        if (onDataLoaded) {
-          onDataLoaded(data);
+        if (onDataLoadedRef.current) {
+          onDataLoadedRef.current(data);
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to retrieve forecast impact intelligence';
@@ -92,7 +98,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
         setIsLoading(false);
       }
     },
-    [mode, selectedSector, onDataLoaded]
+    [mode, selectedSector]
   );
 
   useEffect(() => {

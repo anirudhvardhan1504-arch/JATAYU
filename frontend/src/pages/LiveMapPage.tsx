@@ -143,6 +143,10 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   const [selectedDistrictName, setSelectedDistrictName] = useState<string | null>(null);
   const [districtImpactResponse, setDistrictImpactResponse] = useState<ForecastImpactResponse | null>(null);
 
+  const handleImpactDataLoaded = useCallback((data: ForecastImpactResponse) => {
+    setDistrictImpactResponse(data);
+  }, []);
+
   // Ingest genuine NWP forecast grid & impact intelligence whenever operational sector changes
   useEffect(() => {
     let isSubscribed = true;
@@ -711,7 +715,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         onClose={() => setShowImpactDashboard(false)}
         activeSectorKey={getNearestSectorKey(location.lat, location.lon)}
         selectedDistrict={selectedDistrictName}
-        onDataLoaded={(data) => setDistrictImpactResponse(data)}
+        onDataLoaded={handleImpactDataLoaded}
         onSelectSector={(sectorKey) => {
           const jump = SECTOR_QUICK_JUMPS.find((j) => {
             if (sectorKey === 'mumbai') return j.code === 'MUM';

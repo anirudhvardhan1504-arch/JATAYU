@@ -138,20 +138,69 @@ export interface ForecastImpactResponse {
   districts: DistrictForecastImpact[];
 }
 
+const CLIENT_IMPACT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes client-side memory cache
+
+interface ClientImpactCacheEntry {
+  response: ForecastImpactResponse;
+  cachedAt: number;
+}
+
+const clientImpactCache = new Map<string, ClientImpactCacheEntry>();
+const inFlightImpactRequests = new Map<string, Promise<ForecastImpactResponse>>();
+
+/**
+ * Clears the client-side forecast impact memory cache (useful for tests).
+ */
+export function clearForecastImpactClientCache(): void {
+  clientImpactCache.clear();
+  inFlightImpactRequests.clear();
+}
+
 /**
  * Fetches forecast impact intelligence for a given sector or national synoptic mesh.
+ * Reuses active in-flight promises (coalescing) and in-memory cache to prevent request storms.
  */
 export async function getForecastImpact(
   mode: ForecastGridMode = 'sector',
   sector: OperationalSectorKey = 'chennai',
   refresh: boolean = false
 ): Promise<ForecastImpactResponse> {
+  const cacheKey = `${mode}:${mode === 'sector' ? sector : 'all'}`;
+  const now = Date.now();
+
+  if (!refresh) {
+    const cached = clientImpactCache.get(cacheKey);
+    if (cached && now - cached.cachedAt < CLIENT_IMPACT_CACHE_TTL_MS) {
+      return cached.response;
+    }
+
+    const inFlight = inFlightImpactRequests.get(cacheKey);
+    if (inFlight) {
+      return inFlight;
+    }
+  }
+
   const query = new URLSearchParams({
     mode,
     sector,
     refresh: refresh ? 'true' : 'false',
   });
-  return fetchJson<ForecastImpactResponse>(`/weather/forecast-impact?${query.toString()}`);
+
+  const requestPromise = (async () => {
+    try {
+      const response = await fetchJson<ForecastImpactResponse>(`/weather/forecast-impact?${query.toString()}`);
+      clientImpactCache.set(cacheKey, {
+        response,
+        cachedAt: Date.now(),
+      });
+      return response;
+    } finally {
+      inFlightImpactRequests.delete(cacheKey);
+    }
+  })();
+
+  inFlightImpactRequests.set(cacheKey, requestPromise);
+  return requestPromise;
 }
 
 /**
