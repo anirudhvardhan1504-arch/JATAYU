@@ -1,6 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { WeatherService } from '../services/weather.service.js';
 import { replayService } from '../services/replay.service.js';
+import {
+  forecastGridService,
+  OPERATIONAL_SECTOR_CLUSTERS,
+} from '../services/forecast-grid.service.js';
+import {
+  ForecastGridMode,
+  OperationalSectorKey,
+} from '../types/forecast-grid.types.js';
 
 export const weatherRouter = Router();
 const weatherService = new WeatherService();
@@ -126,6 +134,65 @@ weatherRouter.get('/historical', async (req: Request, res: Response) => {
         lat: req.query.lat,
         lon: req.query.lon,
       },
+    });
+  }
+});
+
+/**
+ * GET /api/weather/forecast-grid
+ *
+ * Serves the 72-hour NWP forecast grid across India (hierarchical adaptive mesh:
+ * national synoptic macro-grid + 5 operational mesoscale sector clusters).
+ *
+ * Query Parameters:
+ * - mode: 'sector' | 'national' (default: 'sector')
+ * - sector: 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun' (default: 'mumbai')
+ * - refresh: 'true' | 'false' (forces fresh upstream fetch if budget allows)
+ */
+weatherRouter.get('/forecast-grid', async (req: Request, res: Response) => {
+  const attemptedAt = new Date().toISOString();
+  try {
+    const rawMode = (req.query.mode as string) || 'sector';
+    const rawSector = (req.query.sector as string) || 'mumbai';
+    const forceRefresh = req.query.refresh === 'true';
+
+    // Validate mode
+    if (rawMode !== 'sector' && rawMode !== 'national') {
+      res.status(400).json({
+        error: "Invalid mode parameter. Must be either 'sector' or 'national'.",
+        code: 'INVALID_GRID_MODE',
+        attemptedAt,
+      });
+      return;
+    }
+    const mode = rawMode as ForecastGridMode;
+
+    // Validate sector key
+    let sectorKey: OperationalSectorKey = 'mumbai';
+    if (rawSector) {
+      const lower = rawSector.toLowerCase() as OperationalSectorKey;
+      if (!OPERATIONAL_SECTOR_CLUSTERS[lower]) {
+        res.status(400).json({
+          error: `Invalid sector key '${rawSector}'. Must be one of: ${Object.keys(OPERATIONAL_SECTOR_CLUSTERS).join(', ')}.`,
+          code: 'INVALID_SECTOR_KEY',
+          attemptedAt,
+        });
+        return;
+      }
+      sectorKey = lower;
+    }
+
+    const gridResponse = await forecastGridService.getForecastGrid(mode, sectorKey, forceRefresh);
+    res.status(200).json(gridResponse);
+  } catch (err: any) {
+    const statusCode = err.message?.includes('exhausted') ? 429 : err.message?.includes('upstream') ? 502 : 500;
+    const code = statusCode === 429 ? 'DAILY_BUDGET_EXHAUSTED' : 'FORECAST_GRID_ERROR';
+
+    res.status(statusCode).json({
+      error: err.message || 'Failed to generate forecast grid.',
+      code,
+      attemptedAt,
+      quotaStatus: forecastGridService.getQuotaStatus(),
     });
   }
 });
