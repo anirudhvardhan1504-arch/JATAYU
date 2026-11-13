@@ -460,6 +460,47 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
       expect(getImpactSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('guarantees onDataLoadedRef invokes the latest parent callback after parent re-renders', async () => {
+      let resolvePromise: (val: any) => void = () => {};
+      const delayedPromise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
+
+      vi.spyOn(impactService, 'getForecastImpact').mockImplementation(() => delayedPromise as any);
+
+      const callbackInitial = vi.fn();
+      const callbackUpdated = vi.fn();
+
+      const { rerender } = render(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          onDataLoaded={callbackInitial}
+        />
+      );
+
+      // Parent re-renders before promise resolves, passing updated callback
+      rerender(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          onDataLoaded={callbackUpdated}
+        />
+      );
+
+      // Now resolve the delayed promise
+      resolvePromise(mockResponse);
+
+      await waitFor(() => {
+        expect(callbackUpdated).toHaveBeenCalledWith(mockResponse);
+      });
+
+      // Initial stale callback must NOT have been called
+      expect(callbackInitial).not.toHaveBeenCalled();
+    });
+
     it('displays HTTP 429 rate limit error accurately and recovers cleanly via retry button', async () => {
       const getImpactSpy = vi
         .spyOn(impactService, 'getForecastImpact')

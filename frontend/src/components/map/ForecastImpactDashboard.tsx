@@ -76,6 +76,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
 
   // Keep latest onDataLoaded callback in a ref to break the infinite re-render loop
   const onDataLoadedRef = useRef(onDataLoaded);
+  onDataLoadedRef.current = onDataLoaded;
   useEffect(() => {
     onDataLoadedRef.current = onDataLoaded;
   }, [onDataLoaded]);
