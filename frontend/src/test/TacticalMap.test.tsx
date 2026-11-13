@@ -968,5 +968,60 @@ describe('LiveMapPage Integration Tests', () => {
       expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-pressure-extrema-source');
       expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-pressure-contours-source');
     });
+
+    it('renders wind particle streamline canvas overlay and disclosure badge', () => {
+      const onToggleWind = vi.fn();
+      const onTogglePlay = vi.fn();
+
+      const { rerender, unmount } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showWindParticles={true}
+          windParticleDensity="standard"
+          windSpeedMultiplier={1.0}
+          isWindPlaying={true}
+          forecastTimestepIndex={0}
+          forecastGridData={mockForecastData}
+          onToggleWindParticles={onToggleWind}
+          onToggleWindPlay={onTogglePlay}
+        />
+      );
+
+      // Verify canvas element exists and is visible
+      const canvas = screen.getByTestId('wind-particle-canvas');
+      expect(canvas).toBeInTheDocument();
+      expect(canvas).toHaveStyle({ display: 'block' });
+
+      // Verify HUD indicator badge
+      expect(screen.getByText(/Wind Streamlines: 10m Vectors/i)).toBeInTheDocument();
+
+      // Verify controls palette shows pause and hide buttons
+      const pauseBtn = screen.getByTitle(/Pause wind animation/i);
+      expect(pauseBtn).toBeInTheDocument();
+      fireEvent.click(pauseBtn);
+      expect(onTogglePlay).toHaveBeenCalledWith(false);
+
+      // Toggle visibility off
+      rerender(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showWindParticles={false}
+          windParticleDensity="standard"
+          windSpeedMultiplier={1.0}
+          isWindPlaying={true}
+          forecastTimestepIndex={0}
+          forecastGridData={mockForecastData}
+          onToggleWindParticles={onToggleWind}
+          onToggleWindPlay={onTogglePlay}
+        />
+      );
+
+      expect(canvas).toHaveStyle({ display: 'none' });
+
+      // Unmount cleanly without errors
+      unmount();
+    });
   });
 });

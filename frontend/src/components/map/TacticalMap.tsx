@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Layers, ShieldAlert, Crosshair, RotateCcw, AlertTriangle, Eye, EyeOff, Globe } from 'lucide-react';
+import { Layers, ShieldAlert, Crosshair, RotateCcw, AlertTriangle, Eye, EyeOff, Globe, Wind, Play, Pause } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { getLatestRadarInfo, RainViewerRadarInfo } from '../../services/radar';
 import { SimulationMetadata } from '../../services/research';
@@ -24,6 +24,12 @@ import {
   syncPressureLayers,
   removePressureLayers,
 } from '../../services/pressure-layer';
+import {
+  WindParticleDensity,
+} from '../../services/wind-particles';
+import {
+  WindOverlayManager,
+} from '../../services/wind-layer';
 
 export interface TacticalMapProps {
   center: [number, number]; // [lon, lat]
@@ -65,6 +71,16 @@ export interface TacticalMapProps {
   showPressureContours?: boolean;
   pressureContourInterval?: ContourIntervalHpa;
   onTogglePressureContours?: (visible: boolean) => void;
+  // Phase 3B-3C Forecast Wind Particle Animation
+  showWindParticles?: boolean;
+  windParticleDensity?: WindParticleDensity;
+  windParticleOpacity?: number; // 0 - 100
+  windSpeedMultiplier?: number;
+  isWindPlaying?: boolean;
+  onToggleWindParticles?: (visible: boolean) => void;
+  onToggleWindPlay?: (playing: boolean) => void;
+  onChangeWindSpeedMultiplier?: (speed: number) => void;
+  onChangeWindParticleDensity?: (density: WindParticleDensity) => void;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -105,6 +121,15 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   showPressureContours = false,
   pressureContourInterval = 4,
   onTogglePressureContours,
+  showWindParticles = false,
+  windParticleDensity = 'standard',
+  windParticleOpacity = 85,
+  windSpeedMultiplier = 1.0,
+  isWindPlaying = true,
+  onToggleWindParticles,
+  onToggleWindPlay,
+  onChangeWindSpeedMultiplier,
+  onChangeWindParticleDensity,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -120,11 +145,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   // Standalone forecast layer internal state management
   const [internalShowForecast, setInternalShowForecast] = useState<boolean | null>(null);
   const [internalShowPressureContours, setInternalShowPressureContours] = useState<boolean | null>(null);
+  const [internalShowWindParticles, setInternalShowWindParticles] = useState<boolean | null>(null);
+  const [internalWindDensity, setInternalWindDensity] = useState<WindParticleDensity>(windParticleDensity);
+  const [internalWindSpeed, setInternalWindSpeed] = useState<number>(windSpeedMultiplier);
+  const [internalIsWindPlaying, setInternalIsWindPlaying] = useState<boolean>(isWindPlaying);
   const [internalForecastGrid, setInternalForecastGrid] = useState<ForecastGridResponse | null>(null);
+
   const effectiveShowForecast = internalShowForecast !== null ? internalShowForecast : showForecast;
   const effectiveShowPressureContours =
     internalShowPressureContours !== null ? internalShowPressureContours : showPressureContours;
+  const effectiveShowWindParticles =
+    internalShowWindParticles !== null ? internalShowWindParticles : showWindParticles;
+  const effectiveWindDensity = windParticleDensity || internalWindDensity;
+  const effectiveWindSpeed = windSpeedMultiplier || internalWindSpeed;
+  const effectiveIsWindPlaying = isWindPlaying !== undefined ? isWindPlaying : internalIsWindPlaying;
+  const effectiveWindOpacity = windParticleOpacity;
   const effectiveForecastGrid = forecastGridData || internalForecastGrid;
+
+  const windCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const windOverlayManagerRef = useRef<WindOverlayManager | null>(null);
 
   // Reset internal toggles when parent props change
   useEffect(() => {
@@ -135,9 +174,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     setInternalShowPressureContours(null);
   }, [showPressureContours]);
 
+  useEffect(() => {
+    setInternalShowWindParticles(null);
+  }, [showWindParticles]);
+
   // Auto-fetch forecast grid if turned on in standalone mode without passed data
   useEffect(() => {
-    if ((!effectiveShowForecast && !effectiveShowPressureContours) || effectiveForecastGrid) return;
+    if ((!effectiveShowForecast && !effectiveShowPressureContours && !effectiveShowWindParticles) || effectiveForecastGrid) return;
     let isSubscribed = true;
     getForecastGrid('sector', 'mumbai')
       .then((grid) => {
@@ -149,7 +192,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     return () => {
       isSubscribed = false;
     };
-  }, [effectiveShowForecast, effectiveShowPressureContours, effectiveForecastGrid]);
+  }, [effectiveShowForecast, effectiveShowPressureContours, effectiveShowWindParticles, effectiveForecastGrid]);
 
   // Fetch verified RainViewer metadata on mount
   useEffect(() => {
@@ -364,6 +407,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       mapRef.current = map;
 
       return () => {
+        if (windOverlayManagerRef.current) {
+          windOverlayManagerRef.current.unmount();
+          windOverlayManagerRef.current = null;
+        }
         removePressureLayers(map);
         removeForecastScalarLayer(map);
         map.remove();
@@ -844,6 +891,40 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     effectiveForecastGrid,
   ]);
 
+  // Synchronize Wind Particle Streamlines (Phase 3B-3C)
+  useEffect(() => {
+    const map = mapRef.current;
+    const canvas = windCanvasRef.current;
+    if (!map || !canvas) return;
+
+    if (!windOverlayManagerRef.current) {
+      windOverlayManagerRef.current = new WindOverlayManager();
+      windOverlayManagerRef.current.mount(map, canvas, effectiveForecastGrid, forecastTimestepIndex, {
+        visible: effectiveShowWindParticles,
+        isPlaying: effectiveIsWindPlaying,
+        opacity: effectiveWindOpacity,
+        density: effectiveWindDensity,
+        speedMultiplier: effectiveWindSpeed,
+      });
+    } else {
+      windOverlayManagerRef.current.sync(effectiveForecastGrid, forecastTimestepIndex, {
+        visible: effectiveShowWindParticles,
+        isPlaying: effectiveIsWindPlaying,
+        opacity: effectiveWindOpacity,
+        density: effectiveWindDensity,
+        speedMultiplier: effectiveWindSpeed,
+      });
+    }
+  }, [
+    effectiveShowWindParticles,
+    effectiveIsWindPlaying,
+    effectiveWindOpacity,
+    effectiveWindDensity,
+    effectiveWindSpeed,
+    forecastTimestepIndex,
+    effectiveForecastGrid,
+  ]);
+
   const handleRecenter = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.flyTo({ center: initialCenter, zoom: 10 });
@@ -857,6 +938,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     <div className={`relative border border-slate-300 rounded overflow-hidden bg-navy-950 ${className}`}>
       {/* Map Canvas */}
       <div ref={mapContainer} className="w-full h-full min-h-[420px]" />
+
+      {/* Forecast Wind Particle Canvas Overlay (Phase 3B-3C) */}
+      <canvas
+        ref={windCanvasRef}
+        data-testid="wind-particle-canvas"
+        className="absolute inset-0 pointer-events-none z-[1]"
+        style={{
+          display: effectiveShowWindParticles ? 'block' : 'none',
+        }}
+      />
 
       {/* Fallback if MapLibre fails */}
       {mapError && (
@@ -877,8 +968,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
       )}
 
-      {/* Forecast Scientific Disclosure Banner (Phase 3B-3A & 3B-3B) */}
-      {(effectiveShowForecast || effectiveShowPressureContours) && effectiveForecastGrid && (
+      {/* Forecast Scientific Disclosure Banner (Phase 3B-3A, 3B-3B & 3B-3C) */}
+      {(effectiveShowForecast || effectiveShowPressureContours || effectiveShowWindParticles) && effectiveForecastGrid && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-auto max-w-2xl text-center px-2">
           <div className="bg-navy-950/95 border border-sky-500/80 text-sky-200 px-3.5 py-1.5 rounded-lg shadow-xl font-mono text-[11px] space-y-1">
             <div className="flex items-center justify-center gap-2 font-bold text-amber-300">
@@ -896,6 +987,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               {effectiveShowPressureContours && (
                 <span className="bg-sky-950/90 border border-sky-600/80 text-sky-300 px-1.5 rounded text-[9.5px]">
                   Isobars: MSLP ({pressureContourInterval} hPa) • Extrema (H/L)
+                </span>
+              )}
+              {effectiveShowWindParticles && (
+                <span className="bg-emerald-950/90 border border-emerald-600/80 text-emerald-300 px-1.5 rounded text-[9.5px]">
+                  Wind Streamlines: 10m Vectors ({effectiveWindDensity} • {effectiveWindSpeed}x)
                 </span>
               )}
               {effectiveForecastGrid.metadata.isFallback && (
@@ -1121,6 +1217,91 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                     <div>MSLP • {pressureContourInterval} hPa interval</div>
                     <div className="text-[8.5px] text-sky-300">
                       Local Extrema: High (H) / Low (L)
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Wind Particle Streamlines (Phase 3B-3C) */}
+              <div className="pt-2 border-t border-navy-800 space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span className="text-[11px] flex items-center gap-1">
+                      <Wind className="w-3 h-3 text-emerald-400 inline" />
+                      <span>Wind Streamlines</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {effectiveShowWindParticles && (
+                      <button
+                        onClick={() => {
+                          const nextPlay = !effectiveIsWindPlaying;
+                          if (onToggleWindPlay) onToggleWindPlay(nextPlay);
+                          else setInternalIsWindPlaying(nextPlay);
+                        }}
+                        className="p-1 hover:bg-navy-800 rounded text-slate-300 cursor-pointer"
+                        title={effectiveIsWindPlaying ? 'Pause wind animation' : 'Resume wind animation'}
+                      >
+                        {effectiveIsWindPlaying ? <Pause className="w-3 h-3 text-emerald-400" /> : <Play className="w-3 h-3 text-slate-400" />}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        const next = !effectiveShowWindParticles;
+                        if (onToggleWindParticles) onToggleWindParticles(next);
+                        else setInternalShowWindParticles(next);
+                      }}
+                      className="p-1 hover:bg-navy-800 rounded text-slate-300 cursor-pointer"
+                      title={effectiveShowWindParticles ? 'Hide wind particle overlay' : 'Show wind particle overlay'}
+                    >
+                      {effectiveShowWindParticles ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
+                    </button>
+                  </div>
+                </div>
+                {effectiveShowWindParticles && (
+                  <div className="text-[9px] text-slate-400 font-mono space-y-1.5 pt-0.5">
+                    <div className="flex items-center justify-between">
+                      <span>Density:</span>
+                      <div className="flex gap-1">
+                        {(['light', 'standard', 'dense'] as WindParticleDensity[]).map((d) => (
+                          <button
+                            key={d}
+                            onClick={() => {
+                              if (onChangeWindParticleDensity) onChangeWindParticleDensity(d);
+                              else setInternalWindDensity(d);
+                            }}
+                            className={`px-1 py-0.5 rounded text-[8px] cursor-pointer ${
+                              effectiveWindDensity === d
+                                ? 'bg-emerald-600 text-white font-bold'
+                                : 'bg-navy-800 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {d.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Speed:</span>
+                      <div className="flex gap-1">
+                        {[0.5, 1.0, 1.5, 2.0].map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => {
+                              if (onChangeWindSpeedMultiplier) onChangeWindSpeedMultiplier(s);
+                              else setInternalWindSpeed(s);
+                            }}
+                            className={`px-1 py-0.5 rounded text-[8px] cursor-pointer ${
+                              effectiveWindSpeed === s
+                                ? 'bg-emerald-600 text-white font-bold'
+                                : 'bg-navy-800 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {s}x
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
