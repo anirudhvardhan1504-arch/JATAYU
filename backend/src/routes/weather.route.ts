@@ -5,6 +5,7 @@ import {
   forecastGridService,
   OPERATIONAL_SECTOR_CLUSTERS,
 } from '../services/forecast-grid.service.js';
+import { forecastImpactService } from '../services/forecast-impact.service.js';
 import {
   ForecastGridMode,
   OperationalSectorKey,
@@ -193,6 +194,64 @@ weatherRouter.get('/forecast-grid', async (req: Request, res: Response) => {
       code,
       attemptedAt,
       quotaStatus: forecastGridService.getQuotaStatus(),
+    });
+  }
+});
+
+/**
+ * GET /api/weather/forecast-impact
+ *
+ * Translates gridded NWP forecast data into transparent, district-level
+ * rainfall hazard metrics and local exposure information.
+ *
+ * Query Parameters:
+ * - mode: 'sector' | 'national' (default: 'sector')
+ * - sector: 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun' (default: 'chennai')
+ * - refresh: 'true' | 'false' (forces fresh upstream fetch if budget allows)
+ */
+weatherRouter.get('/forecast-impact', async (req: Request, res: Response) => {
+  const attemptedAt = new Date().toISOString();
+  try {
+    const rawMode = (req.query.mode as string) || 'sector';
+    const rawSector = (req.query.sector as string) || 'chennai';
+    const forceRefresh = req.query.refresh === 'true';
+
+    // Validate mode
+    if (rawMode !== 'sector' && rawMode !== 'national') {
+      res.status(400).json({
+        error: "Invalid mode parameter. Must be either 'sector' or 'national'.",
+        code: 'INVALID_GRID_MODE',
+        attemptedAt,
+      });
+      return;
+    }
+    const mode = rawMode as ForecastGridMode;
+
+    // Validate sector key
+    let sectorKey: OperationalSectorKey = 'chennai';
+    if (rawSector) {
+      const lower = rawSector.toLowerCase() as OperationalSectorKey;
+      if (!OPERATIONAL_SECTOR_CLUSTERS[lower]) {
+        res.status(400).json({
+          error: `Invalid sector key '${rawSector}'. Must be one of: ${Object.keys(OPERATIONAL_SECTOR_CLUSTERS).join(', ')}.`,
+          code: 'INVALID_SECTOR_KEY',
+          attemptedAt,
+        });
+        return;
+      }
+      sectorKey = lower;
+    }
+
+    const impactResponse = await forecastImpactService.getForecastImpact(mode, sectorKey, forceRefresh);
+    res.status(200).json(impactResponse);
+  } catch (err: any) {
+    const statusCode = err.message?.includes('exhausted') ? 429 : err.message?.includes('upstream') ? 502 : 500;
+    const code = statusCode === 429 ? 'DAILY_BUDGET_EXHAUSTED' : 'FORECAST_IMPACT_ERROR';
+
+    res.status(statusCode).json({
+      error: err.message || 'Failed to compute forecast impact.',
+      code,
+      attemptedAt,
     });
   }
 });
