@@ -33,6 +33,12 @@ export type DistrictSamplingMethod =
   | 'PROXIMITY_CENTROID_BOUNDED'
   | 'NONE';
 
+export type DistrictSpatialDensity =
+  | 'MULTI_NODE_REPRESENTATIVE'
+  | 'SINGLE_NODE_LOCALIZED'
+  | 'CENTROID_PROXIMITY_ONLY'
+  | 'UNREPRESENTED';
+
 export interface DistrictImpactMetrics {
   /** Future 6-hour forecast accumulation from validStartTime: T+1 to T+6 (mm) */
   futureAccum6hMm: number | null;
@@ -105,6 +111,7 @@ export interface DistrictForecastImpact {
   censusCode?: string;
   coverage: {
     status: DistrictCoverageStatus;
+    spatialDensity: DistrictSpatialDensity;
     nodeCount: number;
     method: DistrictSamplingMethod;
     meanDistanceKm?: number;
@@ -120,6 +127,7 @@ export interface ForecastImpactMetadata {
   provider: string;
   model: string;
   nativeResolution: string;
+  gridSamplingResolution: string;
   initializationTime: string;
   runCycle: '00Z' | '06Z' | '12Z' | '18Z' | 'UNKNOWN';
   validStartTime: string;

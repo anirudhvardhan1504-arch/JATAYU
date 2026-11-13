@@ -236,6 +236,24 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
       expect(classifyImd24hRainfall(350.0)).toBe('EXTREMELY_HEAVY_RAIN');
     });
 
+    it('rigorously tests exact boundary decimal edges (14.99 vs 15.00, 64.49 vs 64.50, etc.)', () => {
+      // 15.0 boundary
+      expect(classifyImd24hRainfall(14.99)).toBe('LIGHT_RAIN');
+      expect(classifyImd24hRainfall(15.00)).toBe('MODERATE_RAIN');
+
+      // 64.5 boundary
+      expect(classifyImd24hRainfall(64.49)).toBe('MODERATE_RAIN');
+      expect(classifyImd24hRainfall(64.50)).toBe('HEAVY_RAIN');
+
+      // 115.5 boundary
+      expect(classifyImd24hRainfall(115.49)).toBe('HEAVY_RAIN');
+      expect(classifyImd24hRainfall(115.50)).toBe('VERY_HEAVY_RAIN');
+
+      // 204.5 boundary
+      expect(classifyImd24hRainfall(204.49)).toBe('VERY_HEAVY_RAIN');
+      expect(classifyImd24hRainfall(204.50)).toBe('EXTREMELY_HEAVY_RAIN');
+    });
+
     it('accurately classifies peak hourly rain rates', () => {
       expect(classifyImdHourlyRate(0.0)).toBe('NEGLIGIBLE');
       expect(classifyImdHourlyRate(2.0)).toBe('NEGLIGIBLE');
@@ -361,9 +379,19 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
       expect(chennai!.classification.officialImdAlert!.severity).toBe('WARNING');
       expect(chennai!.classification.officialImdAlert!.color).toBe('ORANGE');
 
-      // Check local exposure: Chennai has 6 choke points
+      // Check resolution metadata distinction
+      expect(response.metadata.nativeResolution).toBe('0.25° (~28 km) regular lat/lon');
+      expect(response.metadata.gridSamplingResolution).toContain('0.25° (~28 km) Mesoscale Sector Grid Cluster');
+
+      // Check coverage quality for single-node district (Chennai)
+      expect(chennai!.coverage.nodeCount).toBe(1);
+      expect(chennai!.coverage.spatialDensity).toBe('SINGLE_NODE_LOCALIZED');
+      expect(chennai!.coverage.coverageNotice).toContain('single interior NWP node');
+
+      // Check local exposure: Chennai has 6 choke points and non-inundation disclosure
       expect(chennai!.localExposure.chennaiHistoricalChokepointsCount).toBe(6);
       expect(chennai!.localExposure.verifiedEmergencyFacilitiesCount).toBeGreaterThan(0);
+      expect(chennai!.localExposure.exposureNotice).toContain('Geographic co-location in district does NOT imply physical inundation');
     });
 
     it('does NOT assign Chennai choke points to non-Chennai districts', async () => {

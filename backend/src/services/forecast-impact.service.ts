@@ -44,6 +44,7 @@ import {
   ImdHourlyRateCategory,
   DistrictCoverageStatus,
   DistrictSamplingMethod,
+  DistrictSpatialDensity,
   DistrictDataQuality,
   DistrictClassification,
   DistrictLocalExposure,
@@ -557,6 +558,10 @@ export class ForecastImpactService {
       provider: gridMeta.provider,
       model: gridMeta.model,
       nativeResolution: gridMeta.nativeResolution,
+      gridSamplingResolution:
+        mode === 'sector'
+          ? `0.25° (~28 km) Mesoscale Sector Grid Cluster (${sectorKey.toUpperCase()})`
+          : '1.5° (~160 km) National Synoptic Macro-Mesh',
       initializationTime: gridMeta.initializationTime,
       runCycle: gridMeta.runCycle,
       validStartTime: gridMeta.validStartTime,
@@ -606,6 +611,7 @@ export class ForecastImpactService {
 
     let status: DistrictCoverageStatus = 'INSUFFICIENT_DATA';
     let method: DistrictSamplingMethod = 'NONE';
+    let spatialDensity: DistrictSpatialDensity = 'UNREPRESENTED';
     let contributingNodes: ForecastGridNode[] = [];
     let meanDistanceKm: number | undefined;
     let coverageNotice: string | undefined;
@@ -614,6 +620,17 @@ export class ForecastImpactService {
       contributingNodes = interiorNodes;
       method = 'POLYGON_INTERIOR';
       status = mode === 'sector' ? 'SUFFICIENT_MESOSCALE' : 'SYNOPTIC_INDICATIVE';
+
+      if (interiorNodes.length >= 3) {
+        spatialDensity = 'MULTI_NODE_REPRESENTATIVE';
+        coverageNotice = `District rainfall is an area average of ${interiorNodes.length} interior NWP model nodes.`;
+      } else {
+        spatialDensity = 'SINGLE_NODE_LOCALIZED';
+        coverageNotice =
+          interiorNodes.length === 1
+            ? 'District rainfall is derived from a single interior NWP node; intra-district spatial variability is unrepresented.'
+            : `District rainfall is derived from ${interiorNodes.length} interior NWP nodes; localized microclimatic variability may exist.`;
+      }
     } else {
       // Find nearest grid node to district centroid
       let nearestNode: ForecastGridNode | null = null;
@@ -630,12 +647,14 @@ export class ForecastImpactService {
       if (nearestNode && minDistance <= maxFallbackDistanceKm) {
         contributingNodes = [nearestNode];
         method = 'PROXIMITY_CENTROID_BOUNDED';
+        spatialDensity = 'CENTROID_PROXIMITY_ONLY';
         meanDistanceKm = Math.round(minDistance * 10) / 10;
         status = mode === 'sector' ? 'SUFFICIENT_MESOSCALE' : 'SYNOPTIC_INDICATIVE';
-        coverageNotice = `Estimated from nearest NWP node located ${meanDistanceKm} km from district centroid.`;
+        coverageNotice = `District contains 0 interior nodes; estimated from nearest NWP node located ${meanDistanceKm} km from district centroid (within ${maxFallbackDistanceKm} km threshold).`;
       } else {
         status = 'INSUFFICIENT_DATA';
         method = 'NONE';
+        spatialDensity = 'UNREPRESENTED';
         coverageNotice = `No NWP forecast grid nodes within defensible radius (${maxFallbackDistanceKm} km).`;
       }
     }
@@ -648,6 +667,7 @@ export class ForecastImpactService {
         censusCode,
         coverage: {
           status: 'INSUFFICIENT_DATA',
+          spatialDensity: 'UNREPRESENTED',
           nodeCount: 0,
           method: 'NONE',
           coverageNotice,
@@ -769,6 +789,7 @@ export class ForecastImpactService {
       censusCode,
       coverage: {
         status,
+        spatialDensity,
         nodeCount: contributingNodes.length,
         method,
         meanDistanceKm,
@@ -846,15 +867,19 @@ export class ForecastImpactService {
 
     // 2. Choke points: strictly for Chennai
     let chokepointsCount: number | undefined;
-    let exposureNotice: string;
+    const facilityNotice =
+      'Facilities count represents emergency response infrastructure geographically located within administrative boundaries. Geographic co-location in district does NOT imply physical inundation, hydraulic flooding, or structural damage.';
 
+    let chokepointNotice: string;
     if (districtUpper === 'CHENNAI') {
       chokepointsCount = this.chennaiChokepoints.length;
-      exposureNotice = `Evaluated against ${this.chennaiChokepoints.length} verified historical Adyar River basin and arterial drainage bottlenecks.`;
+      chokepointNotice = `Evaluated against ${this.chennaiChokepoints.length} verified historical Adyar River basin and arterial drainage bottlenecks (static historical indicators, not hydrodynamic inundation predictions).`;
     } else {
-      exposureNotice =
+      chokepointNotice =
         'Historical flood choke points registry is localized to Chennai Adyar basin; no historical choke points registered for this district.';
     }
+
+    const exposureNotice = `${facilityNotice} ${chokepointNotice}`;
 
     return {
       verifiedEmergencyFacilitiesCount: matchedFacilities.length,
