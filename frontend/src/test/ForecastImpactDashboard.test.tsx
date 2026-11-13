@@ -182,28 +182,87 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
     expect(screen.queryByText(/FORECAST IMPACT INTELLIGENCE/i)).toBeNull();
   });
 
-  it('renders header, NWP model provenance, and disclaimer when open', async () => {
+  it('renders header, NWP model provenance, badge, and disclaimer when open', async () => {
     render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
 
     await waitFor(() => {
       expect(screen.getByText(/FORECAST IMPACT INTELLIGENCE/i)).toBeDefined();
     });
 
+    // NWP 72H FORECAST WINDOW badge
+    expect(screen.getByText('NWP 72H FORECAST WINDOW')).toBeDefined();
+
     // Model and run cycle
     expect(screen.getByText('ECMWF IFS (0.25°)')).toBeDefined();
     expect(screen.getByText(/00Z CYCLE/)).toBeDefined();
     expect(screen.getByText('Open-Meteo ECMWF Open Data')).toBeDefined();
 
-    // Operational disclaimer
+    // Operational disclaimer & accumulation semantics
     expect(screen.getByText(/Meteorological hazard forecast only; does NOT simulate hydraulic inundation/i)).toBeDefined();
+    expect(screen.getByText(/Accumulation Horizon Semantics:/i)).toBeDefined();
   });
 
-  it('renders KPI summary cards with correct counts', async () => {
+  it('renders mode-dependent KPI summary cards with scientifically accurate descriptions in sector mode', async () => {
     render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
 
     await waitFor(() => {
       expect(screen.getByText('3')).toBeDefined(); // Evaluated
-      expect(screen.getAllByText('2').length).toBe(2); // Sufficient coverage & Heavy or above
+      expect(screen.getByText('SUFFICIENT MESOSCALE COVERAGE')).toBeDefined();
+      expect(screen.getByText(/Mesoscale Sampling \(Defensible Spacing ≤ 25 km\)/i)).toBeDefined();
+      expect(screen.getAllByText('2').length).toBe(2); // Sufficient mesoscale coverage & Heavy or above
+    });
+  });
+
+  it('renders mode-dependent KPI summary cards with indicative synoptic description in national mode', async () => {
+    const nationalResponse: ForecastImpactResponse = {
+      ...mockResponse,
+      metadata: {
+        ...mockResponse.metadata,
+        mode: 'national',
+        activeSector: undefined,
+        gridSamplingResolution: '1.5° (~160 km) National Synoptic Macro-Mesh',
+      },
+      districts: [
+        {
+          ...mockResponse.districts[0],
+          coverage: {
+            ...mockResponse.districts[0].coverage,
+            status: 'SYNOPTIC_INDICATIVE',
+          },
+        },
+        {
+          ...mockResponse.districts[1],
+          coverage: {
+            ...mockResponse.districts[1].coverage,
+            status: 'SYNOPTIC_INDICATIVE',
+          },
+        },
+        {
+          ...mockResponse.districts[2],
+          coverage: {
+            ...mockResponse.districts[2].coverage,
+            status: 'INSUFFICIENT_DATA',
+          },
+        },
+      ],
+    };
+
+    vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(nationalResponse);
+
+    render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('CHENNAI')).toBeDefined();
+    });
+
+    // Switch to national mode
+    const nationalBtn = screen.getByRole('button', { name: /National/i });
+    fireEvent.click(nationalBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('INDICATIVE COVERAGE')).toBeDefined();
+      expect(screen.getByText(/Synoptic Macro-Mesh \(Indicative Only; Non-Municipal\)/i)).toBeDefined();
+      expect(screen.queryByText('SUFFICIENT MESOSCALE COVERAGE')).toBeNull();
     });
   });
 

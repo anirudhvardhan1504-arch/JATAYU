@@ -98,6 +98,20 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
     setMode(newMode);
   };
 
+  const activeMode = impactData?.metadata?.mode ?? mode;
+  const isNational = activeMode === 'national';
+  const metadata = impactData?.metadata;
+  const summary = impactData?.summary;
+
+  // Mode-aware coverage counter: derives count strictly from API coverage status
+  const coverageCount = useMemo(() => {
+    if (!impactData?.districts) return summary?.districtsWithSufficientCoverage ?? 0;
+    if (isNational) {
+      return impactData.districts.filter((d) => d.coverage.status === 'SYNOPTIC_INDICATIVE').length;
+    }
+    return impactData.districts.filter((d) => d.coverage.status === 'SUFFICIENT_MESOSCALE').length;
+  }, [impactData, summary, isNational]);
+
   // Filter districts by query and IMD category
   const filteredDistricts = useMemo(() => {
     if (!impactData?.districts) return [];
@@ -115,9 +129,6 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
 
   if (!isOpen) return null;
 
-  const metadata = impactData?.metadata;
-  const summary = impactData?.summary;
-
   return (
     <aside
       className={`fixed inset-y-0 right-0 z-40 w-full sm:w-[540px] md:w-[600px] lg:w-[680px] bg-navy-950/98 backdrop-blur-xl border-l border-navy-700/80 shadow-2xl flex flex-col font-mono text-slate-300 select-none animate-in slide-in-from-right duration-200 ${className}`}
@@ -133,8 +144,11 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
             <div>
               <h2 className="text-sm font-bold text-white tracking-wider flex items-center gap-2">
                 <span>FORECAST IMPACT INTELLIGENCE</span>
-                <span className="px-1.5 py-0.2 bg-teal-950 text-teal-300 text-[9px] rounded border border-teal-700">
-                  NWP 72H
+                <span
+                  className="px-1.5 py-0.2 bg-teal-950 text-teal-300 text-[9px] rounded border border-teal-700 font-mono font-bold"
+                  title="Forecast timeline spans 72 discrete steps (T+0..T+71). Prospective accumulations represent T+1..T+71; complete 72h future accumulation requires T+72."
+                >
+                  NWP 72H FORECAST WINDOW
                 </span>
               </h2>
               <p className="text-[10px] text-slate-400 font-sans">
@@ -295,6 +309,12 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
               <span className="font-bold text-slate-300">Operational Scope: </span>
               {metadata.scientificDisclaimer}
             </div>
+
+            {/* Accumulation Horizon Semantics Notice */}
+            <div className="pt-1 border-t border-navy-800/80 text-[8.5px] text-slate-400 leading-snug">
+              <span className="font-bold text-teal-300">Accumulation Horizon Semantics: </span>
+              NWP timeline covers 72 discrete hourly intervals (T+0 through T+71). Prospective accumulations represent future rainfall starting from T+1 (T+1..T+71). A complete 72-hour future accumulation requires T+72 and is strictly withheld.
+            </div>
           </div>
         )}
 
@@ -308,11 +328,17 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
             </div>
 
             <div className="p-2 bg-navy-900/60 border border-navy-800 rounded-lg">
-              <div className="text-[9px] text-slate-400 uppercase tracking-wider">SUFFICIENT COVERAGE</div>
-              <div className="text-base font-bold text-emerald-400 mt-0.5">
-                {summary.districtsWithSufficientCoverage}
+              <div className="text-[9px] text-slate-400 uppercase tracking-wider">
+                {isNational ? 'INDICATIVE COVERAGE' : 'SUFFICIENT MESOSCALE COVERAGE'}
               </div>
-              <div className="text-[8.5px] text-slate-500">Defensible Spacing</div>
+              <div className="text-base font-bold text-emerald-400 mt-0.5">
+                {coverageCount}
+              </div>
+              <div className="text-[8.5px] text-slate-500 leading-tight mt-0.5">
+                {isNational
+                  ? 'Synoptic Macro-Mesh (Indicative Only; Non-Municipal)'
+                  : 'Mesoscale Sampling (Defensible Spacing ≤ 25 km)'}
+              </div>
             </div>
 
             <div className="p-2 bg-navy-900/60 border border-navy-800 rounded-lg">
