@@ -108,6 +108,13 @@ export const IMD_CATEGORY_MAP_COLORS: Record<string, { fill: string; stroke: str
 let cachedBaseDistrictGeoJSON: GeoJSON.FeatureCollection | null = null;
 let inFlightFetch: Promise<GeoJSON.FeatureCollection | null> | null = null;
 
+/**
+ * Sets or overrides the cached district boundaries GeoJSON (useful for tests and offline seeding).
+ */
+export function setCachedBaseDistrictGeoJSON(geojson: GeoJSON.FeatureCollection | null): void {
+  cachedBaseDistrictGeoJSON = geojson;
+}
+
 // Map event listener tracking to prevent duplicate bindings
 let activeClickListener: ((e: any) => void) | null = null;
 let activeMouseEnterListener: (() => void) | null = null;
@@ -288,48 +295,65 @@ export function enrichDistrictsWithImpact(
   };
 }
 
+export const PROTECTED_OVERLAY_LAYER_IDS = new Set<string>([
+  'jatayu-forecast-scalar-layer',
+  'nasa-gibs-satellite-layer-a',
+  'nasa-gibs-satellite-layer-b',
+  'rainviewer-radar-layer',
+  'jatayu-pressure-contours-line',
+  'jatayu-pressure-contours-label',
+  'jatayu-pressure-extrema-circle',
+  'jatayu-pressure-extrema-label',
+  'adyar-simulation-fill',
+  'adyar-simulation-line',
+]);
+
 /**
- * Finds the layer ID before which the district layers should be placed.
- * Placed BELOW weather & simulation overlays, and BELOW basemap symbol layers,
- * guaranteeing that city labels, road names, and tactical markers are never obscured.
+ * Determines the layer ID before which the district forecast impact layers should be placed.
+ *
+ * Algorithm:
+ * 1. Inspects the actual rendered MapLibre style layers from map.getStyle().layers (order: 0 to N-1).
+ * 2. Finds the EARLIEST existing layer that belongs to PROTECTED_OVERLAY_LAYER_IDS.
+ *    Inserting before this layer guarantees that district fills are strictly beneath
+ *    EVERY active weather overlay (forecast scalar, satellite, radar, pressure contours/extrema, SFINCS).
+ * 3. If no protected overlay exists, finds the EARLIEST basemap symbol layer (city/road/place labels)
+ *    that is not one of our own district layers.
+ *    Inserting before this layer guarantees that city names, roads, and tactical markers
+ *    render crisply on top of the polygon fills.
+ * 4. If neither a protected overlay nor a suitable symbol layer exists, returns undefined.
+ *    syncForecastImpactLayers will NOT blindly insert the layer at the top; it will safely defer.
  */
 export function findBeforeLayerId(map: MapLibreMap): string | undefined {
-  // 1. Must be inserted BELOW existing weather / simulation overlay layers
-  const overlayCandidateIds = [
-    'jatayu-forecast-scalar-layer',
-    'nasa-gibs-satellite-layer-a',
-    'nasa-gibs-satellite-layer-b',
-    'rainviewer-radar-layer',
-    'jatayu-pressure-contours-line',
-    'jatayu-pressure-contours-label',
-    'jatayu-pressure-extrema-circle',
-    'jatayu-pressure-extrema-label',
-    'adyar-simulation-fill',
-    'adyar-simulation-line',
-  ];
+  if (!map) return undefined;
 
-  for (const id of overlayCandidateIds) {
-    if (map.getLayer(id)) {
-      return id;
-    }
-  }
-
-  // 2. Safe Basemap Fallback: Insert below labels, place names, and POI symbols
-  // so district polygon fills do not obscure base cartography text or markers.
+  let styleLayers: any[] = [];
   try {
-    const style = map.getStyle();
-    if (style && Array.isArray(style.layers)) {
-      const firstSymbol = style.layers.find(
-        (l) => l.type === 'symbol' && !l.id.startsWith('jatayu-forecast-impact-')
-      );
-      if (firstSymbol) {
-        return firstSymbol.id;
+    if (typeof map.getStyle === 'function') {
+      const style = map.getStyle();
+      if (style && Array.isArray(style.layers)) {
+        styleLayers = style.layers;
       }
     }
-  } catch {
-    // Style not yet accessible or getStyle unavailable
+  } catch (err) {
+    console.warn('[ForecastImpactLayer] Error inspecting map style layers:', err);
   }
 
+  // 1. Scan actual rendered layer stack in order (index 0 to N-1).
+  // Find the EARLIEST existing protected overlay in rendered style order.
+  const earliestOverlay = styleLayers.find((layer) => PROTECTED_OVERLAY_LAYER_IDS.has(layer.id));
+  if (earliestOverlay) {
+    return earliestOverlay.id;
+  }
+
+  // 2. Safe Basemap Fallback: Find earliest basemap symbol layer (labels / place names)
+  const earliestSymbol = styleLayers.find(
+    (layer) => layer.type === 'symbol' && !layer.id.startsWith('jatayu-forecast-impact-')
+  );
+  if (earliestSymbol) {
+    return earliestSymbol.id;
+  }
+
+  // 3. No safe anchor layer found
   return undefined;
 }
 
@@ -355,6 +379,22 @@ export async function syncForecastImpactLayers(
 
   const enrichedGeoJSON = enrichDistrictsWithImpact(baseGeoJSON, response, selectedDistrict);
   const beforeLayer = findBeforeLayerId(map);
+
+  // If neither a protected overlay nor a symbol layer exists in the style,
+  // do NOT silently insert at the top of the layer stack!
+  // Defer insertion safely until a suitable style layer becomes available.
+  if (!beforeLayer) {
+    console.warn(
+      '[ForecastImpactLayer] No protected overlay or basemap symbol layer available in current style. Deferring district layer insertion.'
+    );
+    if (typeof map.once === 'function') {
+      map.once('styledata', () => {
+        syncForecastImpactLayers(map, options);
+      });
+    }
+    return;
+  }
+
   const opacityRatio = Math.max(0.05, Math.min(1.0, opacity / 100));
 
   // 1. Source Management
@@ -389,6 +429,20 @@ export async function syncForecastImpactLayers(
       ['get', 'fillOpacity'],
       opacityRatio,
     ]);
+    if (typeof map.moveLayer === 'function' && beforeLayer) {
+      try {
+        const style = typeof map.getStyle === 'function' ? map.getStyle() : null;
+        if (style && Array.isArray(style.layers)) {
+          const fillIdx = style.layers.findIndex((l) => l.id === FORECAST_IMPACT_FILL_LAYER_ID);
+          const targetIdx = style.layers.findIndex((l) => l.id === beforeLayer);
+          if (fillIdx !== -1 && targetIdx !== -1 && fillIdx > targetIdx) {
+            map.moveLayer(FORECAST_IMPACT_FILL_LAYER_ID, beforeLayer);
+          }
+        }
+      } catch {
+        // Ignore if style or moveLayer inspection fails
+      }
+    }
   }
 
   // 3. Line Layer (Outlines with dashed styling for indicative national results)

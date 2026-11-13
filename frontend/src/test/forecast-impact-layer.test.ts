@@ -1,11 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   enrichDistrictsWithImpact,
   getFeatureBounds,
   findBeforeLayerId,
+  syncForecastImpactLayers,
   classifyImd24hRainfall,
+  setCachedBaseDistrictGeoJSON,
   VALID_IMD_CATEGORIES,
   IMD_CATEGORY_MAP_COLORS,
+  PROTECTED_OVERLAY_LAYER_IDS,
   FORECAST_IMPACT_SOURCE_ID,
   FORECAST_IMPACT_FILL_LAYER_ID,
   FORECAST_IMPACT_LINE_LAYER_ID,
@@ -13,7 +16,10 @@ import {
 } from '../services/forecast-impact-layer';
 import type { ForecastImpactResponse, DistrictForecastImpact } from '../services/forecast-impact';
 
-describe('ForecastImpactLayer - Phase 3D-2B & 3D-2B1 Unit Tests', () => {
+describe('ForecastImpactLayer - Phase 3D-2B, 3D-2B1 & 3D-2B2 Unit Tests', () => {
+  beforeEach(() => {
+    setCachedBaseDistrictGeoJSON(mockBaseGeoJSON);
+  });
   const mockBaseGeoJSON: GeoJSON.FeatureCollection = {
     type: 'FeatureCollection',
     features: [
@@ -210,6 +216,9 @@ describe('ForecastImpactLayer - Phase 3D-2B & 3D-2B1 Unit Tests', () => {
       expect(FORECAST_IMPACT_FILL_LAYER_ID).toBe('jatayu-forecast-impact-districts-fill');
       expect(FORECAST_IMPACT_LINE_LAYER_ID).toBe('jatayu-forecast-impact-districts-line');
       expect(FORECAST_IMPACT_HIGHLIGHT_LAYER_ID).toBe('jatayu-forecast-impact-districts-highlight');
+
+      expect(PROTECTED_OVERLAY_LAYER_IDS.has('jatayu-forecast-scalar-layer')).toBe(true);
+      expect(PROTECTED_OVERLAY_LAYER_IDS.size).toBe(10);
 
       expect(IMD_CATEGORY_MAP_COLORS.EXTREMELY_HEAVY_RAIN.fill).toBe('#C026D3');
       expect(IMD_CATEGORY_MAP_COLORS.VERY_HEAVY_RAIN.fill).toBe('#DC2626');
@@ -492,89 +501,228 @@ describe('ForecastImpactLayer - Phase 3D-2B & 3D-2B1 Unit Tests', () => {
     });
   });
 
-  describe('4. Map Layer Stacking & Precedence Verification', () => {
-    it('places district layers below existing forecast scalar canvas layer', () => {
+  describe('4. Map Layer Stacking & Precedence Verification (Phase 3D-2B2)', () => {
+    it('1. identifies the earliest protected overlay when overlays appear in a different order from candidate array', () => {
+      // In the candidate array, 'jatayu-forecast-scalar-layer' is listed first.
+      // But in this rendered MapLibre style, 'rainviewer-radar-layer' is placed earlier in the layer order.
       const mockMap: any = {
-        getLayer: vi.fn((id: string) => (id === 'jatayu-forecast-scalar-layer' ? {} : undefined)),
-        getStyle: vi.fn(() => ({ layers: [] })),
+        getStyle: vi.fn(() => ({
+          layers: [
+            { id: 'background', type: 'background' },
+            { id: 'water', type: 'fill' },
+            { id: 'rainviewer-radar-layer', type: 'raster' }, // index 2 (earliest protected overlay)
+            { id: 'jatayu-forecast-scalar-layer', type: 'raster' }, // index 3
+          ],
+        })),
       };
 
       const target = findBeforeLayerId(mockMap);
-      expect(target).toBe('jatayu-forecast-scalar-layer');
-    });
-
-    it('places district layers below satellite raster buffer layer', () => {
-      const mockMap: any = {
-        getLayer: vi.fn((id: string) => (id === 'nasa-gibs-satellite-layer-a' ? {} : undefined)),
-        getStyle: vi.fn(() => ({ layers: [] })),
-      };
-
-      const target = findBeforeLayerId(mockMap);
-      expect(target).toBe('nasa-gibs-satellite-layer-a');
-    });
-
-    it('places district layers below rainviewer radar layer', () => {
-      const mockMap: any = {
-        getLayer: vi.fn((id: string) => (id === 'rainviewer-radar-layer' ? {} : undefined)),
-        getStyle: vi.fn(() => ({ layers: [] })),
-      };
-
-      const target = findBeforeLayerId(mockMap);
+      // Must choose 'rainviewer-radar-layer' so district fills sit beneath BOTH overlays
       expect(target).toBe('rainviewer-radar-layer');
     });
 
-    it('places district layers below pressure contour lines and extrema markers', () => {
-      const mockMap: any = {
-        getLayer: vi.fn((id: string) => (id === 'jatayu-pressure-contours-line' ? {} : undefined)),
-        getStyle: vi.fn(() => ({ layers: [] })),
+    it('2. correctly selects the earliest protected overlay when multiple overlays exist simultaneously', () => {
+      // Permutation A: SFINCS simulation layer is placed earlier than pressure and scalar layers
+      const mockMapA: any = {
+        getStyle: vi.fn(() => ({
+          layers: [
+            { id: 'background', type: 'background' },
+            { id: 'adyar-simulation-fill', type: 'fill' }, // earliest protected overlay
+            { id: 'jatayu-pressure-contours-line', type: 'line' },
+            { id: 'jatayu-forecast-scalar-layer', type: 'raster' },
+          ],
+        })),
       };
+      expect(findBeforeLayerId(mockMapA)).toBe('adyar-simulation-fill');
 
-      const target = findBeforeLayerId(mockMap);
-      expect(target).toBe('jatayu-pressure-contours-line');
+      // Permutation B: Satellite Buffer B precedes Radar
+      const mockMapB: any = {
+        getStyle: vi.fn(() => ({
+          layers: [
+            { id: 'background', type: 'background' },
+            { id: 'nasa-gibs-satellite-layer-b', type: 'raster' }, // earliest protected overlay
+            { id: 'rainviewer-radar-layer', type: 'raster' },
+          ],
+        })),
+      };
+      expect(findBeforeLayerId(mockMapB)).toBe('nasa-gibs-satellite-layer-b');
     });
 
-    it('places district layers below SFINCS hydrodynamic simulation layers', () => {
+    it('3. safely falls back to inserting beneath the earliest basemap symbol layer when no protected overlay exists', () => {
       const mockMap: any = {
-        getLayer: vi.fn((id: string) => (id === 'adyar-simulation-fill' ? {} : undefined)),
-        getStyle: vi.fn(() => ({ layers: [] })),
-      };
-
-      const target = findBeforeLayerId(mockMap);
-      expect(target).toBe('adyar-simulation-fill');
-    });
-
-    it('safely falls back to inserting below basemap symbol layers when no weather overlays exist', () => {
-      const mockMap: any = {
-        getLayer: vi.fn(() => undefined),
         getStyle: vi.fn(() => ({
           layers: [
             { id: 'background', type: 'background' },
             { id: 'water', type: 'fill' },
             { id: 'road_network', type: 'line' },
-            { id: 'place_labels', type: 'symbol' },
+            { id: 'place_city_labels', type: 'symbol' }, // earliest basemap symbol layer
+            { id: 'road_labels', type: 'symbol' },
             { id: 'poi_labels', type: 'symbol' },
           ],
         })),
       };
 
       const target = findBeforeLayerId(mockMap);
-      // Must be inserted before 'place_labels' so district fill is rendered below city/road labels
-      expect(target).toBe('place_labels');
+      // Must be inserted before 'place_city_labels' so district fills sit below city names and road text
+      expect(target).toBe('place_city_labels');
     });
 
-    it('returns undefined safely when no overlays and no symbol layers are present in style', () => {
+    it('4. returns undefined and safely defers insertion when neither protected overlays nor symbol layers exist', async () => {
+      // Map style with only background and landcover fill
+      let styledataCallback: (() => void) | null = null;
       const mockMap: any = {
         getLayer: vi.fn(() => undefined),
+        getSource: vi.fn(() => undefined),
+        addSource: vi.fn(),
+        addLayer: vi.fn(),
+        once: vi.fn((event: string, cb: () => void) => {
+          if (event === 'styledata') {
+            styledataCallback = cb;
+          }
+        }),
         getStyle: vi.fn(() => ({
           layers: [
             { id: 'background', type: 'background' },
-            { id: 'water', type: 'fill' },
+            { id: 'landcover', type: 'fill' },
           ],
         })),
       };
 
+      // 1. findBeforeLayerId returns undefined
       const target = findBeforeLayerId(mockMap);
       expect(target).toBeUndefined();
+
+      // 2. syncForecastImpactLayers does NOT blindly call addLayer at top; it defers via styledata
+      await syncForecastImpactLayers(mockMap, {
+        response: mockImpactResponse,
+        selectedDistrict: null,
+        opacity: 65,
+        visible: true,
+      });
+
+      expect(mockMap.addLayer).not.toHaveBeenCalled();
+      expect(mockMap.once).toHaveBeenCalledWith('styledata', expect.any(Function));
+      expect(styledataCallback).not.toBeNull();
+    });
+
+    it('5. handles style reload and cleanly reinitializes layers upon restyle', async () => {
+      let layersInMap: Record<string, any> = {};
+      let sourcesInMap: Record<string, any> = {};
+
+      const mockMap: any = {
+        getLayer: vi.fn((id: string) => layersInMap[id]),
+        getSource: vi.fn((id: string) => sourcesInMap[id]),
+        addSource: vi.fn((id: string, def: any) => {
+          sourcesInMap[id] = { ...def, setData: vi.fn() };
+        }),
+        addLayer: vi.fn((def: any, before?: string) => {
+          layersInMap[def.id] = { ...def, before };
+        }),
+        removeLayer: vi.fn((id: string) => {
+          delete layersInMap[id];
+        }),
+        removeSource: vi.fn((id: string) => {
+          delete sourcesInMap[id];
+        }),
+        setLayoutProperty: vi.fn(),
+        setPaintProperty: vi.fn(),
+        setFilter: vi.fn(),
+        on: vi.fn(),
+        off: vi.fn(),
+        getCanvas: vi.fn(() => ({ style: {} })),
+        getStyle: vi.fn(() => ({
+          layers: [
+            { id: 'background', type: 'background' },
+            { id: 'city_labels', type: 'symbol' },
+          ],
+        })),
+      };
+
+      // Initial mount
+      await syncForecastImpactLayers(mockMap, {
+        response: mockImpactResponse,
+        selectedDistrict: null,
+        opacity: 65,
+        visible: true,
+      });
+
+      expect(mockMap.addSource).toHaveBeenCalledTimes(1);
+      expect(mockMap.addLayer).toHaveBeenCalledTimes(3); // fill, line, highlight
+
+      // Simulate style reload (MapLibre setStyle drops all custom sources and layers)
+      layersInMap = {};
+      sourcesInMap = {};
+      mockMap.getStyle.mockReturnValue({
+        layers: [
+          { id: 'carto_dark_bg', type: 'background' },
+          { id: 'carto_dark_places', type: 'symbol' },
+        ],
+      });
+
+      // Sync on reloaded style
+      await syncForecastImpactLayers(mockMap, {
+        response: mockImpactResponse,
+        selectedDistrict: null,
+        opacity: 65,
+        visible: true,
+      });
+
+      // Must cleanly re-add source and layers before carto_dark_places
+      expect(mockMap.addSource).toHaveBeenCalledTimes(2);
+      expect(mockMap.addLayer).toHaveBeenCalledTimes(6);
+      expect(layersInMap[FORECAST_IMPACT_FILL_LAYER_ID]?.before).toBe('carto_dark_places');
+    });
+
+    it('6. updates existing district layer without creating duplicate sources or layers', async () => {
+      const mockSourceData = vi.fn();
+      const existingSource: any = { setData: mockSourceData };
+
+      const mockMap: any = {
+        getLayer: vi.fn((id: string) => {
+          if (
+            id === FORECAST_IMPACT_FILL_LAYER_ID ||
+            id === FORECAST_IMPACT_LINE_LAYER_ID ||
+            id === FORECAST_IMPACT_HIGHLIGHT_LAYER_ID
+          ) {
+            return { id };
+          }
+          return undefined;
+        }),
+        getSource: vi.fn((id: string) => (id === FORECAST_IMPACT_SOURCE_ID ? existingSource : undefined)),
+        addSource: vi.fn(),
+        addLayer: vi.fn(),
+        setLayoutProperty: vi.fn(),
+        setPaintProperty: vi.fn(),
+        setFilter: vi.fn(),
+        on: vi.fn(),
+        off: vi.fn(),
+        getCanvas: vi.fn(() => ({ style: {} })),
+        getStyle: vi.fn(() => ({
+          layers: [
+            { id: 'background', type: 'background' },
+            { id: FORECAST_IMPACT_FILL_LAYER_ID, type: 'fill' },
+            { id: FORECAST_IMPACT_LINE_LAYER_ID, type: 'line' },
+            { id: 'city_labels', type: 'symbol' },
+          ],
+        })),
+      };
+
+      await syncForecastImpactLayers(mockMap, {
+        response: mockImpactResponse,
+        selectedDistrict: null,
+        opacity: 80,
+        visible: true,
+      });
+
+      // No new source or layers added; existing source updated
+      expect(mockMap.addSource).not.toHaveBeenCalled();
+      expect(mockMap.addLayer).not.toHaveBeenCalled();
+      expect(mockSourceData).toHaveBeenCalledTimes(1);
+      expect(mockMap.setPaintProperty).toHaveBeenCalledWith(
+        FORECAST_IMPACT_FILL_LAYER_ID,
+        'fill-opacity',
+        expect.any(Array)
+      );
     });
   });
 });
