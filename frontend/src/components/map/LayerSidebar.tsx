@@ -57,6 +57,15 @@ export interface LayerSidebarProps {
   onToggleHumidityLayer?: (show: boolean) => void;
   showPressureLayer?: boolean;
   onTogglePressureLayer?: (show: boolean) => void;
+  // Phase 3C Forecast Timeline & Provenance additions
+  forecastGrid?: any;
+  forecastTimestepIndex?: number;
+  forecastOpacity?: number;
+  onChangeForecastOpacity?: (opacity: number) => void;
+  pressureContourInterval?: 2 | 4;
+  onChangePressureContourInterval?: (interval: 2 | 4) => void;
+  windParticleDensity?: 'light' | 'standard' | 'dense';
+  onChangeWindParticleDensity?: (density: 'light' | 'standard' | 'dense') => void;
 
   // Category C: JATAYU Intelligence
   isAuthorizedForSimulation: boolean;
@@ -103,6 +112,14 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
   onToggleHumidityLayer,
   showPressureLayer = false,
   onTogglePressureLayer,
+  forecastGrid = null,
+  forecastTimestepIndex = 0,
+  forecastOpacity = 80,
+  onChangeForecastOpacity,
+  pressureContourInterval = 4,
+  onChangePressureContourInterval,
+  windParticleDensity = 'standard',
+  onChangeWindParticleDensity,
   isAuthorizedForSimulation,
   userRole,
   showSimulation,
@@ -513,6 +530,99 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                 {showPressureLayer ? 'ENABLED' : 'DISABLED'}
               </button>
             </div>
+
+            {/* Pressure Sub-Controls (Interval 2 hPa / 4 hPa) */}
+            {showPressureLayer && (
+              <div className="p-1.5 bg-navy-900/80 border border-navy-800 rounded text-[9px] text-slate-400 flex items-center justify-between">
+                <span>Isobar Interval:</span>
+                <div className="flex gap-1">
+                  {[2, 4].map((hpa) => (
+                    <button
+                      key={hpa}
+                      onClick={() => onChangePressureContourInterval && onChangePressureContourInterval(hpa as 2 | 4)}
+                      className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold border transition-colors cursor-pointer ${
+                        pressureContourInterval === hpa
+                          ? 'bg-purple-900 text-purple-200 border-purple-500'
+                          : 'bg-navy-950 text-slate-400 border-navy-800 hover:text-white'
+                      }`}
+                    >
+                      {hpa} hPa
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Wind Sub-Controls (Density Light / Standard / Dense) */}
+            {showWindLayer && (
+              <div className="p-1.5 bg-navy-900/80 border border-navy-800 rounded text-[9px] text-slate-400 flex items-center justify-between">
+                <span>Particle Density:</span>
+                <div className="flex gap-1">
+                  {(['light', 'standard', 'dense'] as const).map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => onChangeWindParticleDensity && onChangeWindParticleDensity(d)}
+                      className={`px-1.5 py-0.5 rounded text-[8px] font-bold border transition-colors cursor-pointer ${
+                        windParticleDensity === d
+                          ? 'bg-teal-900 text-teal-200 border-teal-500'
+                          : 'bg-navy-950 text-slate-400 border-navy-800 hover:text-white'
+                      }`}
+                    >
+                      {d.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Forecast Opacity Slider (rendered if any forecast layer is on) */}
+            {(showPrecipLayer || showWindLayer || showTempLayer || showHumidityLayer || showPressureLayer) && (
+              <div className="space-y-1 pt-1 border-t border-teal-900/40">
+                <div className="flex justify-between text-[10px] text-slate-400">
+                  <span>Forecast Opacity:</span>
+                  <span className="font-bold text-white">{forecastOpacity}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="20"
+                  max="100"
+                  value={forecastOpacity}
+                  onChange={(e) => onChangeForecastOpacity && onChangeForecastOpacity(Number(e.target.value))}
+                  className="w-full accent-teal-500 h-1 bg-navy-800 rounded-lg cursor-pointer"
+                />
+              </div>
+            )}
+
+            {/* Forecast NWP Metadata & Model Run Provenance Card */}
+            {forecastGrid?.metadata && (
+              <div className="p-1.5 bg-navy-900/90 border border-teal-800/50 rounded text-[8.5px] text-slate-400 space-y-0.5">
+                <div className="flex justify-between text-slate-300">
+                  <span>Model:</span>
+                  <span className="font-semibold text-teal-300">{forecastGrid.metadata.model}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Run Cycle:</span>
+                  <span className="text-amber-300">{forecastGrid.metadata.runCycle} ({forecastGrid.metadata.initializationTime})</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Active Step:</span>
+                  <span className="font-mono text-white font-bold">T+{forecastTimestepIndex.toString().padStart(2, '0')}h</span>
+                </div>
+                <div className="text-[8px] text-slate-500 pt-0.5 border-t border-navy-800">
+                  Provider: {forecastGrid.metadata.provider}
+                </div>
+                {forecastGrid.metadata.isFallback && (
+                  <div className="text-[8px] text-amber-400 font-bold">
+                    ⚠️ FAILOVER ACTIVE (NOAA GFS)
+                  </div>
+                )}
+                {forecastGrid.metadata.isStale && (
+                  <div className="text-[8px] text-rose-400 font-bold">
+                    ⚠️ STALE CACHE ACTIVE
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

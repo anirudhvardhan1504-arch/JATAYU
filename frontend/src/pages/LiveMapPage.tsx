@@ -38,6 +38,12 @@ import {
   getLatestCompletedCompositeDate,
   SATELLITE_PRODUCTS,
 } from '../services/satellite';
+import {
+  ForecastProductType,
+  ForecastGridResponse,
+  OperationalSectorKey,
+  getForecastGrid,
+} from '../services/forecast';
 
 export interface LiveMapPageProps {
   location: { name: string; lat: number; lon: number };
@@ -57,6 +63,26 @@ export const SECTOR_QUICK_JUMPS = [
   { name: 'Dehradun Hill Catchment', lat: 30.3165, lon: 78.0322, label: 'Dehradun', code: 'DED' },
   { name: 'Kolkata Deltaic Zone', lat: 22.5726, lon: 88.3639, label: 'Kolkata', code: 'CCU' },
 ];
+
+function getNearestSectorKey(lat: number, lon: number): OperationalSectorKey {
+  const sectors: { key: OperationalSectorKey; lat: number; lon: number }[] = [
+    { key: 'mumbai', lat: 19.076, lon: 72.8777 },
+    { key: 'chennai', lat: 13.0827, lon: 80.2707 },
+    { key: 'guwahati', lat: 26.1445, lon: 91.7362 },
+    { key: 'dehradun', lat: 30.3165, lon: 78.0322 },
+    { key: 'kolkata', lat: 22.5726, lon: 88.3639 },
+  ];
+  let closest = sectors[0];
+  let minDist = Infinity;
+  for (const s of sectors) {
+    const d = Math.hypot(lat - s.lat, lon - s.lon);
+    if (d < minDist) {
+      minDist = d;
+      closest = s;
+    }
+  }
+  return closest.key;
+}
 
 export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   location,
@@ -90,12 +116,65 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   const activeSatelliteProductKey: SatelliteProductKey =
     satelliteMode === 'live' ? satelliteChannel : hdProduct;
 
-  // Category B: Forecast Maps State
+  // Category B: Forecast Maps State & Unified 72h Timeline
   const [showPrecipLayer, setShowPrecipLayer] = useState(true);
   const [showWindLayer, setShowWindLayer] = useState(false);
   const [showTempLayer, setShowTempLayer] = useState(false);
   const [showHumidityLayer, setShowHumidityLayer] = useState(false);
   const [showPressureLayer, setShowPressureLayer] = useState(false);
+
+  const [forecastGridData, setForecastGridData] = useState<ForecastGridResponse | null>(null);
+  const [forecastTimestepIndex, setForecastTimestepIndex] = useState<number>(0);
+  const [isForecastPlaying, setIsForecastPlaying] = useState<boolean>(false);
+  const [forecastPlaybackSpeed, setForecastPlaybackSpeed] = useState<number>(800);
+  const [timelineMode, setTimelineMode] = useState<'live' | 'forecast'>('live');
+  const [forecastOpacity, setForecastOpacity] = useState<number>(80);
+  const [pressureContourInterval, setPressureContourInterval] = useState<2 | 4>(4);
+  const [windParticleDensity, setWindParticleDensity] = useState<'light' | 'standard' | 'dense'>('standard');
+  const [windSpeedMultiplier, setWindSpeedMultiplier] = useState<number>(1.0);
+
+  // Ingest genuine NWP forecast grid whenever the selected operational sector changes
+  useEffect(() => {
+    let isSubscribed = true;
+    const sectorKey = getNearestSectorKey(location.lat, location.lon);
+    getForecastGrid('sector', sectorKey)
+      .then((grid) => {
+        if (!isSubscribed || !grid) return;
+        setForecastGridData(grid);
+      })
+      .catch((err) => {
+        console.warn('[LiveMapPage] Failed to fetch forecast grid:', err);
+      });
+    return () => {
+      isSubscribed = false;
+    };
+  }, [location.lat, location.lon]);
+
+  // Unified Forecast Timeline Playback Timer
+  useEffect(() => {
+    if (!isForecastPlaying || !forecastGridData) return;
+    const totalSteps = forecastGridData.nodes?.[0]?.hourly?.length || 72;
+    const timer = setInterval(() => {
+      setForecastTimestepIndex((prev) => (prev + 1) % totalSteps);
+    }, forecastPlaybackSpeed);
+    return () => clearInterval(timer);
+  }, [isForecastPlaying, forecastGridData, forecastPlaybackSpeed]);
+
+  // Determine active forecast scalar product
+  const activeForecastProduct: ForecastProductType = useMemo(() => {
+    if (showTempLayer) return 'temperature';
+    if (showHumidityLayer) return 'humidity';
+    if (showPressureLayer && !showPrecipLayer) return 'pressure';
+    return 'precipitation';
+  }, [showTempLayer, showHumidityLayer, showPressureLayer, showPrecipLayer]);
+
+  const isAnyForecastScalarActive = Boolean(
+    showPrecipLayer || showTempLayer || showHumidityLayer || (showPressureLayer && !showPrecipLayer)
+  );
+
+  const hasActiveForecastLayer = Boolean(
+    isAnyForecastScalarActive || showPressureLayer || showWindLayer
+  );
 
   // Category C: JATAYU Intelligence State
   const [showSimulation, setShowSimulation] = useState(false);
@@ -391,6 +470,23 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           onToggleSimulation={handleToggleSimulation}
           activeRadarTileUrl={activeFrame?.tileUrl ?? null}
           activeRadarTimestamp={activeFrame?.time ?? null}
+          // Forecast Props (Phase 3C Unified Integration)
+          showForecast={isAnyForecastScalarActive}
+          forecastProduct={activeForecastProduct}
+          forecastTimestepIndex={forecastTimestepIndex}
+          forecastOpacity={forecastOpacity}
+          forecastGridData={forecastGridData}
+          onToggleForecast={setShowPrecipLayer}
+          showPressureContours={showPressureLayer}
+          pressureContourInterval={pressureContourInterval}
+          onTogglePressureContours={setShowPressureLayer}
+          showWindParticles={showWindLayer}
+          windParticleDensity={windParticleDensity}
+          windSpeedMultiplier={windSpeedMultiplier}
+          isWindPlaying={true}
+          onToggleWindParticles={setShowWindLayer}
+          onChangeWindSpeedMultiplier={setWindSpeedMultiplier}
+          onChangeWindParticleDensity={setWindParticleDensity}
           variant="full"
           hideDefaultControls={true}
           className="w-full h-full min-h-full rounded-none border-none"
@@ -426,6 +522,15 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         onToggleHumidityLayer={setShowHumidityLayer}
         showPressureLayer={showPressureLayer}
         onTogglePressureLayer={setShowPressureLayer}
+        // Phase 3C Forecast additions
+        forecastGrid={forecastGridData}
+        forecastTimestepIndex={forecastTimestepIndex}
+        forecastOpacity={forecastOpacity}
+        onChangeForecastOpacity={setForecastOpacity}
+        pressureContourInterval={pressureContourInterval}
+        onChangePressureContourInterval={setPressureContourInterval}
+        windParticleDensity={windParticleDensity}
+        onChangeWindParticleDensity={setWindParticleDensity}
         isAuthorizedForSimulation={isAuthorized}
         userRole={user?.role}
         showSimulation={showSimulation}
@@ -518,6 +623,32 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           hdCompositeDate={getLatestCompletedCompositeDate()}
           showRadar={showRadar}
           showSatellite={showSatellite}
+
+          // Phase 3C Unified Forecast Timeline additions
+          forecastGrid={forecastGridData}
+          activeForecastTimestepIndex={forecastTimestepIndex}
+          isForecastPlaying={isForecastPlaying}
+          forecastPlaybackSpeed={forecastPlaybackSpeed}
+          onToggleForecastPlay={() => {
+            setIsForecastPlaying(!isForecastPlaying);
+          }}
+          onStepBackForecast={() => {
+            setIsForecastPlaying(false);
+            setForecastTimestepIndex((prev) => Math.max(0, prev - 1));
+          }}
+          onStepForwardForecast={() => {
+            setIsForecastPlaying(false);
+            const maxIdx = (forecastGridData?.nodes?.[0]?.hourly?.length || 72) - 1;
+            setForecastTimestepIndex((prev) => Math.min(maxIdx, prev + 1));
+          }}
+          onSeekForecast={(idx) => {
+            setIsForecastPlaying(false);
+            setForecastTimestepIndex(idx);
+          }}
+          onChangeForecastSpeed={setForecastPlaybackSpeed}
+          timelineMode={timelineMode}
+          onChangeTimelineMode={setTimelineMode}
+          hasActiveForecastLayer={hasActiveForecastLayer}
         />
       </div>
     </div>
