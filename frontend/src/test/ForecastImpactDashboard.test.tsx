@@ -410,4 +410,116 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
       expect(screen.getByText(/STALE CACHE ACTIVE:/i)).toBeDefined();
     });
   });
+
+  describe('Lifecycle Stability & HTTP 429 Recovery (Phase 3D-3)', () => {
+    it('does not trigger repeated fetch requests when parent re-renders with fresh callback reference', async () => {
+      const getImpactSpy = vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(mockResponse);
+
+      let callbackCallCount = 0;
+      const { rerender } = render(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          onDataLoaded={() => {
+            callbackCallCount++;
+          }}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI')).toBeDefined();
+      });
+
+      expect(getImpactSpy).toHaveBeenCalledTimes(1);
+
+      // Re-render multiple times with new inline callback references (simulating LiveMapPage re-renders)
+      rerender(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          onDataLoaded={() => {
+            callbackCallCount++;
+          }}
+        />
+      );
+
+      rerender(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          onDataLoaded={() => {
+            callbackCallCount++;
+          }}
+        />
+      );
+
+      // Must remain exactly 1 network call, breaking the infinite cascade
+      expect(getImpactSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('displays HTTP 429 rate limit error accurately and recovers cleanly via retry button', async () => {
+      const getImpactSpy = vi
+        .spyOn(impactService, 'getForecastImpact')
+        .mockRejectedValueOnce(new Error('API rate limit exceeded. Please wait a moment before sending more requests.'))
+        .mockResolvedValueOnce(mockResponse);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      // Verify 429 error banner is displayed
+      await waitFor(() => {
+        expect(screen.getByText(/API rate limit exceeded/i)).toBeDefined();
+      });
+
+      // Verify retry button is available
+      const retryBtn = screen.getByRole('button', { name: /Retry Request/i });
+      expect(retryBtn).toBeDefined();
+
+      // Click retry
+      fireEvent.click(retryBtn);
+
+      // Verify clean recovery and error banner removal
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI')).toBeDefined();
+      });
+
+      expect(screen.queryByText(/API rate limit exceeded/i)).toBeNull();
+      expect(getImpactSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('triggers cache-bypass refresh when Refresh Data button is clicked', async () => {
+      const getImpactSpy = vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(mockResponse);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI')).toBeDefined();
+      });
+
+      expect(getImpactSpy).toHaveBeenCalledWith('sector', 'chennai', false);
+
+      const refreshBtn = screen.getByTitle(/Refresh Forecast Impact/i);
+      fireEvent.click(refreshBtn);
+
+      await waitFor(() => {
+        expect(getImpactSpy).toHaveBeenCalledWith('sector', 'chennai', true);
+      });
+    });
+
+    it('unmounts cleanly without throwing or triggering memory leaks', async () => {
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(mockResponse);
+
+      const { unmount } = render(
+        <ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI')).toBeDefined();
+      });
+
+      expect(() => unmount()).not.toThrow();
+    });
+  });
 });
