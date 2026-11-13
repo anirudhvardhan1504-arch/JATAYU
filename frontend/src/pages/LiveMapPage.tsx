@@ -31,6 +31,12 @@ import {
   LiveSatelliteChannel,
   HDSatelliteProduct,
   SatelliteProductKey,
+  SatelliteTimeline,
+  SatelliteAnimationFrame,
+  generateSatelliteTimeline,
+  getSatelliteTileUrl,
+  getLatestCompletedCompositeDate,
+  SATELLITE_PRODUCTS,
 } from '../services/satellite';
 
 export interface LiveMapPageProps {
@@ -105,6 +111,13 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(800); // ms per frame
 
+  // Phase 2C: Satellite Timeline Animation State (Independent loop & driver)
+  const [satelliteTimeline, setSatelliteTimeline] = useState<SatelliteTimeline | null>(null);
+  const [activeSatFrameIndex, setActiveSatFrameIndex] = useState<number>(-1);
+  const [isSatPlaying, setIsSatPlaying] = useState(false);
+  const [satPlaybackSpeed, setSatPlaybackSpeed] = useState<number>(800); // ms per frame
+  const [activeTimelineDriver, setActiveTimelineDriver] = useState<'satellite' | 'radar'>('satellite');
+
   // Fetch verified RainViewer animation timeline
   useEffect(() => {
     let isSubscribed = true;
@@ -120,7 +133,19 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
     };
   }, []);
 
-  // Playback timer loop
+  // Initialize and update satellite timeline when product changes
+  useEffect(() => {
+    const satTl = generateSatelliteTimeline(activeSatelliteProductKey);
+    setSatelliteTimeline(satTl);
+    if (satTl.frames.length > 0) {
+      setActiveSatFrameIndex(satTl.frames.length - 1);
+    }
+    if (satelliteMode === 'hd') {
+      setIsSatPlaying(false);
+    }
+  }, [activeSatelliteProductKey, satelliteMode]);
+
+  // Radar playback timer loop
   useEffect(() => {
     if (!isPlaying || !timeline || timeline.radarFrames.length === 0) return;
 
@@ -137,9 +162,46 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
     return () => clearInterval(timer);
   }, [isPlaying, timeline, playbackSpeed]);
 
+  // Satellite playback timer loop (Smooth double-buffered frame progression)
+  useEffect(() => {
+    if (!isSatPlaying || !satelliteTimeline || satelliteTimeline.frames.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setActiveSatFrameIndex((prevIndex) => {
+        const next = prevIndex + 1;
+        if (next >= satelliteTimeline.frames.length) {
+          return 0; // loop back to start
+        }
+        return next;
+      });
+    }, satPlaybackSpeed);
+
+    return () => clearInterval(timer);
+  }, [isSatPlaying, satelliteTimeline, satPlaybackSpeed]);
+
   const activeFrame: RadarAnimationFrame | null =
     timeline && activeFrameIndex >= 0 && activeFrameIndex < timeline.radarFrames.length
       ? timeline.radarFrames[activeFrameIndex]
+      : null;
+
+  const activeSatFrame: SatelliteAnimationFrame | null =
+    satelliteTimeline && activeSatFrameIndex >= 0 && activeSatFrameIndex < satelliteTimeline.frames.length
+      ? satelliteTimeline.frames[activeSatFrameIndex]
+      : null;
+
+  const activeSatTileUrl = activeSatFrame
+    ? activeSatFrame.tileUrl
+    : getSatelliteTileUrl(activeSatelliteProductKey);
+
+  // Preload next frame for flicker-free double buffering
+  const nextSatFrameIndex =
+    satelliteTimeline && satelliteTimeline.frames.length > 1
+      ? (activeSatFrameIndex + 1) % satelliteTimeline.frames.length
+      : -1;
+
+  const preloadSatTileUrl =
+    nextSatFrameIndex >= 0 && satelliteTimeline
+      ? satelliteTimeline.frames[nextSatFrameIndex].tileUrl
       : null;
 
   // Toggle SFINCS hydrodynamic simulation with strict RBAC gate
@@ -320,6 +382,9 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           showSatellite={showSatellite}
           onToggleSatellite={setShowSatellite}
           satelliteProductKey={activeSatelliteProductKey}
+          activeSatelliteTileUrl={activeSatTileUrl}
+          preloadSatelliteTileUrl={preloadSatTileUrl}
+          activeSatelliteTimestamp={activeSatFrame?.time ?? null}
           showSimulation={showSimulation}
           simulationGeojson={simulationData?.geojson ?? simulationData?.contours ?? null}
           simulationMeta={simulationData?.metadata ?? null}
@@ -422,6 +487,37 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
             setActiveFrameIndex(idx);
           }}
           onChangeSpeed={setPlaybackSpeed}
+
+          satelliteTimeline={satelliteTimeline}
+          activeSatelliteFrameIndex={activeSatFrameIndex}
+          isSatellitePlaying={isSatPlaying}
+          satellitePlaybackSpeed={satPlaybackSpeed}
+          activeDriver={activeTimelineDriver}
+          onChangeDriver={setActiveTimelineDriver}
+          onToggleSatellitePlay={() => {
+            if (!satelliteTimeline || satelliteTimeline.frames.length <= 1) return;
+            setIsSatPlaying(!isSatPlaying);
+          }}
+          onStepBackSatellite={() => {
+            if (!satelliteTimeline || satelliteTimeline.frames.length <= 1) return;
+            setIsSatPlaying(false);
+            setActiveSatFrameIndex((prev) => Math.max(0, prev - 1));
+          }}
+          onStepForwardSatellite={() => {
+            if (!satelliteTimeline || satelliteTimeline.frames.length <= 1) return;
+            setIsSatPlaying(false);
+            setActiveSatFrameIndex((prev) => Math.min(satelliteTimeline.frames.length - 1, prev + 1));
+          }}
+          onSeekSatellite={(idx) => {
+            setIsSatPlaying(false);
+            setActiveSatFrameIndex(idx);
+          }}
+          onChangeSatelliteSpeed={setSatPlaybackSpeed}
+          isHDMode={satelliteMode === 'hd'}
+          hdProductName={SATELLITE_PRODUCTS[activeSatelliteProductKey]?.shortLabel}
+          hdCompositeDate={getLatestCompletedCompositeDate()}
+          showRadar={showRadar}
+          showSatellite={showSatellite}
         />
       </div>
     </div>

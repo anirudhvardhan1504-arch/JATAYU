@@ -209,3 +209,112 @@ export function getEstimatedLiveObservationTime(): {
     latencyMinutes: 40,
   };
 }
+
+/**
+ * Single historical observation frame for satellite animation loops.
+ */
+export interface SatelliteAnimationFrame {
+  time: number; // Unix timestamp in seconds
+  isoString: string; // ISO 8601 UTC string (e.g. "2026-11-13T04:10:00Z")
+  tileUrl: string; // GIBS WMTS URL with this explicit ISO timestamp
+  label: string; // Local time display string e.g. "09:40"
+  utcLabel: string; // UTC display e.g. "04:10 UTC"
+  relativeTime: string; // Relative offset e.g. "40m ago (Latest)"
+  isLatest: boolean;
+}
+
+/**
+ * Complete timeline model for satellite playback and scrubbing.
+ */
+export interface SatelliteTimeline {
+  frames: SatelliteAnimationFrame[];
+  latestIso: string;
+  productKey: SatelliteProductKey;
+  latencyMinutes: number;
+}
+
+/**
+ * Generates historical observation frames for NASA GIBS Himawari-9 geostationary channels.
+ *
+ * Cadence: Strictly 10 minutes (PT10M) at :00, :10, :20, :30, :40, :50.
+ * Ingestion latency: ~40 minutes.
+ * Standard historical window: default 12 frames (2 hours of atmospheric evolution).
+ *
+ * For HD daily composite modes (VIIRS / MODIS), returns a single composite frame.
+ */
+export function generateSatelliteTimeline(
+  productKey: SatelliteProductKey = 'ir',
+  frameCount: number = 12
+): SatelliteTimeline {
+  const config = SATELLITE_PRODUCTS[productKey] || SATELLITE_PRODUCTS.ir;
+  const isLive = config.mode === 'live';
+
+  // For HD daily composites (MODIS / VIIRS), generate a single daily composite frame
+  if (!isLive) {
+    const compositeDate = getLatestCompletedCompositeDate();
+    const tileUrl = getSatelliteTileUrl(productKey, compositeDate);
+    const dateObj = new Date(`${compositeDate}T00:00:00Z`);
+    return {
+      frames: [
+        {
+          time: Math.floor(dateObj.getTime() / 1000),
+          isoString: compositeDate,
+          tileUrl,
+          label: compositeDate,
+          utcLabel: `${compositeDate} UTC`,
+          relativeTime: 'Daily Composite',
+          isLatest: true,
+        },
+      ],
+      latestIso: compositeDate,
+      productKey,
+      latencyMinutes: 1440,
+    };
+  }
+
+  // Live Geostationary 10-minute cadence (Himawari-9 AHI)
+  const now = Date.now();
+  const latencyMs = 40 * 60 * 1000;
+  const latestTargetMs = now - latencyMs;
+  const latestTargetDate = new Date(latestTargetMs);
+  const latestMinutes = Math.floor(latestTargetDate.getUTCMinutes() / 10) * 10;
+  latestTargetDate.setUTCMinutes(latestMinutes, 0, 0);
+  latestTargetDate.setUTCMilliseconds(0);
+
+  const frames: SatelliteAnimationFrame[] = [];
+  for (let i = frameCount - 1; i >= 0; i--) {
+    const frameMs = latestTargetDate.getTime() - i * 10 * 60 * 1000;
+    const frameDate = new Date(frameMs);
+    const isoString = frameDate.toISOString().replace(/\.\d{3}Z$/, 'Z');
+    const tileUrl = getSatelliteTileUrl(productKey, isoString);
+    const diffMinutes = Math.round((now - frameMs) / (60 * 1000));
+
+    let relativeTime: string;
+    if (i === 0) {
+      relativeTime = '40m ago (Latest)';
+    } else if (diffMinutes < 60) {
+      relativeTime = `${diffMinutes}m ago`;
+    } else {
+      const hours = Math.floor(diffMinutes / 60);
+      const remMin = diffMinutes % 60;
+      relativeTime = remMin === 0 ? `${hours}h ago` : `${hours}h ${remMin}m ago`;
+    }
+
+    frames.push({
+      time: Math.floor(frameMs / 1000),
+      isoString,
+      tileUrl,
+      label: frameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      utcLabel: `${isoString.slice(11, 16)} UTC`,
+      relativeTime,
+      isLatest: i === 0,
+    });
+  }
+
+  return {
+    frames,
+    latestIso: frames[frames.length - 1]?.isoString || '',
+    productKey,
+    latencyMinutes: 40,
+  };
+}

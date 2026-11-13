@@ -4,6 +4,7 @@ import {
   SECTOR_VIEWING_CHARACTERISTICS,
   getSatelliteTileUrl,
   getEstimatedLiveObservationTime,
+  generateSatelliteTimeline,
 } from '../services/satellite';
 
 describe('Satellite Service Unit Tests', () => {
@@ -62,5 +63,41 @@ describe('Satellite Service Unit Tests', () => {
     expect(SECTOR_VIEWING_CHARACTERISTICS.Chennai).toBeDefined();
     expect(SECTOR_VIEWING_CHARACTERISTICS.Kolkata).toBeDefined();
     expect(SECTOR_VIEWING_CHARACTERISTICS.Dehradun).toBeDefined();
+  });
+
+  it('generates chronological geostationary observation timeline with 10-minute cadence', () => {
+    const timeline = generateSatelliteTimeline('ir', 12);
+    expect(timeline.productKey).toBe('ir');
+    expect(timeline.latencyMinutes).toBe(40);
+    expect(timeline.frames.length).toBe(12);
+
+    // Verify chronological order and 10-minute (600s) spacing
+    for (let i = 0; i < timeline.frames.length - 1; i++) {
+      const current = timeline.frames[i];
+      const next = timeline.frames[i + 1];
+      expect(next.time - current.time).toBe(600); // 10 minutes
+      expect(current.isLatest).toBe(false);
+      expect(current.tileUrl).toContain(current.isoString);
+    }
+
+    const latestFrame = timeline.frames[timeline.frames.length - 1];
+    expect(latestFrame.isLatest).toBe(true);
+    expect(latestFrame.relativeTime).toContain('40m ago (Latest)');
+    expect(latestFrame.tileUrl).toContain('Himawari_AHI_Band13_Clean_Infrared');
+    expect(latestFrame.tileUrl).toContain(latestFrame.isoString);
+  });
+
+  it('isolates HD daily optical composites from 10-minute geostationary animation', () => {
+    const viirsTimeline = generateSatelliteTimeline('viirs');
+    expect(viirsTimeline.productKey).toBe('viirs');
+    expect(viirsTimeline.frames.length).toBe(1);
+    expect(viirsTimeline.frames[0].relativeTime).toBe('Daily Composite');
+    expect(viirsTimeline.frames[0].isLatest).toBe(true);
+    expect(viirsTimeline.frames[0].tileUrl).toContain('VIIRS_NOAA20_CorrectedReflectance_TrueColor');
+
+    const modisTimeline = generateSatelliteTimeline('modis');
+    expect(modisTimeline.frames.length).toBe(1);
+    expect(modisTimeline.frames[0].relativeTime).toBe('Daily Composite');
+    expect(modisTimeline.frames[0].tileUrl).toContain('MODIS_Terra_CorrectedReflectance_TrueColor');
   });
 });

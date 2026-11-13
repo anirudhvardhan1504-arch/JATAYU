@@ -26,6 +26,9 @@ export interface TacticalMapProps {
   onToggleSatellite?: (visible: boolean) => void;
   satelliteProductKey?: SatelliteProductKey;
   satelliteTileUrl?: string | null;
+  activeSatelliteTileUrl?: string | null;
+  preloadSatelliteTileUrl?: string | null;
+  activeSatelliteTimestamp?: number | null;
   initialCenter?: [number, number];
   showSimulation?: boolean;
   simulationGeojson?: GeoJSON.FeatureCollection | null;
@@ -54,6 +57,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   onToggleSatellite,
   satelliteProductKey = 'ir',
   satelliteTileUrl = null,
+  activeSatelliteTileUrl = null,
+  preloadSatelliteTileUrl = null,
+  activeSatelliteTimestamp = null,
   initialCenter = [72.8777, 19.076],
   showSimulation = false,
   simulationGeojson = null,
@@ -68,6 +74,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  const currentSatBufferRef = useRef<'a' | 'b'>('a');
+  const lastSatTileUrlRef = useRef<string | null>(null);
 
   const [mapError, setMapError] = useState<string | null>(null);
   const [radarInfo, setRadarInfo] = useState<RainViewerRadarInfo | null>(null);
@@ -407,16 +415,18 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [showRadar]);
 
-  // Synchronize NASA GIBS Satellite Layer when product or tile URL changes
+  // Initialize / Reconfigure Double-Buffered NASA GIBS Satellite Layers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     const satConfig = SATELLITE_PRODUCTS[satelliteProductKey] || SATELLITE_PRODUCTS.ir;
-    const satTileUrl = satelliteTileUrl || getSatelliteTileUrl(satConfig.key);
+    const initialTileUrl = activeSatelliteTileUrl || satelliteTileUrl || getSatelliteTileUrl(satConfig.key);
+    const initialPreloadUrl = preloadSatelliteTileUrl || initialTileUrl;
 
     const setupSatellite = () => {
       try {
+        // Clean up legacy single layer if present
         if (map.getLayer('nasa-gibs-satellite-layer')) {
           map.removeLayer('nasa-gibs-satellite-layer');
         }
@@ -424,9 +434,34 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           map.removeSource('nasa-gibs-satellite');
         }
 
-        map.addSource('nasa-gibs-satellite', {
+        // Clean up double buffers if present
+        if (map.getLayer('nasa-gibs-satellite-layer-a')) {
+          map.removeLayer('nasa-gibs-satellite-layer-a');
+        }
+        if (map.getLayer('nasa-gibs-satellite-layer-b')) {
+          map.removeLayer('nasa-gibs-satellite-layer-b');
+        }
+        if (map.getSource('nasa-gibs-satellite-source-a')) {
+          map.removeSource('nasa-gibs-satellite-source-a');
+        }
+        if (map.getSource('nasa-gibs-satellite-source-b')) {
+          map.removeSource('nasa-gibs-satellite-source-b');
+        }
+
+        // Add Buffer A Source
+        map.addSource('nasa-gibs-satellite-source-a', {
           type: 'raster',
-          tiles: [satTileUrl],
+          tiles: [initialTileUrl],
+          tileSize: 256,
+          minzoom: satConfig.minZoom,
+          maxzoom: satConfig.maxZoom,
+          attribution: satConfig.attribution,
+        });
+
+        // Add Buffer B Source (Preload)
+        map.addSource('nasa-gibs-satellite-source-b', {
+          type: 'raster',
+          tiles: [initialPreloadUrl],
           tileSize: 256,
           minzoom: satConfig.minZoom,
           maxzoom: satConfig.maxZoom,
@@ -439,13 +474,15 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           ? 'adyar-simulation-fill'
           : undefined;
 
+        // Buffer A Layer (Initially active)
         map.addLayer(
           {
-            id: 'nasa-gibs-satellite-layer',
+            id: 'nasa-gibs-satellite-layer-a',
             type: 'raster',
-            source: 'nasa-gibs-satellite',
+            source: 'nasa-gibs-satellite-source-a',
             paint: {
-              'raster-opacity': satelliteOpacity / 100,
+              'raster-opacity': showSatellite ? satelliteOpacity / 100 : 0,
+              'raster-opacity-transition': { duration: 150, delay: 0 },
             },
             layout: {
               visibility: showSatellite ? 'visible' : 'none',
@@ -453,8 +490,28 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           },
           beforeLayer
         );
+
+        // Buffer B Layer (Initially dormant)
+        map.addLayer(
+          {
+            id: 'nasa-gibs-satellite-layer-b',
+            type: 'raster',
+            source: 'nasa-gibs-satellite-source-b',
+            paint: {
+              'raster-opacity': 0,
+              'raster-opacity-transition': { duration: 150, delay: 0 },
+            },
+            layout: {
+              visibility: showSatellite ? 'visible' : 'none',
+            },
+          },
+          beforeLayer
+        );
+
+        currentSatBufferRef.current = 'a';
+        lastSatTileUrlRef.current = initialTileUrl;
       } catch (err) {
-        console.warn('Satellite layer setup error:', err);
+        console.warn('Satellite double-buffered layer setup error:', err);
       }
     };
 
@@ -463,32 +520,112 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     } else {
       setupSatellite();
     }
-  }, [satelliteProductKey, satelliteTileUrl, showSatellite]);
+  }, [satelliteProductKey]);
+
+  // Synchronize Active Frame and Perform Double-Buffered Swap
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || typeof map.getLayer !== 'function') return;
+
+    const effectiveUrl = activeSatelliteTileUrl || satelliteTileUrl;
+    if (!effectiveUrl) return;
+
+    const hasLayerA = !!map.getLayer('nasa-gibs-satellite-layer-a');
+    const hasLayerB = !!map.getLayer('nasa-gibs-satellite-layer-b');
+    if (!hasLayerA || !hasLayerB) return;
+
+    // If active URL hasn't changed, but preload changed, update inactive buffer source
+    if (effectiveUrl === lastSatTileUrlRef.current) {
+      if (preloadSatelliteTileUrl) {
+        const inactiveBuffer = currentSatBufferRef.current === 'a' ? 'b' : 'a';
+        const inactiveSrc = map.getSource(`nasa-gibs-satellite-source-${inactiveBuffer}`) as maplibregl.RasterTileSource | undefined;
+        if (inactiveSrc && typeof inactiveSrc.setTiles === 'function') {
+          try {
+            inactiveSrc.setTiles([preloadSatelliteTileUrl]);
+          } catch {
+            // Ignored
+          }
+        }
+      }
+      return;
+    }
+
+    lastSatTileUrlRef.current = effectiveUrl;
+
+    const currBuffer = currentSatBufferRef.current;
+    const targetBuffer = currBuffer === 'a' ? 'b' : 'a';
+    const targetLayerId = `nasa-gibs-satellite-layer-${targetBuffer}`;
+    const targetSourceId = `nasa-gibs-satellite-source-${targetBuffer}`;
+    const oldLayerId = `nasa-gibs-satellite-layer-${currBuffer}`;
+    const oldSourceId = `nasa-gibs-satellite-source-${currBuffer}`;
+
+    try {
+      // 1. Ensure target buffer source has the new frame's tile URL
+      const targetSrc = map.getSource(targetSourceId) as maplibregl.RasterTileSource | undefined;
+      if (targetSrc && typeof targetSrc.setTiles === 'function') {
+        targetSrc.setTiles([effectiveUrl]);
+      }
+
+      // 2. Crossfade: target buffer becomes visible, old buffer fades out
+      if (map.getLayer(targetLayerId)) {
+        map.setLayoutProperty?.(targetLayerId, 'visibility', showSatellite ? 'visible' : 'none');
+        map.setPaintProperty?.(targetLayerId, 'raster-opacity', showSatellite ? satelliteOpacity / 100 : 0);
+      }
+      if (map.getLayer(oldLayerId)) {
+        map.setPaintProperty?.(oldLayerId, 'raster-opacity', 0);
+      }
+
+      // 3. Switch active buffer
+      currentSatBufferRef.current = targetBuffer;
+
+      // 4. Preload next frame onto the newly inactive buffer
+      if (preloadSatelliteTileUrl) {
+        const oldSrc = map.getSource(oldSourceId) as maplibregl.RasterTileSource | undefined;
+        if (oldSrc && typeof oldSrc.setTiles === 'function') {
+          oldSrc.setTiles([preloadSatelliteTileUrl]);
+        }
+      }
+    } catch {
+      // Ignored if map is in transition
+    }
+  }, [activeSatelliteTileUrl, preloadSatelliteTileUrl, showSatellite, satelliteOpacity, satelliteTileUrl]);
 
   // Synchronize Satellite Opacity
   useEffect(() => {
     const map = mapRef.current;
     if (!map || typeof map.getLayer !== 'function') return;
     try {
+      const activeLayerId = `nasa-gibs-satellite-layer-${currentSatBufferRef.current}`;
+      if (map.getLayer(activeLayerId)) {
+        map.setPaintProperty?.(activeLayerId, 'raster-opacity', showSatellite ? satelliteOpacity / 100 : 0);
+      }
+      // Also support legacy single layer if present in older tests
       if (map.getLayer('nasa-gibs-satellite-layer')) {
-        map.setPaintProperty?.('nasa-gibs-satellite-layer', 'raster-opacity', satelliteOpacity / 100);
+        map.setPaintProperty?.('nasa-gibs-satellite-layer', 'raster-opacity', showSatellite ? satelliteOpacity / 100 : 0);
       }
     } catch {
       // Ignored
     }
-  }, [satelliteOpacity]);
+  }, [satelliteOpacity, showSatellite]);
 
   // Synchronize Satellite Visibility
   useEffect(() => {
     const map = mapRef.current;
     if (!map || typeof map.getLayer !== 'function') return;
+    const visibility = showSatellite ? 'visible' : 'none';
     try {
+      const activeLayerId = `nasa-gibs-satellite-layer-${currentSatBufferRef.current}`;
+      const inactiveLayerId = `nasa-gibs-satellite-layer-${currentSatBufferRef.current === 'a' ? 'b' : 'a'}`;
+      if (map.getLayer(activeLayerId)) {
+        map.setLayoutProperty?.(activeLayerId, 'visibility', visibility);
+        map.setPaintProperty?.(activeLayerId, 'raster-opacity', showSatellite ? satelliteOpacity / 100 : 0);
+      }
+      if (map.getLayer(inactiveLayerId)) {
+        map.setLayoutProperty?.(inactiveLayerId, 'visibility', visibility);
+        map.setPaintProperty?.(inactiveLayerId, 'raster-opacity', 0);
+      }
       if (map.getLayer('nasa-gibs-satellite-layer')) {
-        map.setLayoutProperty?.(
-          'nasa-gibs-satellite-layer',
-          'visibility',
-          showSatellite ? 'visible' : 'none'
-        );
+        map.setLayoutProperty?.('nasa-gibs-satellite-layer', 'visibility', visibility);
       }
     } catch {
       // Ignored
@@ -713,8 +850,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                   </button>
                 </div>
                 {showSatellite && (
-                  <div className="text-[9px] text-slate-400 font-mono">
-                    {SATELLITE_PRODUCTS[satelliteProductKey]?.shortLabel || 'Infrared'} • {satelliteOpacity}%
+                  <div className="text-[9px] text-slate-400 font-mono space-y-0.5">
+                    <div>{SATELLITE_PRODUCTS[satelliteProductKey]?.shortLabel || 'Infrared'} • {satelliteOpacity}%</div>
+                    {activeSatelliteTimestamp && (
+                      <div className="text-[8.5px] text-cyan-300">
+                        {new Date(activeSatelliteTimestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

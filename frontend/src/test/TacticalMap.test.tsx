@@ -68,7 +68,7 @@ describe('TacticalMap Component Unit & Integration Tests', () => {
     Object.keys(addedLayers).forEach((k) => delete addedLayers[k]);
 
     mockAddSource.mockImplementation((id: string, def: any) => {
-      addedSources[id] = { setData: vi.fn(), ...def };
+      addedSources[id] = { setData: vi.fn(), setTiles: vi.fn(), ...def };
     });
     mockGetSource.mockImplementation((id: string) => addedSources[id]);
     mockRemoveSource.mockImplementation((id: string) => {
@@ -551,7 +551,7 @@ describe('LiveMapPage Integration Tests', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('initializes NASA GIBS satellite raster source and layer in MapLibre', async () => {
+  it('initializes double-buffered NASA GIBS satellite raster sources and layers in MapLibre', async () => {
     render(
       <TacticalMap
         center={[72.8777, 19.076]}
@@ -562,19 +562,56 @@ describe('LiveMapPage Integration Tests', () => {
       />
     );
 
-    // Verify source registration
-    expect(addedSources['nasa-gibs-satellite']).toBeDefined();
-    expect(addedSources['nasa-gibs-satellite'].tiles[0]).toContain('Himawari_AHI_Band13_Clean_Infrared');
-    expect(addedSources['nasa-gibs-satellite'].maxzoom).toBe(6);
+    // Verify double-buffered sources registration (A and B)
+    expect(addedSources['nasa-gibs-satellite-source-a']).toBeDefined();
+    expect(addedSources['nasa-gibs-satellite-source-b']).toBeDefined();
+    expect(addedSources['nasa-gibs-satellite-source-a'].tiles[0]).toContain('Himawari_AHI_Band13_Clean_Infrared');
+    expect(addedSources['nasa-gibs-satellite-source-a'].maxzoom).toBe(6);
 
-    // Verify layer registration
-    expect(addedLayers['nasa-gibs-satellite-layer']).toBeDefined();
-    expect(addedLayers['nasa-gibs-satellite-layer'].type).toBe('raster');
-    expect(addedLayers['nasa-gibs-satellite-layer'].paint['raster-opacity']).toBe(0.8);
-    expect(addedLayers['nasa-gibs-satellite-layer'].layout.visibility).toBe('visible');
+    // Verify double-buffered layers registration (A active, B dormant)
+    expect(addedLayers['nasa-gibs-satellite-layer-a']).toBeDefined();
+    expect(addedLayers['nasa-gibs-satellite-layer-b']).toBeDefined();
+    expect(addedLayers['nasa-gibs-satellite-layer-a'].paint['raster-opacity']).toBe(0.8);
+    expect(addedLayers['nasa-gibs-satellite-layer-b'].paint['raster-opacity']).toBe(0);
+    expect(addedLayers['nasa-gibs-satellite-layer-a'].layout.visibility).toBe('visible');
   });
 
-  it('updates satellite layer when product key or opacity changes', async () => {
+  it('performs smooth double-buffered frame swapping when active satellite tile URL changes', async () => {
+    const { rerender } = render(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={80}
+        satelliteProductKey="ir"
+        activeSatelliteTileUrl="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band13_Clean_Infrared/default/2026-11-13T03:50:00Z/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png"
+      />
+    );
+
+    expect(addedSources['nasa-gibs-satellite-source-a']).toBeDefined();
+
+    // Frame advances: next frame becomes active
+    const nextFrameUrl = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band13_Clean_Infrared/default/2026-11-13T04:00:00Z/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png";
+    const preloadFrameUrl = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band13_Clean_Infrared/default/2026-11-13T04:10:00Z/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png";
+
+    rerender(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={80}
+        satelliteProductKey="ir"
+        activeSatelliteTileUrl={nextFrameUrl}
+        preloadSatelliteTileUrl={preloadFrameUrl}
+      />
+    );
+
+    // Buffer B should be set to nextFrameUrl and faded in (opacity 0.8), Buffer A faded out (opacity 0)
+    expect(mockSetPaintProperty).toHaveBeenCalledWith('nasa-gibs-satellite-layer-b', 'raster-opacity', 0.8);
+    expect(mockSetPaintProperty).toHaveBeenCalledWith('nasa-gibs-satellite-layer-a', 'raster-opacity', 0);
+  });
+
+  it('updates satellite double buffers when product key changes', async () => {
     const { rerender } = render(
       <TacticalMap
         center={[72.8777, 19.076]}
@@ -585,7 +622,7 @@ describe('LiveMapPage Integration Tests', () => {
       />
     );
 
-    expect(addedSources['nasa-gibs-satellite'].tiles[0]).toContain('Himawari_AHI_Band13_Clean_Infrared');
+    expect(addedSources['nasa-gibs-satellite-source-a'].tiles[0]).toContain('Himawari_AHI_Band13_Clean_Infrared');
 
     // Switch to VIIRS HD
     rerender(
@@ -598,12 +635,12 @@ describe('LiveMapPage Integration Tests', () => {
       />
     );
 
-    expect(addedSources['nasa-gibs-satellite'].tiles[0]).toContain('VIIRS_NOAA20_CorrectedReflectance_TrueColor');
-    expect(addedSources['nasa-gibs-satellite'].maxzoom).toBe(9);
-    expect(mockSetPaintProperty).toHaveBeenCalledWith('nasa-gibs-satellite-layer', 'raster-opacity', 0.9);
+    expect(addedSources['nasa-gibs-satellite-source-a'].tiles[0]).toContain('VIIRS_NOAA20_CorrectedReflectance_TrueColor');
+    expect(addedSources['nasa-gibs-satellite-source-a'].maxzoom).toBe(9);
+    expect(mockSetPaintProperty).toHaveBeenCalledWith('nasa-gibs-satellite-layer-a', 'raster-opacity', 0.9);
   });
 
-  it('interactively toggles satellite mode and channels in LiveMapPage', async () => {
+  it('interactively toggles satellite mode, channels, and timeline playback in LiveMapPage', async () => {
     render(
       <LiveMapPage
         location={mockLocation}
@@ -621,6 +658,10 @@ describe('LiveMapPage Integration Tests', () => {
     expect(screen.getByText('Infrared (10.4 µm)')).toBeInTheDocument();
     expect(screen.getByText('Visible (0.64 µm)')).toBeInTheDocument();
     expect(screen.getByText('Air Mass RGB')).toBeInTheDocument();
+
+    // Verify dual-track timeline has SAT and RADAR selectors when both are visible
+    expect(screen.getByRole('button', { name: /focus timeline on nasa gibs satellite/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /focus timeline on rainviewer radar/i })).toBeInTheDocument();
 
     // Click Visible channel -> daylight notice
     fireEvent.click(screen.getByText('Visible (0.64 µm)'));
