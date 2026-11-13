@@ -16,6 +16,7 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
+  FileText,
 } from 'lucide-react';
 import { SimulationResponse } from '../../services/research';
 import {
@@ -66,6 +67,7 @@ export interface LayerSidebarProps {
   onChangePressureContourInterval?: (interval: 2 | 4) => void;
   windParticleDensity?: 'light' | 'standard' | 'dense';
   onChangeWindParticleDensity?: (density: 'light' | 'standard' | 'dense') => void;
+  onOpenForecastImpact?: () => void;
 
   // Category C: JATAYU Intelligence
   isAuthorizedForSimulation: boolean;
@@ -120,6 +122,7 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
   onChangePressureContourInterval,
   windParticleDensity = 'standard',
   onChangeWindParticleDensity,
+  onOpenForecastImpact,
   isAuthorizedForSimulation,
   userRole,
   showSimulation,
@@ -622,6 +625,18 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Forecast Impact Analysis Trigger Button */}
+            {onOpenForecastImpact && (
+              <button
+                onClick={onOpenForecastImpact}
+                className="w-full mt-1.5 py-1.5 px-2 bg-gradient-to-r from-teal-900/60 to-blue-900/60 hover:from-teal-800/80 hover:to-blue-800/80 border border-teal-500/50 rounded-lg text-teal-300 font-bold text-[10px] tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                title="Open District Forecast Impact Intelligence Dashboard"
+              >
+                <FileText className="w-3.5 h-3.5 text-teal-400" />
+                <span>FORECAST IMPACT DASHBOARD</span>
+              </button>
             )}
           </div>
         )}

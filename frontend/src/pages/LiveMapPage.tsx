@@ -6,12 +6,14 @@ import {
   Radio,
   CheckCircle2,
   Compass,
+  FileText,
 } from 'lucide-react';
 import { TacticalMap } from '../components/map/TacticalMap';
 import { LayerSidebar } from '../components/map/LayerSidebar';
 import { MapTimeline } from '../components/map/MapTimeline';
 import { TelemetryDrawer } from '../components/map/TelemetryDrawer';
 import { WeatherLegend } from '../components/map/WeatherLegend';
+import { ForecastImpactDashboard } from '../components/map/ForecastImpactDashboard';
 import { AuthContext } from '../context/AuthContext';
 import { fetchAdyarSimulation, SimulationResponse, isGeoJSONFeatureCollection } from '../services/research';
 import {
@@ -103,6 +105,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   // Drawer & Overlay Visibilities
   const [showLayerSidebar, setShowLayerSidebar] = useState(true);
   const [showDetailsPanel, setShowDetailsPanel] = useState(true);
+  const [showImpactDashboard, setShowImpactDashboard] = useState(false);
 
   // Category A: Live Maps State
   const [showRadar, setShowRadar] = useState(true);
@@ -422,6 +425,21 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
             </button>
           )}
 
+          {/* Forecast Impact Intelligence Dashboard Toggle */}
+          <button
+            onClick={() => setShowImpactDashboard(!showImpactDashboard)}
+            className={`px-2.5 py-1 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer flex-shrink-0 ${
+              showImpactDashboard
+                ? 'bg-teal-900/80 border-teal-500 text-teal-300 shadow-md ring-1 ring-teal-500/50'
+                : 'bg-navy-900/90 border-navy-700 text-slate-300 hover:text-teal-300'
+            }`}
+            title="Toggle district-level forecast impact intelligence dashboard"
+            aria-label="Toggle district-level forecast impact intelligence dashboard"
+          >
+            <FileText className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" />
+            <span className="hidden sm:inline">IMPACT ANALYSIS</span>
+          </button>
+
           {/* Telemetry Details Panel Toggle */}
           <button
             onClick={() => setShowDetailsPanel(!showDetailsPanel)}
@@ -531,6 +549,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         onChangePressureContourInterval={setPressureContourInterval}
         windParticleDensity={windParticleDensity}
         onChangeWindParticleDensity={setWindParticleDensity}
+        onOpenForecastImpact={() => setShowImpactDashboard(true)}
         isAuthorizedForSimulation={isAuthorized}
         userRole={user?.role}
         showSimulation={showSimulation}
@@ -651,6 +670,29 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           hasActiveForecastLayer={hasActiveForecastLayer}
         />
       </div>
+
+      {/* 7. FORECAST IMPACT INTELLIGENCE DASHBOARD (DRAWER) */}
+      <ForecastImpactDashboard
+        isOpen={showImpactDashboard}
+        onClose={() => setShowImpactDashboard(false)}
+        activeSectorKey={getNearestSectorKey(location.lat, location.lon)}
+        onSelectSector={(sectorKey) => {
+          const jump = SECTOR_QUICK_JUMPS.find((j) => {
+            if (sectorKey === 'mumbai') return j.code === 'MUM';
+            if (sectorKey === 'chennai') return j.code === 'CHE';
+            if (sectorKey === 'guwahati') return j.code === 'GHY';
+            if (sectorKey === 'dehradun') return j.code === 'DED';
+            if (sectorKey === 'kolkata') return j.code === 'CCU';
+            return false;
+          });
+          if (jump) {
+            onSelectLocation({ name: jump.name, lat: jump.lat, lon: jump.lon });
+          }
+        }}
+        onSelectDistrict={(districtName) => {
+          console.log('[LiveMapPage] Focused on impact district:', districtName);
+        }}
+      />
     </div>
   );
 };
