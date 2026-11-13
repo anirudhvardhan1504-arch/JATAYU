@@ -228,35 +228,35 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
                     <span className="w-2 h-2 rounded-sm bg-[#DC2626]" />
                     <span>Very Heavy</span>
                   </span>
-                  <span className="font-mono text-slate-400">115.6–204.4</span>
+                  <span className="font-mono text-slate-400">115.5–204.4 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#EA580C]" />
                     <span>Heavy</span>
                   </span>
-                  <span className="font-mono text-slate-400">64.5–115.5</span>
+                  <span className="font-mono text-slate-400">64.5–115.4 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#D97706]" />
                     <span>Moderate</span>
                   </span>
-                  <span className="font-mono text-slate-400">15.6–64.4</span>
+                  <span className="font-mono text-slate-400">15.0–64.4 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#0284C7]" />
                     <span>Light</span>
                   </span>
-                  <span className="font-mono text-slate-400">2.5–15.5</span>
+                  <span className="font-mono text-slate-400">0.1–14.9 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#334155]" />
                     <span>No Rain</span>
                   </span>
-                  <span className="font-mono text-slate-400">&lt; 2.5 mm</span>
+                  <span className="font-mono text-slate-400">0.0 mm (Nil)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">

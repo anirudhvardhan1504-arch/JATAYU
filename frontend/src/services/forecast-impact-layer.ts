@@ -18,7 +18,7 @@
  */
 
 import type { Map as MapLibreMap, GeoJSONSource } from 'maplibre-gl';
-import type { ForecastImpactResponse } from './forecast-impact';
+import type { ForecastImpactResponse, ImdRainfallCategory } from './forecast-impact';
 
 export const FORECAST_IMPACT_SOURCE_ID = 'jatayu-forecast-impact-districts-source';
 export const FORECAST_IMPACT_FILL_LAYER_ID = 'jatayu-forecast-impact-districts-fill';
@@ -33,6 +33,39 @@ export interface ForecastImpactLayerOptions {
   onSelectDistrict?: (districtName: string, state: string) => void;
 }
 
+export const VALID_IMD_CATEGORIES = new Set<string>([
+  'NO_RAIN',
+  'LIGHT_RAIN',
+  'MODERATE_RAIN',
+  'HEAVY_RAIN',
+  'VERY_HEAVY_RAIN',
+  'EXTREMELY_HEAVY_RAIN',
+]);
+
+/**
+ * Authoritative 24-hour IMD accumulated rainfall classifier.
+ * Strictly adheres to comparison operators in backend/src/services/forecast-impact.service.ts
+ * and risk.service.ts:
+ * - 0.0 mm: NO_RAIN
+ * - >0.0 and <15.0 mm: LIGHT_RAIN
+ * - 15.0 to <64.5 mm: MODERATE_RAIN
+ * - 64.5 to <115.5 mm: HEAVY_RAIN
+ * - 115.5 to <204.5 mm: VERY_HEAVY_RAIN
+ * - >=204.5 mm: EXTREMELY_HEAVY_RAIN
+ * Null, undefined, or NaN rainfall is never converted to NO_RAIN; returns INSUFFICIENT_DATA.
+ */
+export function classifyImd24hRainfall(accumMm: number | null | undefined): ImdRainfallCategory | 'INSUFFICIENT_DATA' {
+  if (accumMm === null || accumMm === undefined || typeof accumMm !== 'number' || isNaN(accumMm) || accumMm < 0) {
+    return 'INSUFFICIENT_DATA';
+  }
+  if (accumMm === 0) return 'NO_RAIN';
+  if (accumMm < 15.0) return 'LIGHT_RAIN';
+  if (accumMm < 64.5) return 'MODERATE_RAIN';
+  if (accumMm < 115.5) return 'HEAVY_RAIN';
+  if (accumMm < 204.5) return 'VERY_HEAVY_RAIN';
+  return 'EXTREMELY_HEAVY_RAIN';
+}
+
 export const IMD_CATEGORY_MAP_COLORS: Record<string, { fill: string; stroke: string; label: string }> = {
   EXTREMELY_HEAVY_RAIN: {
     fill: '#C026D3', // Fuchsia / Purple (>= 204.5 mm)
@@ -40,29 +73,29 @@ export const IMD_CATEGORY_MAP_COLORS: Record<string, { fill: string; stroke: str
     label: 'Extremely Heavy (≥ 204.5 mm)',
   },
   VERY_HEAVY_RAIN: {
-    fill: '#DC2626', // Red (115.6 - 204.4 mm)
+    fill: '#DC2626', // Red (115.5 - 204.4 mm)
     stroke: '#FCA5A5',
-    label: 'Very Heavy (115.6 - 204.4 mm)',
+    label: 'Very Heavy (115.5–204.4 mm)',
   },
   HEAVY_RAIN: {
-    fill: '#EA580C', // Orange (64.5 - 115.5 mm)
+    fill: '#EA580C', // Orange (64.5 - 115.4 mm)
     stroke: '#FDBA74',
-    label: 'Heavy (64.5 - 115.5 mm)',
+    label: 'Heavy (64.5–115.4 mm)',
   },
   MODERATE_RAIN: {
-    fill: '#D97706', // Amber (15.6 - 64.4 mm)
+    fill: '#D97706', // Amber (15.0 - 64.4 mm)
     stroke: '#FDE68A',
-    label: 'Moderate (15.6 - 64.4 mm)',
+    label: 'Moderate (15.0–64.4 mm)',
   },
   LIGHT_RAIN: {
-    fill: '#0284C7', // Sky / Cyan (2.5 - 15.5 mm)
+    fill: '#0284C7', // Sky / Cyan (0.1 - 14.9 mm)
     stroke: '#7DD3FC',
-    label: 'Light (2.5 - 15.5 mm)',
+    label: 'Light (0.1–14.9 mm)',
   },
   NO_RAIN: {
-    fill: '#334155', // Slate (< 2.5 mm)
+    fill: '#334155', // Slate (0.0 mm / Nil)
     stroke: '#64748B',
-    label: 'No Rain (< 2.5 mm)',
+    label: 'No Rain (0.0 mm / Nil)',
   },
   INSUFFICIENT_DATA: {
     fill: '#1E293B', // Neutral dark slate (insufficient or unrepresented)
@@ -210,12 +243,21 @@ export function enrichDistrictsWithImpact(
       const isCentroidFallback = spatialDensity === 'CENTROID_PROXIMITY_ONLY';
 
       // Missing or invalid metrics must not be rendered as zero rainfall
-      let category = 'INSUFFICIENT_DATA';
+      let category: ImdRainfallCategory | 'INSUFFICIENT_DATA' = 'INSUFFICIENT_DATA';
       let accum24h: number | null = null;
 
-      if (match && coverageStatus !== 'INSUFFICIENT_DATA' && match.metrics && match.metrics.futureAccum24hMm !== null) {
-        category = rawCategory || 'NO_RAIN';
-        accum24h = match.metrics.futureAccum24hMm;
+      const rawAccum = match?.metrics?.futureAccum24hMm;
+      const isValidNumber = typeof rawAccum === 'number' && !isNaN(rawAccum) && rawAccum >= 0;
+
+      if (match && coverageStatus !== 'INSUFFICIENT_DATA' && isValidNumber) {
+        accum24h = rawAccum;
+        if (rawCategory && VALID_IMD_CATEGORIES.has(rawCategory)) {
+          // Authoritative reuse of backend-provided classification
+          category = rawCategory as ImdRainfallCategory;
+        } else {
+          // Fallback classification using authoritative IMD 24h accumulated rainfall operators
+          category = classifyImd24hRainfall(accum24h);
+        }
       }
 
       const styleDef = IMD_CATEGORY_MAP_COLORS[category] || IMD_CATEGORY_MAP_COLORS.INSUFFICIENT_DATA;
@@ -248,21 +290,46 @@ export function enrichDistrictsWithImpact(
 
 /**
  * Finds the layer ID before which the district layers should be placed.
- * Placed before pressure contours, wind particles, and SFINCS simulation layers.
+ * Placed BELOW weather & simulation overlays, and BELOW basemap symbol layers,
+ * guaranteeing that city labels, road names, and tactical markers are never obscured.
  */
-function findBeforeLayerId(map: MapLibreMap): string | undefined {
-  if (map.getLayer('jatayu-pressure-contours-line')) {
-    return 'jatayu-pressure-contours-line';
+export function findBeforeLayerId(map: MapLibreMap): string | undefined {
+  // 1. Must be inserted BELOW existing weather / simulation overlay layers
+  const overlayCandidateIds = [
+    'jatayu-forecast-scalar-layer',
+    'nasa-gibs-satellite-layer-a',
+    'nasa-gibs-satellite-layer-b',
+    'rainviewer-radar-layer',
+    'jatayu-pressure-contours-line',
+    'jatayu-pressure-contours-label',
+    'jatayu-pressure-extrema-circle',
+    'jatayu-pressure-extrema-label',
+    'adyar-simulation-fill',
+    'adyar-simulation-line',
+  ];
+
+  for (const id of overlayCandidateIds) {
+    if (map.getLayer(id)) {
+      return id;
+    }
   }
-  if (map.getLayer('jatayu-pressure-extrema-circle')) {
-    return 'jatayu-pressure-extrema-circle';
+
+  // 2. Safe Basemap Fallback: Insert below labels, place names, and POI symbols
+  // so district polygon fills do not obscure base cartography text or markers.
+  try {
+    const style = map.getStyle();
+    if (style && Array.isArray(style.layers)) {
+      const firstSymbol = style.layers.find(
+        (l) => l.type === 'symbol' && !l.id.startsWith('jatayu-forecast-impact-')
+      );
+      if (firstSymbol) {
+        return firstSymbol.id;
+      }
+    }
+  } catch {
+    // Style not yet accessible or getStyle unavailable
   }
-  if (map.getLayer('adyar-simulation-fill')) {
-    return 'adyar-simulation-fill';
-  }
-  if (map.getLayer('adyar-simulation-line')) {
-    return 'adyar-simulation-line';
-  }
+
   return undefined;
 }
 
