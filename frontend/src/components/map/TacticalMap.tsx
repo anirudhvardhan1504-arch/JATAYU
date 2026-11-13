@@ -9,6 +9,16 @@ import {
   SATELLITE_PRODUCTS,
   getSatelliteTileUrl,
 } from '../../services/satellite';
+import {
+  ForecastProductType,
+  ForecastGridResponse,
+  FORECAST_PRODUCTS,
+  getForecastGrid,
+} from '../../services/forecast';
+import {
+  syncForecastScalarLayer,
+  removeForecastScalarLayer,
+} from '../../services/forecast-layer';
 
 export interface TacticalMapProps {
   center: [number, number]; // [lon, lat]
@@ -39,6 +49,13 @@ export interface TacticalMapProps {
   onRadarLoaded?: (info: RainViewerRadarInfo) => void;
   variant?: 'standalone' | 'full';
   hideDefaultControls?: boolean;
+  // Phase 3B-3A Forecast Scalar Canvas Layer
+  showForecast?: boolean;
+  forecastProduct?: ForecastProductType;
+  forecastTimestepIndex?: number;
+  forecastOpacity?: number; // 0 - 100
+  forecastGridData?: ForecastGridResponse | null;
+  onToggleForecast?: (visible: boolean) => void;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -70,6 +87,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   onRadarLoaded,
   variant = 'standalone',
   hideDefaultControls = false,
+  showForecast = false,
+  forecastProduct = 'precipitation',
+  forecastTimestepIndex = 0,
+  forecastOpacity = 80,
+  forecastGridData = null,
+  onToggleForecast,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -81,6 +104,33 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [radarInfo, setRadarInfo] = useState<RainViewerRadarInfo | null>(null);
   const [radarLoading, setRadarLoading] = useState(false);
   const [radarError, setRadarError] = useState<string | null>(null);
+
+  // Standalone forecast layer internal state management
+  const [internalShowForecast, setInternalShowForecast] = useState<boolean | null>(null);
+  const [internalForecastGrid, setInternalForecastGrid] = useState<ForecastGridResponse | null>(null);
+  const effectiveShowForecast = internalShowForecast !== null ? internalShowForecast : showForecast;
+  const effectiveForecastGrid = forecastGridData || internalForecastGrid;
+
+  // Reset internal toggle when parent prop changes
+  useEffect(() => {
+    setInternalShowForecast(null);
+  }, [showForecast]);
+
+  // Auto-fetch forecast grid if turned on in standalone mode without passed data
+  useEffect(() => {
+    if (!effectiveShowForecast || effectiveForecastGrid) return;
+    let isSubscribed = true;
+    getForecastGrid('sector', 'mumbai')
+      .then((grid) => {
+        if (isSubscribed) setInternalForecastGrid(grid);
+      })
+      .catch((err) => {
+        console.warn('[TacticalMap] Failed to load forecast grid:', err);
+      });
+    return () => {
+      isSubscribed = false;
+    };
+  }, [effectiveShowForecast, effectiveForecastGrid]);
 
   // Fetch verified RainViewer metadata on mount
   useEffect(() => {
@@ -295,6 +345,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       mapRef.current = map;
 
       return () => {
+        removeForecastScalarLayer(map);
         map.remove();
         mapRef.current = null;
         markerRef.current = null;
@@ -719,6 +770,34 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [showSimulation]);
 
+  // Synchronize Forecast Scalar Canvas Layer (Phase 3B-3A)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const applySync = () => {
+      syncForecastScalarLayer(map, {
+        response: effectiveForecastGrid,
+        productType: forecastProduct,
+        timestepIndex: forecastTimestepIndex,
+        opacity: forecastOpacity,
+        visible: effectiveShowForecast,
+      });
+    };
+
+    if (!map.isStyleLoaded()) {
+      map.once('load', applySync);
+    } else {
+      applySync();
+    }
+  }, [
+    effectiveShowForecast,
+    forecastProduct,
+    forecastTimestepIndex,
+    forecastOpacity,
+    effectiveForecastGrid,
+  ]);
+
   const handleRecenter = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.flyTo({ center: initialCenter, zoom: 10 });
@@ -749,6 +828,79 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 animate-pulse" />
             <span>⚠️ EXPERIMENTAL SIMULATION — NOT VALIDATED FOR OFFICIAL CIVIL DEFENSE</span>
           </div>
+        </div>
+      )}
+
+      {/* Forecast Scientific Disclosure Banner (Phase 3B-3A) */}
+      {effectiveShowForecast && effectiveForecastGrid && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-auto max-w-2xl text-center px-2">
+          <div className="bg-navy-950/95 border border-sky-500/80 text-sky-200 px-3.5 py-1.5 rounded-lg shadow-xl font-mono text-[11px] space-y-1">
+            <div className="flex items-center justify-center gap-2 font-bold text-amber-300">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+              <span>Spatial surface reconstructed via mesoscale grid interpolation. Not a raw native-resolution GRIB2 raster.</span>
+            </div>
+            <div className="text-[10px] text-slate-300 flex items-center justify-center gap-2 flex-wrap border-t border-navy-800 pt-1">
+              <span className="text-cyan-300 font-semibold">{effectiveForecastGrid.metadata.model}</span>
+              <span>•</span>
+              <span>Provider: {effectiveForecastGrid.metadata.provider}</span>
+              <span>•</span>
+              <span>Run: {effectiveForecastGrid.metadata.runCycle} ({effectiveForecastGrid.metadata.initializationTime})</span>
+              <span>•</span>
+              <span className="text-amber-300 font-semibold">T+{forecastTimestepIndex.toString().padStart(2, '0')}h</span>
+              {effectiveForecastGrid.metadata.isFallback && (
+                <span className="bg-amber-900/80 text-amber-300 px-1 rounded text-[9px] font-bold">
+                  FAILOVER ACTIVE
+                </span>
+              )}
+              {effectiveForecastGrid.metadata.isStale && (
+                <span className="bg-rose-900/80 text-rose-300 px-1 rounded text-[9px] font-bold">
+                  STALE CACHE
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Forecast Product Legend */}
+      {effectiveShowForecast && (
+        <div className="absolute bottom-6 left-3 z-20 pointer-events-auto max-w-xs bg-navy-950/90 border border-navy-700 p-2 rounded shadow-lg text-slate-200 font-mono text-[10px]">
+          <div className="flex items-center justify-between font-bold text-cyan-300 border-b border-navy-800 pb-1 mb-1.5">
+            <span>FORECAST: {FORECAST_PRODUCTS[forecastProduct]?.shortLabel.toUpperCase()}</span>
+            <span>{FORECAST_PRODUCTS[forecastProduct]?.unit}</span>
+          </div>
+          {forecastProduct === 'precipitation' ? (
+            <div className="space-y-1">
+              <div className="text-[9px] text-slate-400">Preceding 1-hour total accumulation (mm)</div>
+              <div className="flex items-center gap-1">
+                <span className="w-4 h-2 rounded-sm bg-[#67a9cf]" title="0.1 - 2.5 mm (Light)" />
+                <span className="w-4 h-2 rounded-sm bg-[#02818a]" title="2.5 - 7.5 mm (Moderate)" />
+                <span className="w-4 h-2 rounded-sm bg-[#fed976]" title="7.5 - 15 mm (Heavy)" />
+                <span className="w-4 h-2 rounded-sm bg-[#fd8d3c]" title="15 - 30 mm (Very Heavy)" />
+                <span className="w-4 h-2 rounded-sm bg-[#e31a1c]" title="30 - 50 mm (Extremely Heavy)" />
+                <span className="w-4 h-2 rounded-sm bg-[#800026]" title="50+ mm (Torrential)" />
+              </div>
+              <div className="flex justify-between text-[8px] text-slate-500 font-mono">
+                <span>0.1mm</span>
+                <span>15mm</span>
+                <span>50+mm</span>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="text-[9px] text-slate-400">{FORECAST_PRODUCTS[forecastProduct]?.description}</div>
+              <div className="flex items-center gap-1">
+                {FORECAST_PRODUCTS[forecastProduct]?.colorRamp.map((cr, idx) => (
+                  <span
+                    key={idx}
+                    className="w-4 h-2 rounded-sm"
+                    style={{ backgroundColor: cr.color }}
+                    title={cr.label}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -857,6 +1009,37 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                         {new Date(activeSatelliteTimestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+
+              {/* Forecast Scalar Canvas Layer */}
+              <div className="pt-2 border-t border-navy-800 space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-sky-400" />
+                    <span className="text-[11px]">NWP Forecast Scalar</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (onToggleForecast) {
+                        onToggleForecast(!effectiveShowForecast);
+                      } else {
+                        setInternalShowForecast(!effectiveShowForecast);
+                      }
+                    }}
+                    className="p-1 hover:bg-navy-800 rounded text-slate-300 cursor-pointer"
+                    title={effectiveShowForecast ? 'Hide forecast scalar overlay' : 'Show forecast scalar overlay'}
+                  >
+                    {effectiveShowForecast ? <Eye className="w-3.5 h-3.5 text-sky-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
+                  </button>
+                </div>
+                {effectiveShowForecast && (
+                  <div className="text-[9px] text-slate-400 font-mono space-y-0.5">
+                    <div>{FORECAST_PRODUCTS[forecastProduct]?.shortLabel || 'Precipitation'} • {forecastOpacity}%</div>
+                    <div className="text-[8.5px] text-amber-300">
+                      Step: T+{forecastTimestepIndex.toString().padStart(2, '0')}h
+                    </div>
                   </div>
                 )}
               </div>

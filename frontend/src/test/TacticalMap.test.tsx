@@ -68,7 +68,7 @@ describe('TacticalMap Component Unit & Integration Tests', () => {
     Object.keys(addedLayers).forEach((k) => delete addedLayers[k]);
 
     mockAddSource.mockImplementation((id: string, def: any) => {
-      addedSources[id] = { setData: vi.fn(), setTiles: vi.fn(), ...def };
+      addedSources[id] = { setData: vi.fn(), setTiles: vi.fn(), updateImage: vi.fn(), ...def };
     });
     mockGetSource.mockImplementation((id: string) => addedSources[id]);
     mockRemoveSource.mockImplementation((id: string) => {
@@ -672,5 +672,208 @@ describe('LiveMapPage Integration Tests', () => {
     expect(screen.getByText('VIIRS NOAA-20')).toBeInTheDocument();
     expect(screen.getByText('MODIS Terra')).toBeInTheDocument();
     expect(screen.getByText('250m at equator')).toBeInTheDocument();
+  });
+
+  describe('Phase 3B-3A: Forecast Scalar Canvas Layer & Scientific Disclosure', () => {
+    const mockForecastData: any = {
+      metadata: {
+        provider: 'Open-Meteo ECMWF Open Data',
+        model: 'ECMWF IFS (0.25°)',
+        nativeResolution: '0.25° (~28 km) regular lat/lon',
+        isFallback: false,
+        runCycle: '00Z',
+        initializationTime: '2026-11-13T00:00',
+        generatedAt: '2026-11-13T06:00:00Z',
+        validStartTime: '2026-11-13T00:00',
+        validEndTime: '2026-11-15T23:00',
+        totalTimesteps: 72,
+        gridNodeCount: 2,
+        deduplicatedNodeCount: 2,
+        mode: 'sector',
+        activeSector: 'mumbai',
+        isInterpolatedMesh: true,
+        disclosure:
+          'Spatial surface reconstructed via mesoscale grid interpolation. Not a raw native-resolution GRIB2 raster.',
+        attribution: 'Weather data by Open-Meteo under CC BY 4.0',
+        isStale: false,
+        cacheTtlMs: 7200000,
+        billableCallsIncurred: 2,
+        dailyBudgetRemaining: 7990,
+      },
+      nodes: [
+        {
+          requestedLat: 19.0,
+          requestedLon: 72.8,
+          modelLat: 19.0,
+          modelLon: 72.75,
+          elevationM: 10,
+          accum24hMm: 25.0,
+          accum72hMm: 60.0,
+          maxWindGustKmh: 45.0,
+          minPressureMslHpa: 1008.0,
+          hourly: Array.from({ length: 72 }, (_, i) => ({
+            time: `2026-11-13T${i.toString().padStart(2, '0')}:00`,
+            precipitationMm: i === 12 ? 22.0 : 1.5,
+            rainMm: 1.5,
+            showersMm: 0,
+            temperatureC: 30.0,
+            apparentTemperatureC: 34.0,
+            relativeHumidityPercent: 75,
+            pressureMslHpa: 1008.0,
+            surfacePressureHpa: 1007.0,
+            windSpeedKmh: 20,
+            windDirectionDegrees: 240,
+            windGustsKmh: 35,
+            uMs: -4.8,
+            vMs: -2.8,
+          })),
+        },
+      ],
+    };
+
+    it('renders forecast scalar layer, image source, and mandatory scientific disclosure', async () => {
+      render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="precipitation"
+          forecastTimestepIndex={0}
+          forecastOpacity={85}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      // Verify layer and source added to MapLibre
+      expect(mockAddSource).toHaveBeenCalledWith(
+        'jatayu-forecast-scalar-source',
+        expect.objectContaining({
+          type: 'image',
+          coordinates: expect.any(Array),
+        })
+      );
+
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'jatayu-forecast-scalar-layer',
+          type: 'raster',
+          source: 'jatayu-forecast-scalar-source',
+          paint: expect.objectContaining({
+            'raster-opacity': 0.85,
+          }),
+        }),
+        'adyar-simulation-fill'
+      );
+
+      // Verify mandatory scientific disclosure banner
+      expect(
+        screen.getByText(
+          'Spatial surface reconstructed via mesoscale grid interpolation. Not a raw native-resolution GRIB2 raster.'
+        )
+      ).toBeInTheDocument();
+
+      // Verify model and run cycle metadata
+      expect(screen.getByText('ECMWF IFS (0.25°)')).toBeInTheDocument();
+      expect(screen.getByText(/Provider: Open-Meteo ECMWF Open Data/)).toBeInTheDocument();
+      expect(screen.getAllByText(/T\+00h/)[0]).toBeInTheDocument();
+
+      // Verify product legend
+      expect(screen.getByText('FORECAST: PRECIPITATION')).toBeInTheDocument();
+      expect(screen.getByText('Preceding 1-hour total accumulation (mm)')).toBeInTheDocument();
+    });
+
+    it('updates raster opacity and visibility dynamically without reinitializing map', () => {
+      const { rerender } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="temperature"
+          forecastTimestepIndex={5}
+          forecastOpacity={70}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      expect(mockSetPaintProperty).toHaveBeenCalledWith('jatayu-forecast-scalar-layer', 'raster-opacity', 0.7);
+
+      // Change opacity to 90
+      rerender(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="temperature"
+          forecastTimestepIndex={5}
+          forecastOpacity={90}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      expect(mockSetPaintProperty).toHaveBeenCalledWith('jatayu-forecast-scalar-layer', 'raster-opacity', 0.9);
+
+      // Hide layer
+      rerender(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={false}
+          forecastProduct="temperature"
+          forecastTimestepIndex={5}
+          forecastOpacity={90}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-forecast-scalar-layer', 'visibility', 'none');
+    });
+
+    it('displays FAILOVER ACTIVE and STALE CACHE notices appropriately', () => {
+      const fallbackData = {
+        ...mockForecastData,
+        metadata: {
+          ...mockForecastData.metadata,
+          provider: 'Open-Meteo NOAA GFS',
+          model: 'NOAA GFS (0.25°)',
+          isFallback: true,
+          isStale: true,
+        },
+      };
+
+      render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="pressure"
+          forecastTimestepIndex={12}
+          forecastOpacity={80}
+          forecastGridData={fallbackData}
+        />
+      );
+
+      expect(screen.getByText('NOAA GFS (0.25°)')).toBeInTheDocument();
+      expect(screen.getByText('FAILOVER ACTIVE')).toBeInTheDocument();
+      expect(screen.getByText('STALE CACHE')).toBeInTheDocument();
+      expect(screen.getByText('FORECAST: MSLP')).toBeInTheDocument();
+    });
+
+    it('cleans up forecast scalar layer and source on unmount', () => {
+      const { unmount } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="precipitation"
+          forecastTimestepIndex={0}
+          forecastOpacity={80}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      unmount();
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-forecast-scalar-layer');
+      expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-forecast-scalar-source');
+    });
   });
 });
