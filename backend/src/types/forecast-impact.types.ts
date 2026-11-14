@@ -169,6 +169,7 @@ export interface DistrictRainfallAssessment {
   peakHourlyTimeUtc: string | null;
   thresholdDefinition: string; // "Official IMD 24-Hour Rainfall Standard"
   priorityDefinition: string;  // "JATAYU Internal Decision-Support Heuristic"
+  hourlyIntensityBenchmark?: string; // "JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)"
   insufficientReason?: string;
 }
 

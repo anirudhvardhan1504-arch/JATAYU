@@ -166,6 +166,7 @@ export function computeNodeFutureAccumulations(hourly: HourlyGridDataPoint[]): {
   peakHourlyRateMmH: number | null;
   peakHourlyTimeUtc: string | null;
   maxWindGustKmh: number | null;
+  maxWindGustTimeUtc: string | null;
   quality: DistrictDataQuality;
 } {
   const continuity = validateHourlyContinuity(hourly);
@@ -223,6 +224,7 @@ export function computeNodeFutureAccumulations(hourly: HourlyGridDataPoint[]): {
   let peakRate: number | null = null;
   let peakTime: string | null = null;
   let maxGust: number | null = null;
+  let maxGustTime: string | null = null;
 
   if (totalAvailable > 1) {
     let currentPeak = -1;
@@ -239,6 +241,7 @@ export function computeNodeFutureAccumulations(hourly: HourlyGridDataPoint[]): {
       if (pt && typeof pt.windGustsKmh === 'number' && !isNaN(pt.windGustsKmh)) {
         if (pt.windGustsKmh > currentGust) {
           currentGust = pt.windGustsKmh;
+          maxGustTime = pt.time;
         }
       }
     }
@@ -261,6 +264,7 @@ export function computeNodeFutureAccumulations(hourly: HourlyGridDataPoint[]): {
     peakHourlyRateMmH: peakRate,
     peakHourlyTimeUtc: peakTime,
     maxWindGustKmh: maxGust,
+    maxWindGustTimeUtc: maxGust !== null ? maxGustTime : null,
     quality,
   };
 }
@@ -730,14 +734,28 @@ export class ForecastImpactService {
     let peakRate: number | null = null;
     let peakTime: string | null = null;
     let maxGust: number | null = null;
+    let maxGustTime: string | null = null;
 
     for (const m of nodeMetricsList) {
-      if (m.peakHourlyRateMmH !== null && (peakRate === null || m.peakHourlyRateMmH > peakRate)) {
-        peakRate = m.peakHourlyRateMmH;
-        peakTime = m.peakHourlyTimeUtc;
+      if (m.peakHourlyRateMmH !== null) {
+        if (peakRate === null || m.peakHourlyRateMmH > peakRate) {
+          peakRate = m.peakHourlyRateMmH;
+          peakTime = m.peakHourlyTimeUtc;
+        } else if (m.peakHourlyRateMmH === peakRate && m.peakHourlyTimeUtc && peakTime) {
+          if (new Date(m.peakHourlyTimeUtc).getTime() < new Date(peakTime).getTime()) {
+            peakTime = m.peakHourlyTimeUtc;
+          }
+        }
       }
-      if (m.maxWindGustKmh !== null && (maxGust === null || m.maxWindGustKmh > maxGust)) {
-        maxGust = m.maxWindGustKmh;
+      if (m.maxWindGustKmh !== null) {
+        if (maxGust === null || m.maxWindGustKmh > maxGust) {
+          maxGust = m.maxWindGustKmh;
+          maxGustTime = m.maxWindGustTimeUtc;
+        } else if (m.maxWindGustKmh === maxGust && m.maxWindGustTimeUtc && maxGustTime) {
+          if (new Date(m.maxWindGustTimeUtc).getTime() < new Date(maxGustTime).getTime()) {
+            maxGustTime = m.maxWindGustTimeUtc;
+          }
+        }
       }
     }
 
@@ -852,7 +870,9 @@ export class ForecastImpactService {
             issuedAt: officialAlertMatch.issuedAt,
             authorityDisclosure: 'OFFICIAL IMD BULLETIN (SEPARATE AUTHORITY)',
           }
-        : undefined
+        : undefined,
+      undefined,
+      maxGustTime
     );
 
     return {
@@ -897,7 +917,7 @@ export class ForecastImpactService {
       case 'NO_RAIN':
         return 'IMD 24h: 0.0 mm (Nil / Trace)';
       case 'LIGHT_RAIN':
-        return 'IMD 24h: 0.1 - 15.0 mm (Light Rain)';
+        return 'IMD 24h: 0.1 - 14.9 mm (Light Rain)';
       case 'MODERATE_RAIN':
         return 'IMD 24h: 15.0 - 64.4 mm (Moderate Rain)';
       case 'HEAVY_RAIN':

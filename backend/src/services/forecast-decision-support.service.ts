@@ -462,7 +462,7 @@ export function computeExtendedForecastBlocks(
       });
     } else {
       const accum = Math.round(sum * 10) / 10;
-      const rate = Math.round((accum / r.durationHours) * 10) / 10;
+      const rate = Math.round(((accum / r.durationHours) + Number.EPSILON) * 100) / 100;
       blocks.push({
         ...r,
         accumMm: accum,
@@ -503,18 +503,23 @@ export function evaluateContributingDrivers(
     };
   } else {
     let hasShowersData = true;
+    let hasPrecipData = true;
     let burstTriggered = false;
     let burstEvidence: ContributingDriverState['evidence'] | undefined;
 
     for (let t = 1; t <= 24; t++) {
       const pt = hourly[t];
-      if (!pt || typeof pt.showersMm !== 'number' || isNaN(pt.showersMm)) {
+      if (!pt || typeof pt.showersMm !== 'number' || isNaN(pt.showersMm) || pt.showersMm < 0) {
         hasShowersData = false;
+        break;
+      }
+      if (typeof pt.precipitationMm !== 'number' || isNaN(pt.precipitationMm) || pt.precipitationMm < 0) {
+        hasPrecipData = false;
         break;
       }
       const p = pt.precipitationMm;
       const s = pt.showersMm;
-      if (typeof p === 'number' && !isNaN(p) && p >= 15.0 && s >= 0) {
+      if (p >= 15.0) {
         const ratio = Math.round((s / p) * 100) / 100;
         if (ratio >= 0.50) {
           burstTriggered = true;
@@ -529,11 +534,13 @@ export function evaluateContributingDrivers(
       }
     }
 
-    if (!hasShowersData) {
+    if (!hasShowersData || !hasPrecipData) {
       convectiveState = {
         key: 'CONVECTIVE_BURST',
         status: 'UNAVAILABLE',
-        missingDataReason: 'showersMm variable not provided in NWP cycle',
+        missingDataReason: !hasShowersData
+          ? 'showersMm variable not provided in NWP cycle'
+          : 'precipitationMm variable not provided in NWP cycle',
         provenance: 'PROPOSED_HEURISTIC',
       };
     } else if (burstTriggered) {
@@ -563,29 +570,47 @@ export function evaluateContributingDrivers(
       provenance: 'PROPOSED_HEURISTIC',
     };
   } else {
-    let currentRun = 0;
-    let maxRun = 0;
+    let allPrecipValid = true;
     for (let t = 1; t <= 24; t++) {
       const p = hourly[t]?.precipitationMm;
-      if (typeof p === 'number' && !isNaN(p) && p >= 5.0) {
-        currentRun++;
-        if (currentRun > maxRun) maxRun = currentRun;
-      } else {
-        currentRun = 0;
+      if (typeof p !== 'number' || isNaN(p) || p < 0) {
+        allPrecipValid = false;
+        break;
       }
     }
 
-    if (maxRun >= 4) {
+    if (!allPrecipValid) {
       prolongedState = {
         key: 'PROLONGED_INTENSITY',
-        status: 'TRIGGERED',
-        evidence: {
-          observedValue: maxRun,
-          threshold: 4,
-          units: 'hours',
-        },
+        status: 'UNAVAILABLE',
+        missingDataReason: 'Precipitation timeseries incomplete or discontinuous across T+1..T+24',
         provenance: 'PROPOSED_HEURISTIC',
       };
+    } else {
+      let currentRun = 0;
+      let maxRun = 0;
+      for (let t = 1; t <= 24; t++) {
+        const p = hourly[t].precipitationMm!;
+        if (p >= 5.0) {
+          currentRun++;
+          if (currentRun > maxRun) maxRun = currentRun;
+        } else {
+          currentRun = 0;
+        }
+      }
+
+      if (maxRun >= 4) {
+        prolongedState = {
+          key: 'PROLONGED_INTENSITY',
+          status: 'TRIGGERED',
+          evidence: {
+            observedValue: maxRun,
+            threshold: 4,
+            units: 'hours',
+          },
+          provenance: 'PROPOSED_HEURISTIC',
+        };
+      }
     }
   }
   drivers.push(prolongedState);
@@ -607,48 +632,61 @@ export function evaluateContributingDrivers(
     };
   } else {
     let hasGustData = true;
+    let hasPrecipData = true;
     let coincidenceTriggered = false;
     let evidence: ContributingDriverState['evidence'] | undefined;
 
     for (let t = 1; t <= 24; t++) {
       const pt = hourly[t];
-      if (!pt || typeof pt.windGustsKmh !== 'number' || isNaN(pt.windGustsKmh)) {
+      if (!pt || typeof pt.windGustsKmh !== 'number' || isNaN(pt.windGustsKmh) || pt.windGustsKmh < 0) {
         hasGustData = false;
         break;
       }
-      const g = pt.windGustsKmh;
-      if (g >= 65.0) {
-        // Check rain at t-1, t, t+1
-        const pCurrent = pt.precipitationMm ?? 0;
-        const pPrev = t > 1 ? (hourly[t - 1]?.precipitationMm ?? 0) : 0;
-        const pNext = t < 24 ? (hourly[t + 1]?.precipitationMm ?? 0) : 0;
-        if (pCurrent >= 7.5 || pPrev >= 7.5 || pNext >= 7.5) {
-          coincidenceTriggered = true;
-          evidence = {
-            observedValue: g,
-            threshold: 65.0,
-            units: 'km/h',
-            timestampUtc: pt.time,
-          };
-          break;
-        }
+      if (typeof pt.precipitationMm !== 'number' || isNaN(pt.precipitationMm) || pt.precipitationMm < 0) {
+        hasPrecipData = false;
+        break;
       }
     }
 
-    if (!hasGustData) {
+    if (!hasGustData || !hasPrecipData) {
       gustCoincidenceState = {
         key: 'GALE_GUST_COINCIDENCE',
         status: 'UNAVAILABLE',
-        missingDataReason: 'windGustsKmh variable not provided in NWP cycle',
+        missingDataReason: !hasGustData
+          ? 'windGustsKmh variable not provided in NWP cycle'
+          : 'precipitationMm variable not provided in NWP cycle',
         provenance: 'PROPOSED_HEURISTIC',
       };
-    } else if (coincidenceTriggered) {
-      gustCoincidenceState = {
-        key: 'GALE_GUST_COINCIDENCE',
-        status: 'TRIGGERED',
-        evidence,
-        provenance: 'PROPOSED_HEURISTIC',
-      };
+    } else {
+      for (let t = 1; t <= 24; t++) {
+        const pt = hourly[t];
+        const g = pt.windGustsKmh;
+        if (g >= 65.0) {
+          // Check rain at t-1, t, t+1
+          const pCurrent = pt.precipitationMm;
+          const pPrev = t > 1 ? (hourly[t - 1]?.precipitationMm ?? 0) : 0;
+          const pNext = t < 24 ? (hourly[t + 1]?.precipitationMm ?? 0) : 0;
+          if (pCurrent >= 7.5 || pPrev >= 7.5 || pNext >= 7.5) {
+            coincidenceTriggered = true;
+            evidence = {
+              observedValue: g,
+              threshold: 65.0,
+              units: 'km/h',
+              timestampUtc: pt.time,
+            };
+            break;
+          }
+        }
+      }
+
+      if (coincidenceTriggered) {
+        gustCoincidenceState = {
+          key: 'GALE_GUST_COINCIDENCE',
+          status: 'TRIGGERED',
+          evidence,
+          provenance: 'PROPOSED_HEURISTIC',
+        };
+      }
     }
   }
   drivers.push(gustCoincidenceState);
@@ -822,7 +860,8 @@ export function buildDistrictDecisionSupport(
   peakHourlyTimeUtc: string | null,
   maxWindGustKmh: number | null,
   officialAlertMatch?: DistrictDecisionSupport['officialImdAlert'],
-  precomputedMask?: ContinuityMask
+  precomputedMask?: ContinuityMask,
+  peakWindGustTimeUtc?: string | null
 ): DistrictDecisionSupport {
   const mask = precomputedMask || getContinuityMask(hourly);
   const availability = evaluateMeteorologicalAvailability(hourly, mask);
@@ -840,6 +879,7 @@ export function buildDistrictDecisionSupport(
       peakHourlyTimeUtc: null,
       thresholdDefinition: 'Official IMD 24-Hour Rainfall Standard',
       priorityDefinition: 'JATAYU Internal Decision-Support Heuristic',
+      hourlyIntensityBenchmark: 'JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)',
       insufficientReason: 'Precipitation timeseries incomplete or discontinuous across T+1..T+24',
     };
   } else {
@@ -856,6 +896,7 @@ export function buildDistrictDecisionSupport(
       peakHourlyTimeUtc,
       thresholdDefinition: 'Official IMD 24-Hour Rainfall Standard',
       priorityDefinition: 'JATAYU Internal Decision-Support Heuristic',
+      hourlyIntensityBenchmark: 'JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)',
     };
   }
 
@@ -871,12 +912,27 @@ export function buildDistrictDecisionSupport(
       insufficientReason: 'Wind gust timeseries missing or incomplete across T+1..T+24',
     };
   } else {
+    let resolvedPeakGustTime: string | null = peakWindGustTimeUtc ?? null;
+    if (resolvedPeakGustTime === null && hourly && hourly.length > 1) {
+      for (let t = 1; t < hourly.length; t++) {
+        const pt = hourly[t];
+        if (
+          pt &&
+          typeof pt.windGustsKmh === 'number' &&
+          Math.round(pt.windGustsKmh * 10) / 10 === Math.round(maxWindGustKmh * 10) / 10
+        ) {
+          resolvedPeakGustTime = pt.time || null;
+          break;
+        }
+      }
+    }
+
     const severityCategory = evaluateWindSeverity(maxWindGustKmh);
     wind = {
       status: 'AVAILABLE',
       severityCategory,
       maxWindGustKmh,
-      peakGustTimeUtc: null,
+      peakGustTimeUtc: resolvedPeakGustTime,
       provenance: 'PROPOSED_HEURISTIC_WIND_SCALE',
     };
   }
@@ -933,7 +989,8 @@ export class ForecastDecisionSupportService {
     peakHourlyTimeUtc: string | null,
     maxWindGustKmh: number | null,
     officialAlertMatch?: DistrictDecisionSupport['officialImdAlert'],
-    precomputedMask?: ContinuityMask
+    precomputedMask?: ContinuityMask,
+    peakWindGustTimeUtc?: string | null
   ): DistrictDecisionSupport {
     return buildDistrictDecisionSupport(
       hourly,
@@ -942,7 +999,8 @@ export class ForecastDecisionSupportService {
       peakHourlyTimeUtc,
       maxWindGustKmh,
       officialAlertMatch,
-      precomputedMask
+      precomputedMask,
+      peakWindGustTimeUtc
     );
   }
 }

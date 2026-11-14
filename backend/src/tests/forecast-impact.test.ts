@@ -987,4 +987,262 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
       });
     });
   });
+
+  describe('8. Phase 3E-1A: Decision Support Output Integrity Verification', () => {
+    describe('A. Extended Block Mean Rainfall Rate Calculation & Precision', () => {
+      it('calculates meanRateMmH to 2 decimal places for non-zero accumulation below 1 mm (0.3mm / 6h = 0.05 mm/h)', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 71; t++) {
+          series[t].precipitationMm = 0;
+        }
+        series[1].precipitationMm = 0.1;
+        series[2].precipitationMm = 0.1;
+        series[3].precipitationMm = 0.1;
+
+        const blocks = computeExtendedForecastBlocks(series);
+        expect(blocks[0].accumMm).toBe(0.3);
+        expect(blocks[0].durationHours).toBe(6);
+        expect(blocks[0].meanRateMmH).toBe(0.05); // Exact 0.3 / 6
+      });
+
+      it('calculates meanRateMmH for 0.2mm over 6h as 0.03 mm/h', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 71; t++) series[t].precipitationMm = 0;
+        series[1].precipitationMm = 0.2;
+
+        const blocks = computeExtendedForecastBlocks(series);
+        expect(blocks[0].accumMm).toBe(0.2);
+        expect(blocks[0].meanRateMmH).toBe(0.03); // Math.round(0.2 / 6 * 100) / 100 = 0.03
+      });
+
+      it('calculates meanRateMmH as 0 for genuine zero accumulation', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 71; t++) series[t].precipitationMm = 0;
+
+        const blocks = computeExtendedForecastBlocks(series);
+        expect(blocks[0].accumMm).toBe(0);
+        expect(blocks[0].meanRateMmH).toBe(0);
+      });
+
+      it('calculates meanRateMmH for 6-hour blocks correctly (1.0mm / 6h = 0.17 mm/h)', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 71; t++) series[t].precipitationMm = 0;
+        series[1].precipitationMm = 1.0;
+
+        const blocks = computeExtendedForecastBlocks(series);
+        expect(blocks[0].accumMm).toBe(1.0);
+        expect(blocks[0].durationHours).toBe(6);
+        expect(blocks[0].meanRateMmH).toBe(0.17); // 1.0 / 6 = 0.1666... -> 0.17
+      });
+
+      it('calculates meanRateMmH for final 5-hour block (Block 12) correctly', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 71; t++) series[t].precipitationMm = 0;
+        // Block 12 is T+67..T+71 (5 hours)
+        series[67].precipitationMm = 0.7;
+
+        const blocks = computeExtendedForecastBlocks(series);
+        const b12 = blocks[11];
+        expect(b12.blockIndex).toBe(12);
+        expect(b12.durationHours).toBe(5);
+        expect(b12.accumMm).toBe(0.7);
+        expect(b12.meanRateMmH).toBe(0.14); // 0.7 / 5 = 0.14
+
+        // Test another value: 2.5mm / 5h = 0.5 mm/h
+        series[67].precipitationMm = 2.5;
+        const blocks2 = computeExtendedForecastBlocks(series);
+        expect(blocks2[11].accumMm).toBe(2.5);
+        expect(blocks2[11].meanRateMmH).toBe(0.5);
+      });
+
+      it('returns accumMm: null and meanRateMmH: null for incomplete or missing data in a block', () => {
+        const series = createSyntheticHourlySeries();
+        // Make T+4 null in Block 1
+        (series[4] as any).precipitationMm = null;
+
+        const blocks = computeExtendedForecastBlocks(series);
+        expect(blocks[0].accumMm).toBeNull();
+        expect(blocks[0].meanRateMmH).toBeNull();
+      });
+    });
+
+    describe('B. Peak Wind Gust Timestamp Extraction & Tie-Breaking', () => {
+      it('returns correct UTC timestamp for maximum wind gust in wind assessment', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 71; t++) series[t].windGustsKmh = 25.0;
+        series[10].windGustsKmh = 58.5; // Peak at T+10
+        const peakTime = series[10].time;
+
+        const ds = forecastDecisionSupportService.buildDecisionSupport(
+          series,
+          20.0,
+          5.0,
+          series[3].time,
+          58.5
+        );
+
+        expect(ds.wind.status).toBe('AVAILABLE');
+        expect(ds.wind.maxWindGustKmh).toBe(58.5);
+        expect(ds.wind.severityCategory).toBe('NEAR_GALE');
+        expect(ds.wind.peakGustTimeUtc).toBe(peakTime);
+      });
+
+      it('deterministically breaks ties in peak wind gust by returning the earliest timestamp', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 71; t++) series[t].windGustsKmh = 20.0;
+        series[5].windGustsKmh = 72.0;  // First occurrence at T+5
+        series[15].windGustsKmh = 72.0; // Tie occurrence at T+15
+        const earliestTime = series[5].time;
+
+        const ds = forecastDecisionSupportService.buildDecisionSupport(
+          series,
+          20.0,
+          5.0,
+          series[3].time,
+          72.0
+        );
+
+        expect(ds.wind.maxWindGustKmh).toBe(72.0);
+        expect(ds.wind.severityCategory).toBe('GALE_FORCE');
+        expect(ds.wind.peakGustTimeUtc).toBe(earliestTime);
+      });
+
+      it('returns peakGustTimeUtc: null when wind data is unavailable or null', () => {
+        const series = createSyntheticHourlySeries();
+        // Wind unavailable: less than 20 points
+        for (let t = 1; t <= 24; t++) (series[t] as any).windGustsKmh = null;
+
+        const ds = forecastDecisionSupportService.buildDecisionSupport(
+          series,
+          20.0,
+          5.0,
+          series[3].time,
+          null
+        );
+
+        expect(ds.wind.status).toBe('UNAVAILABLE');
+        expect(ds.wind.maxWindGustKmh).toBeNull();
+        expect(ds.wind.peakGustTimeUtc).toBeNull();
+      });
+
+      it('correctly tracks maxWindGustTimeUtc in computeNodeFutureAccumulations', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 71; t++) series[t].windGustsKmh = 30.0;
+        series[8].windGustsKmh = 66.0;
+
+        const metrics = computeNodeFutureAccumulations(series);
+        expect(metrics.maxWindGustKmh).toBe(66.0);
+        expect(metrics.maxWindGustTimeUtc).toBe(series[8].time);
+      });
+    });
+
+    describe('C. Threshold Provenance & Authority Separation', () => {
+      it('enforces exact formal provenance strings across all decision support components', () => {
+        const series = createSyntheticHourlySeries();
+        const ds = forecastDecisionSupportService.buildDecisionSupport(
+          series,
+          100.0,
+          25.0,
+          series[5].time,
+          55.0
+        );
+
+        // 24h rainfall standard
+        expect(ds.rainfall.thresholdDefinition).toBe('Official IMD 24-Hour Rainfall Standard');
+        // Priority tier heuristic
+        expect(ds.rainfall.priorityDefinition).toBe('JATAYU Internal Decision-Support Heuristic');
+        // Hourly intensity benchmark
+        expect(ds.rainfall.hourlyIntensityBenchmark).toBe('JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)');
+        // Wind scale heuristic
+        expect(ds.wind.provenance).toBe('PROPOSED_HEURISTIC_WIND_SCALE');
+        // Contributing drivers heuristic
+        for (const driver of ds.contributingDrivers) {
+          expect(driver.provenance).toBe('PROPOSED_HEURISTIC');
+        }
+      });
+    });
+
+    describe('D. Contributing Driver State & Timestamp Integrity', () => {
+      it('never treats missing precipitation as zero in PROLONGED_INTENSITY', () => {
+        const series = createSyntheticHourlySeries();
+        series[1].precipitationMm = 6.0;
+        series[2].precipitationMm = 6.0;
+        series[3].precipitationMm = 6.0;
+        (series[4] as any).precipitationMm = null;
+        series[5].precipitationMm = 6.0;
+
+        const drivers = evaluateContributingDrivers(series);
+        const prolonged = drivers.find((d) => d.key === 'PROLONGED_INTENSITY');
+        expect(prolonged?.status).toBe('UNAVAILABLE');
+        expect(prolonged?.missingDataReason).toContain('Precipitation timeseries incomplete');
+      });
+
+      it('never treats missing precipitation as zero in GALE_GUST_COINCIDENCE', () => {
+        const series = createSyntheticHourlySeries();
+        series[5].windGustsKmh = 70.0;
+        (series[5] as any).precipitationMm = null;
+
+        const drivers = evaluateContributingDrivers(series);
+        const gale = drivers.find((d) => d.key === 'GALE_GUST_COINCIDENCE');
+        expect(gale?.status).toBe('UNAVAILABLE');
+        expect(gale?.missingDataReason).toContain('precipitationMm variable not provided');
+      });
+
+      it('retains complete independence between rainfall priority and wind severity', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 24; t++) (series[t] as any).precipitationMm = null;
+        for (let t = 1; t <= 24; t++) series[t].windGustsKmh = 95.0;
+
+        const ds = forecastDecisionSupportService.buildDecisionSupport(
+          series,
+          null,
+          null,
+          null,
+          95.0
+        );
+
+        // Rainfall is DATA_INSUFFICIENT
+        expect(ds.rainfall.status).toBe('DATA_INSUFFICIENT');
+        expect(ds.rainfall.priorityTier).toBe('UNAVAILABLE');
+
+        // Wind is AVAILABLE and EXTREME_GALE_STORM
+        expect(ds.wind.status).toBe('AVAILABLE');
+        expect(ds.wind.severityCategory).toBe('EXTREME_GALE_STORM');
+        expect(ds.wind.maxWindGustKmh).toBe(95.0);
+
+        // Overall status is PARTIAL
+        expect(ds.availability.overallStatus).toBe('PARTIAL');
+        expect(ds.availability.missingVariables).toContain('precipitationMm');
+      });
+    });
+
+    describe('E. Endpoint Parity: /api/weather/decision-support vs /api/weather/forecast-impact', () => {
+      const app = createApp();
+
+      it('serves identical decisionSupport across both endpoints', async () => {
+        const resImpact = await request(app).get('/api/weather/forecast-impact?mode=sector&sector=chennai');
+        const resDecision = await request(app).get('/api/weather/decision-support?mode=sector&sector=chennai');
+
+        expect(resImpact.status).toBe(200);
+        expect(resDecision.status).toBe(200);
+
+        const impactDistricts = resImpact.body.districts;
+        const decisionDistricts = resDecision.body.districts;
+
+        expect(impactDistricts.length).toBe(decisionDistricts.length);
+
+        for (let i = 0; i < impactDistricts.length; i++) {
+          const id = impactDistricts[i];
+          const dd = decisionDistricts[i];
+
+          expect(dd.district).toBe(id.district);
+          expect(dd.state).toBe(id.state);
+          expect(dd.decisionSupport.rainfall.priorityTier).toBe(id.decisionSupport.rainfall.priorityTier);
+          expect(dd.decisionSupport.wind.severityCategory).toBe(id.decisionSupport.wind.severityCategory);
+          expect(dd.decisionSupport.wind.peakGustTimeUtc).toBe(id.decisionSupport.wind.peakGustTimeUtc);
+          expect(dd.decisionSupport.extendedBlocks[0].meanRateMmH).toBe(id.decisionSupport.extendedBlocks[0].meanRateMmH);
+        }
+      });
+    });
+  });
 });
