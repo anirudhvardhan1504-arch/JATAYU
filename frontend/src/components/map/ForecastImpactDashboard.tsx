@@ -366,7 +366,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
               </div>
               <div>
                 <span className="text-slate-500 block">PROVIDER OUTPUT GRID:</span>
-                <span className="text-teal-300 font-mono">{metadata.nativeResolution || 'Unavailable'}</span>
+                <span className="text-teal-300 font-mono">{metadata.providerOutputGrid || metadata.nativeResolution || '0.25° regular latitude/longitude'}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">JATAYU SAMPLING RESOLUTION:</span>
@@ -636,8 +636,10 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
             const ds = district.decisionSupport;
             const priorityTier: RainfallPriorityTier = ds?.rainfall?.priorityTier || 'TIER_5_ROUTINE';
             const priorityStyle = RAINFALL_PRIORITY_STYLES[priorityTier] || RAINFALL_PRIORITY_STYLES.TIER_5_ROUTINE;
-            const windSeverity: WindSeverityCategory = ds?.wind?.severityCategory || 'ROUTINE';
-            const windStyle = WIND_SEVERITY_STYLES[windSeverity] || WIND_SEVERITY_STYLES.ROUTINE;
+            const windSeverity: WindSeverityCategory =
+              ds?.wind?.severityCategory ||
+              (district.metrics.maxWindGustKmh !== null && district.metrics.maxWindGustKmh >= 0 ? 'ROUTINE' : 'UNAVAILABLE');
+            const windStyle = WIND_SEVERITY_STYLES[windSeverity] || WIND_SEVERITY_STYLES.UNAVAILABLE;
             const availability = ds?.availability;
             const availStatus: OverallDataStatus = availability?.overallStatus || (district.dataQuality.isComplete ? 'COMPLETE' : 'PARTIAL');
             const availStyle = DATA_STATUS_STYLES[availStatus] || DATA_STATUS_STYLES.COMPLETE;
@@ -741,7 +743,9 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                     <div className="flex items-center gap-1 text-[9px] text-slate-400 font-mono">
                       <span>Gust:</span>
                       <span className="text-slate-200 font-bold">
-                        {district.metrics.maxWindGustKmh !== null ? `${district.metrics.maxWindGustKmh.toFixed(1)} km/h` : '--'}
+                        {district.metrics.maxWindGustKmh !== null && ds?.wind?.status !== 'UNAVAILABLE'
+                          ? `${district.metrics.maxWindGustKmh.toFixed(1)} km/h`
+                          : '--'}
                       </span>
                     </div>
 
@@ -886,7 +890,9 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                           <div>
                             <span className="text-slate-400 block">Maximum 10m Wind Gust:</span>
                             <strong className="text-white text-xs font-mono">
-                              {district.metrics.maxWindGustKmh !== null ? `${district.metrics.maxWindGustKmh.toFixed(1)} km/h` : '--'}
+                              {district.metrics.maxWindGustKmh !== null && ds?.wind?.status !== 'UNAVAILABLE'
+                                ? `${district.metrics.maxWindGustKmh.toFixed(1)} km/h`
+                                : '--'}
                             </strong>
                             <p className="text-[8.5px] text-slate-400 leading-tight mt-0.5">
                               {windStyle.description}
@@ -897,9 +903,15 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                             <div>
                               <span className="text-slate-400 block">Peak Gust Time (UTC):</span>
                               <strong className="text-slate-200 font-mono text-[9px]">
-                                {formatUtcTimestamp(ds?.wind?.peakGustTimeUtc || district.metrics.peakHourlyTimeUtc)}
+                                {ds?.wind?.peakGustTimeUtc
+                                  ? formatUtcTimestamp(ds.wind.peakGustTimeUtc)
+                                  : ds?.wind?.status === 'UNAVAILABLE' || district.metrics.maxWindGustKmh === null
+                                  ? 'Unavailable'
+                                  : 'None'}
                               </strong>
-                              <span className="text-[8px] text-slate-500 block">Earliest timestamp on ties</span>
+                              <span className="text-[8px] text-slate-500 block">
+                                {ds?.wind?.status === 'UNAVAILABLE' ? 'Wind gust timeseries incomplete' : 'Earliest timestamp on ties'}
+                              </span>
                             </div>
 
                             <div>

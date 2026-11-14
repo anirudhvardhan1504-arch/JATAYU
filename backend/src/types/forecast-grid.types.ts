@@ -69,7 +69,8 @@ export interface ForecastGridNode {
 export interface ForecastGridMetadata {
   provider: string; // e.g. "Open-Meteo ECMWF Open Data" or "Open-Meteo NOAA GFS"
   model: string; // e.g. "ECMWF IFS (0.25°)" or "NOAA GFS (0.25°)"
-  nativeResolution: string; // e.g. "0.25° (~28 km) regular lat/lon"
+  nativeResolution: string; // Native model resolution (unavailable unless independently verified)
+  providerOutputGrid?: string; // e.g. "0.25° regular latitude/longitude"
   isFallback: boolean;
   fallbackReason?: string;
   runCycle: '00Z' | '06Z' | '12Z' | '18Z' | 'UNKNOWN';

@@ -902,39 +902,55 @@ export function buildDistrictDecisionSupport(
 
   // Wind Assessment
   let wind: DistrictWindAssessment;
-  if (!availability.isWindAvailable || maxWindGustKmh === null) {
+  if (
+    !availability.isWindAvailable ||
+    maxWindGustKmh === null ||
+    isNaN(maxWindGustKmh) ||
+    maxWindGustKmh < 0
+  ) {
     wind = {
       status: 'UNAVAILABLE',
       severityCategory: 'UNAVAILABLE',
       maxWindGustKmh: null,
       peakGustTimeUtc: null,
       provenance: 'PROPOSED_HEURISTIC_WIND_SCALE',
-      insufficientReason: 'Wind gust timeseries missing or incomplete across T+1..T+24',
+      insufficientReason: 'Wind gust timeseries missing, invalid, or incomplete across T+1..T+24',
     };
   } else {
-    let resolvedPeakGustTime: string | null = peakWindGustTimeUtc ?? null;
-    if (resolvedPeakGustTime === null && hourly && hourly.length > 1) {
-      for (let t = 1; t < hourly.length; t++) {
-        const pt = hourly[t];
-        if (
-          pt &&
-          typeof pt.windGustsKmh === 'number' &&
-          Math.round(pt.windGustsKmh * 10) / 10 === Math.round(maxWindGustKmh * 10) / 10
-        ) {
-          resolvedPeakGustTime = pt.time || null;
-          break;
+    const severityCategory = evaluateWindSeverity(maxWindGustKmh);
+    if (severityCategory === 'UNAVAILABLE') {
+      wind = {
+        status: 'UNAVAILABLE',
+        severityCategory: 'UNAVAILABLE',
+        maxWindGustKmh: null,
+        peakGustTimeUtc: null,
+        provenance: 'PROPOSED_HEURISTIC_WIND_SCALE',
+        insufficientReason: 'Wind gust data is invalid or unavailable across evaluation horizon',
+      };
+    } else {
+      let resolvedPeakGustTime: string | null = peakWindGustTimeUtc ?? null;
+      if (resolvedPeakGustTime === null && hourly && hourly.length > 1) {
+        for (let t = 1; t < hourly.length; t++) {
+          const pt = hourly[t];
+          if (
+            pt &&
+            typeof pt.windGustsKmh === 'number' &&
+            Math.round(pt.windGustsKmh * 10) / 10 === Math.round(maxWindGustKmh * 10) / 10
+          ) {
+            resolvedPeakGustTime = pt.time || null;
+            break;
+          }
         }
       }
-    }
 
-    const severityCategory = evaluateWindSeverity(maxWindGustKmh);
-    wind = {
-      status: 'AVAILABLE',
-      severityCategory,
-      maxWindGustKmh,
-      peakGustTimeUtc: resolvedPeakGustTime,
-      provenance: 'PROPOSED_HEURISTIC_WIND_SCALE',
-    };
+      wind = {
+        status: 'AVAILABLE',
+        severityCategory,
+        maxWindGustKmh,
+        peakGustTimeUtc: resolvedPeakGustTime,
+        provenance: 'PROPOSED_HEURISTIC_WIND_SCALE',
+      };
+    }
   }
 
   // Temporal Milestones and Extended Blocks

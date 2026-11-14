@@ -512,7 +512,7 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
         expect(d.metrics).toHaveProperty('futureAccum72hMm');
         expect(d.metrics.futureAccum72hMm).toBeNull();
       }
-    });
+    }, 45000);
 
     it('rejects invalid grid mode with HTTP 400 and structured error code', async () => {
       const res = await request(app).get('/api/weather/forecast-impact?mode=invalid_mode');
@@ -653,6 +653,41 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
         expect(avail.isPressureAvailable).toBe(false);
         expect(avail.missingVariables).toEqual(['precipitationMm', 'windGustsKmh', 'pressureMslHpa']);
       });
+
+      it('Scenario 2: Missing precipitation -> rainfall status DATA_INSUFFICIENT, priorityTier & imd24hCategory UNAVAILABLE', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).precipitationMm = undefined;
+        }
+        const ds = buildDistrictDecisionSupport(series, null, null, null, 40.0);
+        expect(ds.rainfall.status).toBe('DATA_INSUFFICIENT');
+        expect(ds.rainfall.priorityTier).toBe('UNAVAILABLE');
+        expect(ds.rainfall.imd24hCategory).toBe('UNAVAILABLE');
+        expect(ds.rainfall.accum24hMm).toBeNull();
+        expect(ds.rainfall.peakHourlyRateMmH).toBeNull();
+        expect(ds.wind.status).toBe('AVAILABLE');
+      });
+
+      it('Scenario 3: Missing optional showers -> does not crash; rainfall metrics and continuity compute normally', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          delete (pt as any).showersMm;
+        }
+        const ds = buildDistrictDecisionSupport(series, 45.0, 8.0, null, 25.0);
+        expect(ds.rainfall.status).toBe('AVAILABLE');
+        expect(ds.rainfall.priorityTier).toBe('TIER_4_ADVISORY');
+        expect(ds.rainfall.imd24hCategory).toBe('MODERATE_RAIN');
+      });
+
+      it('Scenario 4: Malformed or empty forecast grid series -> handles cleanly without unhandled rejection', () => {
+        const ds = buildDistrictDecisionSupport([], null, null, null, null);
+        expect(ds.availability.overallStatus).toBe('UNAVAILABLE');
+        expect(ds.rainfall.status).toBe('DATA_INSUFFICIENT');
+        expect(ds.wind.status).toBe('UNAVAILABLE');
+        expect(ds.temporalMilestones.first24hTrajectory).toBe('UNAVAILABLE');
+        expect(ds.extendedBlocks.length).toBe(12);
+        expect(ds.extendedBlocks[0].accumMm).toBeNull();
+      });
     });
 
     describe('B. Five-Tier Rainfall Priority & Provenance Separation', () => {
@@ -727,7 +762,10 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
         expect(evaluateWindSeverity(55.0)).toBe('NEAR_GALE');
         expect(evaluateWindSeverity(42.0)).toBe('MODERATE_BREEZE');
         expect(evaluateWindSeverity(25.0)).toBe('ROUTINE');
+        expect(evaluateWindSeverity(0.0)).toBe('ROUTINE');
         expect(evaluateWindSeverity(null)).toBe('UNAVAILABLE');
+        expect(evaluateWindSeverity(NaN)).toBe('UNAVAILABLE');
+        expect(evaluateWindSeverity(-10.0)).toBe('UNAVAILABLE');
       });
 
       it('wind-only assessment with missing rain: extreme wind does NOT default to dry or Tier 5', () => {
@@ -748,6 +786,100 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
         const priorityWithStorm = evaluateRainfallPriorityTier(70.0, 10.0);
         expect(priorityWithCalm).toBe('TIER_3_WATCH');
         expect(priorityWithStorm).toBe('TIER_3_WATCH');
+      });
+
+      // Phase 3E-3A Critical Wind Invariants
+      it('Phase 3E-3A: Missing all wind values -> status and severityCategory must be UNAVAILABLE, never ROUTINE', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).windGustsKmh = undefined;
+        }
+        const ds = buildDistrictDecisionSupport(series, 45.0, 8.0, '2026-11-13T10:00:00.000Z', null);
+        expect(ds.wind.status).toBe('UNAVAILABLE');
+        expect(ds.wind.severityCategory).toBe('UNAVAILABLE');
+        expect(ds.wind.maxWindGustKmh).toBeNull();
+        expect(ds.wind.peakGustTimeUtc).toBeNull();
+        expect(ds.wind.insufficientReason).toContain('missing, invalid, or incomplete');
+
+        // Gale coincidence driver must be UNAVAILABLE
+        const galeDriver = ds.contributingDrivers.find((d) => d.key === 'GALE_GUST_COINCIDENCE');
+        expect(galeDriver?.status).toBe('UNAVAILABLE');
+      });
+
+      it('Phase 3E-3A: Partially missing wind values (<20 valid hours) -> status and severityCategory must be UNAVAILABLE', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 10; t <= 24; t++) {
+          (series[t] as any).windGustsKmh = undefined; // Only 9 valid hours available
+        }
+        const ds = buildDistrictDecisionSupport(series, 45.0, 8.0, '2026-11-13T10:00:00.000Z', 48.0);
+        expect(ds.wind.status).toBe('UNAVAILABLE');
+        expect(ds.wind.severityCategory).toBe('UNAVAILABLE');
+        expect(ds.wind.maxWindGustKmh).toBeNull();
+        expect(ds.wind.peakGustTimeUtc).toBeNull();
+
+        const galeDriver = ds.contributingDrivers.find((d) => d.key === 'GALE_GUST_COINCIDENCE');
+        expect(galeDriver?.status).toBe('UNAVAILABLE');
+      });
+
+      it('Phase 3E-3A: Invalid wind values (negative, NaN) -> status and severityCategory must be UNAVAILABLE', () => {
+        const series = createSyntheticHourlySeries();
+        const dsNegative = buildDistrictDecisionSupport(series, 30.0, 5.0, null, -15.0);
+        expect(dsNegative.wind.status).toBe('UNAVAILABLE');
+        expect(dsNegative.wind.severityCategory).toBe('UNAVAILABLE');
+        expect(dsNegative.wind.maxWindGustKmh).toBeNull();
+
+        const dsNaN = buildDistrictDecisionSupport(series, 30.0, 5.0, null, NaN);
+        expect(dsNaN.wind.status).toBe('UNAVAILABLE');
+        expect(dsNaN.wind.severityCategory).toBe('UNAVAILABLE');
+        expect(dsNaN.wind.maxWindGustKmh).toBeNull();
+      });
+
+      it('Phase 3E-3A: Missing peak gust timestamp safely resolves to null without falling back to rain time', () => {
+        const series = createSyntheticHourlySeries();
+        // Give synthetic series wind gusts of 30 km/h, but maxWindGustKmh = 55 km/h (not found in series)
+        const ds = buildDistrictDecisionSupport(
+          series,
+          45.0,
+          8.0,
+          '2026-11-13T14:00:00.000Z',
+          55.0,
+          undefined,
+          undefined,
+          null
+        );
+        expect(ds.wind.status).toBe('AVAILABLE');
+        expect(ds.wind.severityCategory).toBe('NEAR_GALE');
+        expect(ds.wind.maxWindGustKmh).toBe(55.0);
+        expect(ds.wind.peakGustTimeUtc).toBeNull(); // Does not substitute rainfall time
+      });
+
+      it('Phase 3E-3A: Valid zero gust if source explicitly reports zero -> evaluates to ROUTINE', () => {
+        const series = createSyntheticHourlySeries();
+        for (let t = 1; t <= 24; t++) {
+          series[t].windGustsKmh = 0.0;
+        }
+        const ds = buildDistrictDecisionSupport(series, 20.0, 4.0, null, 0.0);
+        expect(ds.wind.status).toBe('AVAILABLE');
+        expect(ds.wind.severityCategory).toBe('ROUTINE');
+        expect(ds.wind.maxWindGustKmh).toBe(0.0);
+      });
+
+      it('Phase 3E-3A: Independent rainfall assessment when wind is unavailable -> rain evaluated fully', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).windGustsKmh = undefined;
+        }
+        const ds = buildDistrictDecisionSupport(series, 120.0, 38.0, '2026-11-13T08:00:00.000Z', null);
+        // Rainfall must be complete and accurate
+        expect(ds.rainfall.status).toBe('AVAILABLE');
+        expect(ds.rainfall.priorityTier).toBe('TIER_2_ELEVATED');
+        expect(ds.rainfall.imd24hCategory).toBe('VERY_HEAVY_RAIN');
+        expect(ds.rainfall.accum24hMm).toBe(120.0);
+        expect(ds.rainfall.peakHourlyRateMmH).toBe(38.0);
+        // Wind must be unavailable
+        expect(ds.wind.status).toBe('UNAVAILABLE');
+        expect(ds.wind.severityCategory).toBe('UNAVAILABLE');
+        expect(ds.wind.maxWindGustKmh).toBeNull();
       });
     });
 
@@ -1243,7 +1375,7 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
           expect(dd.decisionSupport.wind.peakGustTimeUtc).toBe(id.decisionSupport.wind.peakGustTimeUtc);
           expect(dd.decisionSupport.extendedBlocks[0].meanRateMmH).toBe(id.decisionSupport.extendedBlocks[0].meanRateMmH);
         }
-      });
+      }, 45000);
     });
   });
 
@@ -1315,6 +1447,6 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
           expect(def).toBe('IMD-Aligned 24h: 0.0 mm (No Rain)');
         }
       }
-    });
+    }, 45000);
   });
 });

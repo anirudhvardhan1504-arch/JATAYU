@@ -257,6 +257,7 @@ export interface ForecastImpactMetadata {
   provider: string;
   model: string;
   nativeResolution: string;
+  providerOutputGrid?: string;
   gridSamplingResolution: string;
   initializationTime: string;
   runCycle: '00Z' | '06Z' | '12Z' | '18Z' | 'UNKNOWN';

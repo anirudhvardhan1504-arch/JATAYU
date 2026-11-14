@@ -256,6 +256,89 @@ describe('Phase 3B-1: Forecast Grid Service & Mathematical Physics Verification'
       expect(staleRes.metadata.staleReason).toBe('DAILY_BUDGET_EXHAUSTED');
       expect(staleRes.metadata.dailyBudgetRemaining).toBe(0);
     });
+
+    it('Scenario 1: serves stale cached grid with BOTH_PROVIDERS_UNREACHABLE when both ECMWF and GFS fail', async () => {
+      // Seed cache with 1 valid request
+      vi.spyOn(globalThis, 'fetch').mockImplementationOnce(async (url: any) => {
+        const u = new URL(url.toString());
+        const latArr = u.searchParams.get('latitude')!.split(',').map(Number);
+        const lonArr = u.searchParams.get('longitude')!.split(',').map(Number);
+        const mockPayload = createMockResponse(latArr, lonArr);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => mockPayload,
+          text: async () => JSON.stringify(mockPayload),
+        } as Response;
+      });
+
+      await service.getForecastGrid('sector', 'chennai');
+
+      // Now inject total failure on both ECMWF and GFS
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+        return {
+          ok: false,
+          status: 503,
+          statusText: 'Service Unavailable',
+          text: async () => 'Upstream totally unavailable',
+        } as Response;
+      });
+
+      // Force refresh with both providers failing
+      const res = await service.getForecastGrid('sector', 'chennai', true);
+      expect(res.metadata.isStale).toBe(true);
+      expect(res.metadata.staleReason).toBe('ALL_PROVIDERS_UNAVAILABLE');
+      expect(res.nodes.length).toBeGreaterThan(0);
+    });
+
+    it('Scenario 1 (No Cache): throws error when both ECMWF and GFS fail and no stale cache exists', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+        return {
+          ok: false,
+          status: 503,
+          statusText: 'Service Unavailable',
+          text: async () => 'Upstream totally unavailable',
+        } as Response;
+      });
+
+      await expect(service.getForecastGrid('sector', 'guwahati')).rejects.toThrow(
+        /All forecast upstream providers failed/
+      );
+    });
+
+    it('Scenario 9: recovers cleanly after upstream services become available again', async () => {
+      let failCall = true;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: any) => {
+        if (failCall) {
+          return {
+            ok: false,
+            status: 503,
+            statusText: 'Temporary Outage',
+            text: async () => 'Temporary maintenance',
+          } as Response;
+        }
+        const u = new URL(url.toString());
+        const latArr = u.searchParams.get('latitude')!.split(',').map(Number);
+        const lonArr = u.searchParams.get('longitude')!.split(',').map(Number);
+        const mockPayload = createMockResponse(latArr, lonArr);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => mockPayload,
+          text: async () => JSON.stringify(mockPayload),
+        } as Response;
+      });
+
+      // First call fails
+      await expect(service.getForecastGrid('sector', 'mumbai')).rejects.toThrow();
+
+      // Service recovers
+      failCall = false;
+      const res = await service.getForecastGrid('sector', 'mumbai');
+      expect(res.metadata.provider).toBe('Open-Meteo ECMWF Open Data');
+      expect(res.metadata.isFallback).toBe(false);
+      expect(res.nodes.length).toBeGreaterThan(0);
+    });
   });
 
   describe('4. Express Route Integration: GET /api/weather/forecast-grid', () => {

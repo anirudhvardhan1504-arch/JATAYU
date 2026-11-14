@@ -229,16 +229,20 @@ export function computeNodeFutureAccumulations(hourly: HourlyGridDataPoint[]): {
   if (totalAvailable > 1) {
     let currentPeak = -1;
     let currentGust = -1;
+    let hasValidPeakPoint = false;
+    let hasValidGustPoint = false;
 
     for (let t = 1; t < totalAvailable; t++) {
       const pt = hourly[t];
       if (pt && typeof pt.precipitationMm === 'number' && !isNaN(pt.precipitationMm) && pt.precipitationMm >= 0) {
+        hasValidPeakPoint = true;
         if (pt.precipitationMm > currentPeak) {
           currentPeak = pt.precipitationMm;
           peakTime = pt.time;
         }
       }
-      if (pt && typeof pt.windGustsKmh === 'number' && !isNaN(pt.windGustsKmh)) {
+      if (pt && typeof pt.windGustsKmh === 'number' && !isNaN(pt.windGustsKmh) && pt.windGustsKmh >= 0) {
+        hasValidGustPoint = true;
         if (pt.windGustsKmh > currentGust) {
           currentGust = pt.windGustsKmh;
           maxGustTime = pt.time;
@@ -246,10 +250,10 @@ export function computeNodeFutureAccumulations(hourly: HourlyGridDataPoint[]): {
       }
     }
 
-    if (currentPeak >= 0) {
+    if (hasValidPeakPoint && currentPeak >= 0) {
       peakRate = Math.round(currentPeak * 10) / 10;
     }
-    if (currentGust >= 0) {
+    if (hasValidGustPoint && currentGust >= 0) {
       maxGust = Math.round(currentGust * 10) / 10;
     }
   }
@@ -584,6 +588,7 @@ export class ForecastImpactService {
       provider: gridMeta.provider,
       model: gridMeta.model,
       nativeResolution: gridMeta.nativeResolution,
+      providerOutputGrid: gridMeta.providerOutputGrid || '0.25° regular latitude/longitude',
       gridSamplingResolution:
         mode === 'sector'
           ? `0.25° (~28 km) Mesoscale Sector Grid Cluster (${sectorKey.toUpperCase()})`
@@ -833,7 +838,7 @@ export class ForecastImpactService {
       for (let t = 0; t < numHours; t++) {
         let pSum = 0, pCount = 0;
         let sSum = 0, sCount = 0;
-        let maxG = -1;
+        let maxG = -1, gCount = 0;
         let pmslSum = 0, pmslCount = 0;
         let time = '';
 
@@ -849,8 +854,11 @@ export class ForecastImpactService {
             sSum += pt.showersMm;
             sCount++;
           }
-          if (typeof pt.windGustsKmh === 'number' && !isNaN(pt.windGustsKmh) && pt.windGustsKmh > maxG) {
-            maxG = pt.windGustsKmh;
+          if (typeof pt.windGustsKmh === 'number' && !isNaN(pt.windGustsKmh) && pt.windGustsKmh >= 0) {
+            gCount++;
+            if (pt.windGustsKmh > maxG) {
+              maxG = pt.windGustsKmh;
+            }
           }
           if (typeof pt.pressureMslHpa === 'number' && !isNaN(pt.pressureMslHpa) && pt.pressureMslHpa > 0) {
             pmslSum += pt.pressureMslHpa;
@@ -860,17 +868,17 @@ export class ForecastImpactService {
 
         representativeHourly.push({
           time,
-          precipitationMm: pCount > 0 ? Math.round((pSum / pCount) * 10) / 10 : 0,
-          rainMm: pCount > 0 ? Math.round((pSum / pCount) * 10) / 10 : 0,
-          showersMm: sCount > 0 ? Math.round((sSum / sCount) * 10) / 10 : 0,
+          precipitationMm: pCount > 0 ? Math.round((pSum / pCount) * 10) / 10 : (null as any),
+          rainMm: pCount > 0 ? Math.round((pSum / pCount) * 10) / 10 : (null as any),
+          showersMm: sCount > 0 ? Math.round((sSum / sCount) * 10) / 10 : (null as any),
           temperatureC: 25.0,
           apparentTemperatureC: 25.0,
           relativeHumidityPercent: 70,
-          pressureMslHpa: pmslCount > 0 ? Math.round((pmslSum / pmslCount) * 10) / 10 : 1010.0,
+          pressureMslHpa: pmslCount > 0 ? Math.round((pmslSum / pmslCount) * 10) / 10 : (null as any),
           surfacePressureHpa: 1008.0,
           windSpeedKmh: 15.0,
           windDirectionDegrees: 180,
-          windGustsKmh: maxG >= 0 ? maxG : 0,
+          windGustsKmh: gCount > 0 ? (maxG >= 0 ? maxG : 0) : (null as any),
           uMs: 0,
           vMs: 0,
         });

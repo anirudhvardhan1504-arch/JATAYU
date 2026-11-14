@@ -562,6 +562,54 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
 
       expect(() => unmount()).not.toThrow();
     });
+
+    it('Scenario 5: Backend unavailable (ECONNREFUSED) -> renders error banner and allows retry', async () => {
+      vi.spyOn(impactService, 'getForecastImpact').mockRejectedValueOnce(
+        new Error('Failed to connect to JATAYU backend server: ECONNREFUSED')
+      );
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to connect to JATAYU backend server/i)).toBeDefined();
+        expect(screen.getByRole('button', { name: /Retry Request/i })).toBeDefined();
+      });
+    });
+
+    it('Scenario 6: Frontend network interruption and recovery -> recovers cleanly upon retry', async () => {
+      const getImpactSpy = vi
+        .spyOn(impactService, 'getForecastImpact')
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockResolvedValueOnce(mockResponse);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      // Verify network failure banner
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to fetch/i)).toBeDefined();
+      });
+
+      // Network restored -> user clicks Retry
+      const retryBtn = screen.getByRole('button', { name: /Retry Request/i });
+      fireEvent.click(retryBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI')).toBeDefined();
+        expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
+      });
+      expect(getImpactSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('Scenario 8: Repeated dashboard open/close and memory cleanup across 10 rapid lifecycles', async () => {
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(mockResponse);
+
+      for (let i = 0; i < 10; i++) {
+        const { unmount } = render(
+          <ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />
+        );
+        expect(() => unmount()).not.toThrow();
+      }
+    });
   });
 
   /* -------------------------------------------------------------------------- */
@@ -647,10 +695,10 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
           hourlyIntensityBenchmark: 'JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)',
         },
         wind: {
-          status: opts.maxWindGustKmh !== null ? 'AVAILABLE' : 'UNAVAILABLE',
+          status: opts.windSeverity !== 'UNAVAILABLE' && opts.maxWindGustKmh !== null ? 'AVAILABLE' : 'UNAVAILABLE',
           severityCategory: opts.windSeverity,
-          maxWindGustKmh: opts.maxWindGustKmh,
-          peakGustTimeUtc: opts.peakGustTimeUtc !== undefined ? opts.peakGustTimeUtc : '2026-11-13T15:00:00.000Z',
+          maxWindGustKmh: opts.windSeverity !== 'UNAVAILABLE' ? opts.maxWindGustKmh : null,
+          peakGustTimeUtc: opts.windSeverity !== 'UNAVAILABLE' && opts.peakGustTimeUtc !== undefined ? opts.peakGustTimeUtc : null,
           provenance: 'PROPOSED_HEURISTIC_WIND_SCALE',
         },
         temporalMilestones: {
@@ -829,6 +877,82 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
         expect(screen.getByText('PROPOSED_HEURISTIC_WIND_SCALE')).toBeDefined();
         expect(screen.getByText(/Wind severity is computed independently from rainfall priority tier/i)).toBeDefined();
         expect(screen.getByText('2026-11-13 17:30 UTC')).toBeDefined();
+      });
+    });
+
+    it('Phase 3E-3A: renders UNAVAILABLE wind distinctly from ROUTINE wind when wind measurements are missing or invalid', async () => {
+      const missingWindDistrict = createDecisionDistrict('WIND_MISSING_DISTRICT', 'TAMIL NADU', {
+        priorityTier: 'TIER_3_WATCH',
+        imd24hCategory: 'HEAVY_RAIN',
+        peakHourlyCategory: 'MODERATE',
+        accum24hMm: 72.0,
+        peakHourlyRateMmH: 14.0,
+        windSeverity: 'UNAVAILABLE',
+        maxWindGustKmh: null,
+        peakGustTimeUtc: null,
+      });
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [missingWindDistrict],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('WIND_MISSING_DISTRICT')).toBeDefined();
+        // The district card wind badge must say Unavailable, NOT Routine Wind
+        expect(screen.getAllByText('Unavailable').length).toBeGreaterThanOrEqual(1);
+        expect(screen.queryByText('Routine Wind')).toBeNull();
+      });
+
+      // Expand to view Wind Intelligence panel
+      fireEvent.click(screen.getByText('WIND_MISSING_DISTRICT'));
+
+      await waitFor(() => {
+        // Peak gust time must be Unavailable, and wind section shows incomplete timeseries notice
+        expect(screen.getAllByText('Unavailable').length).toBeGreaterThanOrEqual(2);
+        expect(screen.getByText(/Wind gust timeseries incomplete across T\+1\.\.T\+24/i)).toBeDefined();
+        expect(screen.getByText('Wind gust timeseries incomplete')).toBeDefined();
+      });
+    });
+
+    it('Phase 3E-3A: renders ROUTINE wind with 0.0 km/h when source explicitly reports zero gust', async () => {
+      const calmDistrict = createDecisionDistrict('CALM_DISTRICT', 'TAMIL NADU', {
+        priorityTier: 'TIER_5_ROUTINE',
+        imd24hCategory: 'LIGHT_RAIN',
+        peakHourlyCategory: 'LIGHT',
+        accum24hMm: 5.0,
+        peakHourlyRateMmH: 1.0,
+        windSeverity: 'ROUTINE',
+        maxWindGustKmh: 0.0,
+        peakGustTimeUtc: '2026-11-13T06:00:00.000Z',
+      });
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [calmDistrict],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('CALM_DISTRICT')).toBeDefined();
+        expect(screen.getAllByText('Routine Wind').length).toBeGreaterThanOrEqual(1);
+      });
+
+      // Expand
+      fireEvent.click(screen.getByText('CALM_DISTRICT'));
+
+      await waitFor(() => {
+        expect(screen.getAllByText('0.0 km/h').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByText('2026-11-13 06:00 UTC')).toBeDefined();
       });
     });
 

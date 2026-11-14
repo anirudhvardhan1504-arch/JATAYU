@@ -89,6 +89,8 @@ export interface ForecastGridMetadata {
   model: string;
   /** Native resolution disclosure (e.g. '0.25° (~28 km) regular lat/lon') */
   nativeResolution: string;
+  /** Provider output grid (e.g. '0.25° regular latitude/longitude') */
+  providerOutputGrid?: string;
   /** True when primary provider (ECMWF) failed and failover (NOAA GFS) was activated */
   isFallback: boolean;
   /** Explanation of why fallback was activated */
@@ -600,7 +602,7 @@ export function getForecastDisclosureText(metadata: ForecastGridMetadata): strin
     ? ` [STALE CACHE: ${metadata.staleReason || 'Upstream provider delayed or quota safety enforced'}]`
     : '';
 
-  return `${metadata.disclosure} Model: ${metadata.model} (${metadata.nativeResolution}), Assimilation: ${metadata.runCycle} (${metadata.initializationTime}).${fallbackNotice}${staleNotice}`;
+  return `${metadata.disclosure} Model: ${metadata.model}, Grid: ${metadata.providerOutputGrid || metadata.nativeResolution}, Assimilation: ${metadata.runCycle} (${metadata.initializationTime}).${fallbackNotice}${staleNotice}`;
 }
 
 /**

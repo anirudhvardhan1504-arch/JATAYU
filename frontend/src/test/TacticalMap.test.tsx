@@ -181,6 +181,30 @@ describe('TacticalMap Component Unit & Integration Tests', () => {
       expect(screen.getByText('Global radar feed offline or unreachable')).toBeInTheDocument();
     });
   });
+
+  it('Scenario 7: handles basemap overlay reloads while forecast and satellite overlays are active without crashing', async () => {
+    const { rerender } = render(
+      <TacticalMap
+        center={[80.2707, 13.0827]}
+        locationName="Chennai Operational Sector"
+        showSatellite={true}
+        showForecast={true}
+      />
+    );
+
+    // Rerender with toggled layers
+    rerender(
+      <TacticalMap
+        center={[80.2707, 13.0827]}
+        locationName="Chennai Operational Sector"
+        showSatellite={false}
+        showForecast={true}
+        showPressureContours={true}
+      />
+    );
+
+    expect(screen.getByText('Chennai Operational Sector')).toBeInTheDocument();
+  });
 });
 
 describe('LiveMapPage Integration Tests', () => {

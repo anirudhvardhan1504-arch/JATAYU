@@ -312,6 +312,7 @@ export class ForecastGridService {
     let providerName = 'Open-Meteo ECMWF Open Data';
     let modelName = 'ECMWF IFS (0.25°)';
     let nativeRes = '0.25° (~28 km) regular lat/lon';
+    let providerOutputGrid = '0.25° regular latitude/longitude';
 
     // Attempt Primary Provider (ECMWF Open Data)
     try {
@@ -325,6 +326,7 @@ export class ForecastGridService {
       providerName = 'Open-Meteo NOAA GFS';
       modelName = 'NOAA GFS (0.25°)';
       nativeRes = '0.25° (~28 km) Gaussian lat/lon';
+      providerOutputGrid = '0.25° regular latitude/longitude';
 
       try {
         rawResults = await this.fetchBatchChunks(this.gfsBaseUrl, chunks);
@@ -423,6 +425,7 @@ export class ForecastGridService {
         provider: providerName,
         model: modelName,
         nativeResolution: nativeRes,
+        providerOutputGrid,
         isFallback,
         fallbackReason,
         runCycle,
