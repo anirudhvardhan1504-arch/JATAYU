@@ -150,6 +150,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   // Ingest genuine NWP forecast grid & impact intelligence whenever operational sector changes
   useEffect(() => {
     let isSubscribed = true;
+    setSelectedDistrictName(null);
     const sectorKey = getNearestSectorKey(location.lat, location.lon);
 
     getForecastGrid('sector', sectorKey)
@@ -717,6 +718,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         selectedDistrict={selectedDistrictName}
         onDataLoaded={handleImpactDataLoaded}
         onSelectSector={(sectorKey) => {
+          setSelectedDistrictName(null);
           const jump = SECTOR_QUICK_JUMPS.find((j) => {
             if (sectorKey === 'mumbai') return j.code === 'MUM';
             if (sectorKey === 'chennai') return j.code === 'CHE';

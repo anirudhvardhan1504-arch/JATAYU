@@ -95,6 +95,8 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
   useEffect(() => {
     if (selectedDistrict) {
       setExpandedDistrictId(selectedDistrict.toUpperCase());
+    } else {
+      setExpandedDistrictId(null);
     }
   }, [selectedDistrict]);
 
@@ -141,6 +143,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
 
   const handleSectorChange = (sec: OperationalSectorKey) => {
     setSelectedSector(sec);
+    setExpandedDistrictId(null);
     if (onSelectSector) {
       onSelectSector(sec);
     }
@@ -148,6 +151,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
 
   const handleModeChange = (newMode: ForecastGridMode) => {
     setMode(newMode);
+    setExpandedDistrictId(null);
   };
 
   const activeMode = impactData?.metadata?.mode ?? mode;

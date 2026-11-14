@@ -1325,4 +1325,119 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
       });
     });
   });
+
+  /* -------------------------------------------------------------------------- */
+  /* PHASE 3E-3: INTEGRATION, REGRESSION & DEGRADED-MODE VALIDATION              */
+  /* -------------------------------------------------------------------------- */
+  describe('Phase 3E-3: Integration, Regression & Degraded-Mode Validation', () => {
+    it('resets expanded state when selectedDistrict prop transitions to null', async () => {
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(mockResponse);
+
+      const { rerender } = render(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          selectedDistrict="CHENNAI"
+          onSelectDistrict={vi.fn()}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI')).toBeDefined();
+        // Since CHENNAI is selected/expanded, the Center Map button and RAINFALL INTELLIGENCE should be visible
+        expect(screen.getByRole('button', { name: /Center Map on CHENNAI/i })).toBeDefined();
+        expect(screen.getByText('RAINFALL INTELLIGENCE')).toBeDefined();
+      });
+
+      // Now rerender with selectedDistrict = null
+      rerender(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          selectedDistrict={null}
+          onSelectDistrict={vi.fn()}
+        />
+      );
+
+      await waitFor(() => {
+        // Expanded dossier should collapse
+        expect(screen.queryByRole('button', { name: /Center Map on CHENNAI/i })).toBeNull();
+        expect(screen.queryByText('RAINFALL INTELLIGENCE')).toBeNull();
+      });
+    });
+
+    it('resets expandedDistrictId when switching sector in the dashboard', async () => {
+      const getImpactSpy = vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(mockResponse);
+
+      render(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          onSelectDistrict={vi.fn()}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI')).toBeDefined();
+      });
+
+      // User clicks card to expand
+      fireEvent.click(screen.getByText('CHENNAI'));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Center Map on CHENNAI/i })).toBeDefined();
+        expect(screen.getByText('RAINFALL INTELLIGENCE')).toBeDefined();
+      });
+
+      // Switch sector to Mumbai
+      const mumbaiBtn = screen.getByRole('button', { name: /Mumbai/i });
+      fireEvent.click(mumbaiBtn);
+
+      await waitFor(() => {
+        expect(getImpactSpy).toHaveBeenCalledWith('sector', 'mumbai', false);
+        // Dossier should collapse
+        expect(screen.queryByRole('button', { name: /Center Map on CHENNAI/i })).toBeNull();
+        expect(screen.queryByText('RAINFALL INTELLIGENCE')).toBeNull();
+      });
+    });
+
+    it('resets expandedDistrictId when switching between sector and national modes', async () => {
+      const getImpactSpy = vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(mockResponse);
+
+      render(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          onSelectDistrict={vi.fn()}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI')).toBeDefined();
+      });
+
+      // User clicks card to expand
+      fireEvent.click(screen.getByText('CHENNAI'));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Center Map on CHENNAI/i })).toBeDefined();
+        expect(screen.getByText('RAINFALL INTELLIGENCE')).toBeDefined();
+      });
+
+      // Switch to National mode
+      const nationalBtn = screen.getByRole('button', { name: /National/i });
+      fireEvent.click(nationalBtn);
+
+      await waitFor(() => {
+        expect(getImpactSpy).toHaveBeenCalledWith('national', undefined, false);
+        // Dossier should collapse
+        expect(screen.queryByRole('button', { name: /Center Map on CHENNAI/i })).toBeNull();
+        expect(screen.queryByText('RAINFALL INTELLIGENCE')).toBeNull();
+      });
+    });
+  });
 });
