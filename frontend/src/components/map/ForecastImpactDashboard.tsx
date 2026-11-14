@@ -343,18 +343,18 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                 <span>NWP MODEL ASSIMILATION & PROVENANCE</span>
               </div>
               <span className="px-1.5 py-0.2 bg-teal-950 text-teal-300 text-[9px] rounded border border-teal-800 font-bold">
-                {metadata.runCycle} CYCLE
+                {metadata.runCycle && metadata.runCycle !== 'UNKNOWN' ? `${metadata.runCycle} CYCLE` : 'CYCLE UNAVAILABLE'}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               <div>
                 <span className="text-slate-500 block">FORECAST MODEL:</span>
-                <strong className="text-slate-200 font-mono">{cleanModelName || metadata.model}</strong>
+                <strong className="text-slate-200 font-mono">{cleanModelName || metadata.model || 'Unavailable'}</strong>
               </div>
               <div>
                 <span className="text-slate-500 block">UPSTREAM PROVIDER:</span>
-                <strong className="text-slate-200 font-mono">{metadata.provider}</strong>
+                <strong className="text-slate-200 font-mono">{metadata.provider || 'Unavailable'}</strong>
               </div>
               <div>
                 <span className="text-slate-500 block">NATIVE MODEL RESOLUTION:</span>
@@ -362,20 +362,25 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
               </div>
               <div>
                 <span className="text-slate-500 block">PROVIDER OUTPUT GRID:</span>
-                <span className="text-teal-300 font-mono">{metadata.nativeResolution}</span>
+                <span className="text-teal-300 font-mono">{metadata.nativeResolution || 'Unavailable'}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">JATAYU SAMPLING RESOLUTION:</span>
-                <span className="text-cyan-300 font-mono">{metadata.gridSamplingResolution}</span>
+                <span className="text-cyan-300 font-mono">{metadata.gridSamplingResolution || 'Unavailable'}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">RUN CYCLE / INITIALIZATION:</span>
-                <span className="text-slate-300 font-mono">{metadata.runCycle} ({metadata.initializationTime})</span>
+                <span className="text-slate-300 font-mono">
+                  {metadata.runCycle && metadata.runCycle !== 'UNKNOWN' ? `${metadata.runCycle} Cycle` : 'Cycle Unavailable'}
+                  {metadata.initializationTime ? ` (Initialized: ${formatUtcTimestamp(metadata.initializationTime)})` : ' (Initialization Time Unavailable)'}
+                </span>
               </div>
               <div className="col-span-2 pt-1 border-t border-navy-800 flex justify-between text-[9.5px]">
                 <span className="text-slate-500">VALID FORECAST WINDOW:</span>
                 <span className="text-slate-300 font-mono">
-                  {metadata.validStartTime} → {metadata.validEndTime}
+                  {metadata.validStartTime && metadata.validEndTime
+                    ? `${formatUtcTimestamp(metadata.validStartTime)} → ${formatUtcTimestamp(metadata.validEndTime)}`
+                    : 'Window Unavailable'}
                 </span>
               </div>
             </div>
@@ -689,7 +694,24 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                       </span>
 
                       {/* Overall Meteorological Data Status */}
-                      <span className={`px-1.5 py-0.2 rounded border text-[8.5px] ${availStyle.badge}`} title={availability?.missingVariables?.length ? `Missing: ${availability.missingVariables.join(', ')}` : 'All NWP variables available'}>
+                      <span
+                        className={`px-1.5 py-0.2 rounded border text-[8.5px] ${availStyle.badge}`}
+                        title={
+                          availability?.missingVariables?.length
+                            ? `Missing: ${availability.missingVariables
+                                .map((v) =>
+                                  v === 'pressureMslHpa'
+                                    ? 'Mean Sea-Level Pressure (MSLP)'
+                                    : v === 'windGustsKmh'
+                                    ? '10m Wind Gusts'
+                                    : v === 'precipitationMm'
+                                    ? 'Precipitation Accumulation'
+                                    : v
+                                )
+                                .join(', ')}`
+                            : 'All NWP variables available'
+                        }
+                      >
                         {availStyle.label}
                       </span>
 
@@ -769,7 +791,17 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                           {availability?.missingVariables && availability.missingVariables.length > 0 && (
                             <div className="text-[8.5px] text-amber-300/90 mt-0.5">
                               <strong>Missing Variables: </strong>
-                              {availability.missingVariables.join(', ')}
+                              {availability.missingVariables
+                                .map((v) =>
+                                  v === 'pressureMslHpa'
+                                    ? 'Mean Sea-Level Pressure (MSLP)'
+                                    : v === 'windGustsKmh'
+                                    ? '10m Wind Gusts'
+                                    : v === 'precipitationMm'
+                                    ? 'Precipitation Accumulation'
+                                    : v
+                                )
+                                .join(', ')}
                             </div>
                           )}
                         </div>
@@ -811,7 +843,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                             </div>
 
                             <div>
-                              <span className="text-slate-400 block">Peak Hourly Rate:</span>
+                              <span className="text-slate-400 block">Peak One-Hour Rainfall Rate:</span>
                               <strong className="text-white text-xs font-mono">
                                 {district.metrics.peakHourlyRateMmH !== null ? `${district.metrics.peakHourlyRateMmH.toFixed(1)} mm/h` : '--'}
                               </strong>
@@ -820,7 +852,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                               </span>
                               {district.metrics.peakHourlyTimeUtc && (
                                 <span className="text-[8px] text-slate-500 block">
-                                  Valid: {formatUtcTimestamp(district.metrics.peakHourlyTimeUtc)}
+                                  Valid: {formatUtcTimestamp(district.metrics.peakHourlyTimeUtc)} (Preceding-Hour Accumulation)
                                 </span>
                               )}
                             </div>
@@ -829,7 +861,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                           {/* Explicit Scientific Distinction Safeguard */}
                           <div className="p-1 bg-navy-950 border border-navy-800/80 rounded text-[8px] text-slate-400 leading-tight">
                             <strong className="text-slate-300">Operational Safeguard: </strong>
-                            Peak hourly rate (mm/h) indicates instantaneous convective intensity; 24h accumulation (mm) represents cumulative precipitation volume.
+                            Peak one-hour rainfall rate (mm/h) is derived from preceding-hour accumulation; 24h accumulation (mm) represents prospective cumulative volume across the forecast horizon.
                           </div>
                         </div>
                       </div>
@@ -943,7 +975,7 @@ export const ForecastImpactDashboard: React.FC<ForecastImpactDashboardProps> = (
                             <strong className="text-slate-200 font-mono">
                               {ds?.temporalMilestones?.peakHourUtc ? formatUtcTimestamp(ds.temporalMilestones.peakHourUtc) : formatUtcTimestamp(district.metrics.peakHourlyTimeUtc)}
                             </strong>
-                            <span className="text-[8px] text-slate-500 block">Maximum hourly rate</span>
+                            <span className="text-[8px] text-slate-500 block">Peak 1h accumulation rate</span>
                           </div>
                           <div>
                             <span className="text-slate-500 block">CESSATION HOUR:</span>

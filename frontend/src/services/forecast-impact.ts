@@ -584,27 +584,27 @@ export const CONTRIBUTING_DRIVERS_META: Record<
 > = {
   CONVECTIVE_BURST: {
     title: 'Convective Burst',
-    criterion: 'Peak rain >= 15 mm/h with >= 50% convective fraction (showers/rain ratio)',
+    criterion: 'Peak one-hour rainfall rate >= 15.0 mm/h (preceding-hour accumulation)',
     unit: 'ratio',
   },
   PROLONGED_INTENSITY: {
-    title: 'Prolonged Intensity',
-    criterion: '>= 4 consecutive hours with rain >= 5.0 mm/h',
+    title: 'Prolonged Rainfall',
+    criterion: '>= 3 consecutive hours with one-hour rainfall rate >= 5.0 mm/h',
     unit: 'hours',
   },
   GALE_GUST_COINCIDENCE: {
     title: 'Gale-Gust Coincidence',
-    criterion: 'Peak gust >= 65 km/h coincident with rain >= 7.5 mm/h within +/- 1 hour',
+    criterion: 'Peak gust >= 62.0 km/h coincident with one-hour rain rate >= 5.0 mm/h within +/- 1 hour',
     unit: 'km/h',
   },
   RAPID_BAROMETRIC_DROP: {
-    title: 'Rapid Barometric Drop',
-    criterion: '>= 3.0 hPa drop over 3h or >= 5.0 hPa drop over 6h (MSLP only)',
+    title: 'Rapid MSLP Drop',
+    criterion: 'Mean sea-level pressure drop >= 3.0 hPa in 3h or >= 5.0 hPa in 6h (MSLP tendency)',
     unit: 'hPa',
   },
   IMMINENT_ONSET: {
     title: 'Imminent Onset',
-    criterion: 'Rain >= 2.5 mm/h within initial 3 forecast hours (T+1..T+3)',
+    criterion: 'One-hour rain rate >= 2.5 mm/h within initial 3 forecast hours (T+1..T+3)',
     unit: 'hours',
   },
 };

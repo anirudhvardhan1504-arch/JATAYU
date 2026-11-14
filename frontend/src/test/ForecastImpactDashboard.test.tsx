@@ -855,7 +855,7 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
           },
           RAPID_BAROMETRIC_DROP: {
             status: 'UNAVAILABLE',
-            missingDataReason: 'Surface pressure series unavailable from local grid mesh',
+            missingDataReason: 'Mean sea-level pressure series unavailable from local grid mesh',
           },
         },
       });
@@ -886,7 +886,7 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
 
         // Unavailable driver missing reason
         expect(screen.getByText('UNAVAILABLE')).toBeDefined();
-        expect(screen.getByText('Surface pressure series unavailable from local grid mesh')).toBeDefined();
+        expect(screen.getByText('Mean sea-level pressure series unavailable from local grid mesh')).toBeDefined();
       });
     });
 
@@ -900,7 +900,7 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
         windSeverity: 'UNAVAILABLE',
         maxWindGustKmh: null,
         overallStatus: 'PARTIAL',
-        missingVariables: ['10m Wind Gusts', 'Surface Barometric Pressure'],
+        missingVariables: ['10m Wind Gusts', 'pressureMslHpa'],
       });
 
       const response: impactService.ForecastImpactResponse = {
@@ -922,7 +922,7 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/Missing Variables:/i)).toBeDefined();
-        expect(screen.getByText(/10m Wind Gusts, Surface Barometric Pressure/i)).toBeDefined();
+        expect(screen.getByText(/10m Wind Gusts, Mean Sea-Level Pressure \(MSLP\)/i)).toBeDefined();
       });
     });
 
@@ -1103,6 +1103,225 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
         expect(
           screen.getByText(/coarse synoptic prioritization across Indian districts/i)
         ).toBeDefined();
+      });
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* PHASE 3E-2A: DASHBOARD SCIENTIFIC TERMINOLOGY & METADATA INTEGRITY SUITE    */
+  /* -------------------------------------------------------------------------- */
+  describe('Phase 3E-2A: Dashboard Scientific Terminology & Metadata Integrity Suite', () => {
+    it('verifies peak hourly rainfall wording enforces preceding-hour accumulation semantics and does not claim instantaneous intensity', async () => {
+      const rainfallDistrict = {
+        ...mockResponse.districts[0],
+        district: 'PRECIP_TERMINOLOGY_DISTRICT',
+        metrics: {
+          ...mockResponse.districts[0].metrics,
+          futureAccum24hMm: 95.0,
+          peakHourlyRateMmH: 28.5,
+          peakHourlyTimeUtc: '2026-11-14T06:00:00.000Z',
+          peakHourlyRateCategory: 'VERY_HEAVY' as const,
+        },
+        decisionSupport: {
+          ...mockResponse.districts[0].decisionSupport,
+          rainfall: {
+            status: 'AVAILABLE' as const,
+            priorityTier: 'TIER_2_ELEVATED' as const,
+            imd24hCategory: 'HEAVY_RAIN' as const,
+            accum24hMm: 95.0,
+            peakHourlyRateMmH: 28.5,
+            peakHourlyCategory: 'VERY_HEAVY' as const,
+            peakHourlyTimeUtc: '2026-11-14T06:00:00.000Z',
+            thresholdDefinition: 'JATAYU Implementation of IMD-Aligned 24h Rainfall Thresholds',
+            priorityDefinition: 'JATAYU Internal Decision-Support Heuristic',
+            hourlyIntensityBenchmark: 'JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)',
+          },
+          temporalMilestones: {
+            first24hTrajectory: 'INTENSIFYING' as const,
+            w1Mm: 5.0,
+            w2Mm: 15.0,
+            w3Mm: 35.0,
+            w4Mm: 40.0,
+            onsetHourUtc: '2026-11-14T02:00:00.000Z',
+            peakHourUtc: '2026-11-14T06:00:00.000Z',
+            cessationHourUtc: '2026-11-14T12:00:00.000Z',
+            elevatedHoursTotal: 5,
+            longestElevatedRunHours: 4,
+          },
+          wind: {
+            status: 'AVAILABLE' as const,
+            severityCategory: 'ROUTINE' as const,
+            maxWindGustKmh: 35.0,
+            peakGustTimeUtc: '2026-11-14T06:00:00.000Z',
+            provenance: 'PROPOSED_HEURISTIC_WIND_SCALE' as const,
+          },
+          extendedBlocks: [],
+          contributingDrivers: [],
+          availability: {
+            overallStatus: 'COMPLETE' as const,
+            isPrecipitationAvailable: true,
+            isWindAvailable: true,
+            isPressureAvailable: true,
+            missingVariables: [],
+          },
+        },
+      };
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [rainfallDistrict as any],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('PRECIP_TERMINOLOGY_DISTRICT')).toBeDefined();
+      });
+
+      // Expand district dossier
+      fireEvent.click(screen.getByText('PRECIP_TERMINOLOGY_DISTRICT'));
+
+      await waitFor(() => {
+        // Label must describe one-hour rate / preceding-hour accumulation
+        expect(screen.getByText('Peak One-Hour Rainfall Rate:')).toBeDefined();
+
+        // Valid timestamp note must state Preceding-Hour Accumulation
+        expect(screen.getAllByText(/Preceding-Hour Accumulation/i).length).toBeGreaterThanOrEqual(1);
+
+        // Operational safeguard must state derived from preceding-hour accumulation
+        expect(
+          screen.getByText(/Peak one-hour rainfall rate \(mm\/h\) is derived from preceding-hour accumulation/i)
+        ).toBeDefined();
+
+        // Milestone peak hour must state Peak 1h accumulation rate
+        expect(screen.getByText('Peak 1h accumulation rate')).toBeDefined();
+
+        // Absolute negative assertion: zero mention of "instantaneous" anywhere in dashboard
+        expect(screen.queryByText(/instantaneous/i)).toBeNull();
+      });
+    });
+
+    it('verifies RAPID_BAROMETRIC_DROP driver wording consistently identifies MSLP and does not substitute surface pressure', async () => {
+      const pressureDistrict = {
+        ...mockResponse.districts[0],
+        district: 'MSLP_PRESSURE_DISTRICT',
+        decisionSupport: {
+          ...mockResponse.districts[0].decisionSupport,
+          contributingDrivers: [
+            {
+              key: 'RAPID_BAROMETRIC_DROP' as const,
+              status: 'TRIGGERED' as const,
+              evidence: {
+                observedValue: 3.8,
+                threshold: 3.0,
+                units: 'hPa',
+                timestampUtc: '2026-11-14T09:00:00.000Z',
+              },
+              provenance: 'PROPOSED_HEURISTIC' as const,
+            },
+          ],
+          availability: {
+            overallStatus: 'COMPLETE' as const,
+            isPrecipitationAvailable: true,
+            isWindAvailable: true,
+            isPressureAvailable: true,
+            missingVariables: [],
+          },
+        },
+      };
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [pressureDistrict as any],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('MSLP_PRESSURE_DISTRICT')).toBeDefined();
+      });
+
+      fireEvent.click(screen.getByText('MSLP_PRESSURE_DISTRICT'));
+
+      await waitFor(() => {
+        // Driver card title must specify MSLP
+        expect(screen.getByText('Rapid MSLP Drop')).toBeDefined();
+
+        // Driver criterion must specify Mean sea-level pressure drop and MSLP tendency
+        expect(screen.getByText(/Mean sea-level pressure drop >= 3\.0 hPa/i)).toBeDefined();
+
+        // Units must be hPa
+        expect(screen.getByText(/3\.8 hPa \(Threshold: 3 hPa\)/i)).toBeDefined();
+
+        // Negative assertions: zero substitution of surface pressure
+        expect(screen.queryByText(/surface pressure drop/i)).toBeNull();
+        expect(screen.queryByText(/surface barometric pressure/i)).toBeNull();
+      });
+    });
+
+    it('verifies forecast initialization and run cycle metadata is dynamically derived from API response and not hardcoded', async () => {
+      const dynamicMetaResponse: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        metadata: {
+          ...mockResponse.metadata,
+          runCycle: '18Z',
+          initializationTime: '2026-11-14T18:00:00.000Z',
+          validStartTime: '2026-11-14T19:00:00.000Z',
+          validEndTime: '2026-11-17T18:00:00.000Z',
+        },
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(dynamicMetaResponse);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        // Header badge must reflect 18Z dynamically
+        expect(screen.getByText('18Z CYCLE')).toBeDefined();
+
+        // 00Z must not appear
+        expect(screen.queryByText('00Z CYCLE')).toBeNull();
+
+        // Run cycle and initialization row must display 18Z and converted UTC time
+        expect(screen.getByText(/18Z Cycle \(Initialized: 2026-11-14 18:00 UTC\)/i)).toBeDefined();
+      });
+    });
+
+    it('verifies missing or unknown initialization metadata displays explicit unavailable states', async () => {
+      const unavailableMetaResponse: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        metadata: {
+          ...mockResponse.metadata,
+          runCycle: 'UNKNOWN',
+          initializationTime: '',
+          validStartTime: '',
+          validEndTime: '',
+        },
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(unavailableMetaResponse);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        // Header badge must state CYCLE UNAVAILABLE explicitly
+        expect(screen.getByText('CYCLE UNAVAILABLE')).toBeDefined();
+
+        // Run cycle / initialization must state Cycle Unavailable and Initialization Time Unavailable
+        expect(screen.getByText(/Cycle Unavailable \(Initialization Time Unavailable\)/i)).toBeDefined();
+
+        // Valid forecast window must state Window Unavailable
+        expect(screen.getByText('Window Unavailable')).toBeDefined();
+
+        // Zero hardcoded cycles
+        expect(screen.queryByText('00Z CYCLE')).toBeNull();
+        expect(screen.queryByText('18Z CYCLE')).toBeNull();
       });
     });
   });
