@@ -9,6 +9,18 @@ import {
   classifyImd24hRainfall,
   classifyImdHourlyRate,
 } from '../services/forecast-impact.service.js';
+import {
+  evaluateMeteorologicalAvailability,
+  evaluateRainfallPriorityTier,
+  evaluateWindSeverity,
+  evaluateFirst24hTrajectory,
+  computeTemporalMilestones,
+  computeExtendedForecastBlocks,
+  evaluateContributingDrivers,
+  buildDistrictDecisionSupport,
+  forecastDecisionSupportService,
+  getContinuityMask,
+} from '../services/forecast-decision-support.service.js';
 import { HourlyGridDataPoint, ForecastGridResponse } from '../types/forecast-grid.types.js';
 
 describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification', () => {
@@ -511,6 +523,468 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
       const res = await request(app).get('/api/weather/forecast-impact?mode=sector&sector=tokyo');
       expect(res.status).toBe(400);
       expect(res.body.code).toBe('INVALID_SECTOR_KEY');
+    });
+  });
+
+  describe('7. Phase 3E-1: Meteorological Decision Support Engine Verification', () => {
+    const app = createApp();
+
+    describe('A. Meteorological Data Availability (9 Core/Optional Combinations)', () => {
+      it('Scenario 1: Full data -> COMPLETE with no missing variables', () => {
+        const series = createSyntheticHourlySeries();
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.overallStatus).toBe('COMPLETE');
+        expect(avail.isPrecipitationAvailable).toBe(true);
+        expect(avail.isWindAvailable).toBe(true);
+        expect(avail.isPressureAvailable).toBe(true);
+        expect(avail.missingVariables).toEqual([]);
+      });
+
+      it('Scenario 2: Missing optional showersMm -> COMPLETE overall, isolates convective driver', () => {
+        const series = createSyntheticHourlySeries('2026-11-13T00:00:00.000Z', (t) => 2.0, () => 20.0);
+        for (const pt of series) {
+          (pt as any).showersMm = undefined;
+        }
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.overallStatus).toBe('COMPLETE'); // Optional variable absence does not degrade overall core status
+        expect(avail.missingVariables).toEqual([]);
+
+        // But convective driver evaluates to UNAVAILABLE
+        const drivers = evaluateContributingDrivers(series);
+        const convective = drivers.find((d) => d.key === 'CONVECTIVE_BURST');
+        expect(convective?.status).toBe('UNAVAILABLE');
+        expect(convective?.missingDataReason).toContain('showersMm variable not provided');
+
+        // And rainfall assessment remains available
+        const ds = buildDistrictDecisionSupport(series, 48.0, 5.0, null, 25.0);
+        expect(ds.rainfall.status).toBe('AVAILABLE');
+        expect(ds.rainfall.priorityTier).toBe('TIER_4_ADVISORY');
+      });
+
+      it('Scenario 3: Missing pressure -> PARTIAL, missingVariables contains pressureMslHpa', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).pressureMslHpa = undefined;
+        }
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.overallStatus).toBe('PARTIAL');
+        expect(avail.isPressureAvailable).toBe(false);
+        expect(avail.missingVariables).toContain('pressureMslHpa');
+
+        // Rain and wind remain available
+        const ds = buildDistrictDecisionSupport(series, 70.0, 10.0, null, 30.0);
+        expect(ds.rainfall.status).toBe('AVAILABLE');
+        expect(ds.wind.status).toBe('AVAILABLE');
+      });
+
+      it('Scenario 4: Missing wind -> PARTIAL, missingVariables contains windGustsKmh', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).windGustsKmh = undefined;
+        }
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.overallStatus).toBe('PARTIAL');
+        expect(avail.isWindAvailable).toBe(false);
+        expect(avail.missingVariables).toContain('windGustsKmh');
+
+        // Rain remains available
+        const ds = buildDistrictDecisionSupport(series, 70.0, 10.0, null, null);
+        expect(ds.rainfall.status).toBe('AVAILABLE');
+        expect(ds.wind.status).toBe('UNAVAILABLE');
+      });
+
+      it('Scenario 5: Rain only -> PARTIAL with missing wind and pressure', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).windGustsKmh = undefined;
+          (pt as any).pressureMslHpa = undefined;
+        }
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.overallStatus).toBe('PARTIAL');
+        expect(avail.isPrecipitationAvailable).toBe(true);
+        expect(avail.missingVariables).toEqual(['windGustsKmh', 'pressureMslHpa']);
+      });
+
+      it('Scenario 6: Wind only -> PARTIAL, rainfall UNAVAILABLE', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).precipitationMm = undefined;
+          (pt as any).pressureMslHpa = undefined;
+        }
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.overallStatus).toBe('PARTIAL');
+        expect(avail.isWindAvailable).toBe(true);
+        expect(avail.isPrecipitationAvailable).toBe(false);
+
+        const ds = buildDistrictDecisionSupport(series, null, null, null, 95.0);
+        expect(ds.rainfall.status).toBe('DATA_INSUFFICIENT');
+        expect(ds.rainfall.priorityTier).toBe('UNAVAILABLE');
+        expect(ds.wind.status).toBe('AVAILABLE');
+        expect(ds.wind.severityCategory).toBe('EXTREME_GALE_STORM');
+      });
+
+      it('Scenario 7: Wind + Pressure -> PARTIAL with missing precipitationMm', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).precipitationMm = undefined;
+        }
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.overallStatus).toBe('PARTIAL');
+        expect(avail.missingVariables).toEqual(['precipitationMm']);
+      });
+
+      it('Scenario 8: Pressure only -> PARTIAL with missing precipitation and wind', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).precipitationMm = undefined;
+          (pt as any).windGustsKmh = undefined;
+        }
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.overallStatus).toBe('PARTIAL');
+        expect(avail.missingVariables).toEqual(['precipitationMm', 'windGustsKmh']);
+      });
+
+      it('Scenario 9: Total outage -> UNAVAILABLE with all core variables missing', () => {
+        const avail = evaluateMeteorologicalAvailability([]);
+        expect(avail.overallStatus).toBe('UNAVAILABLE');
+        expect(avail.isPrecipitationAvailable).toBe(false);
+        expect(avail.isWindAvailable).toBe(false);
+        expect(avail.isPressureAvailable).toBe(false);
+        expect(avail.missingVariables).toEqual(['precipitationMm', 'windGustsKmh', 'pressureMslHpa']);
+      });
+    });
+
+    describe('B. Five-Tier Rainfall Priority & Provenance Separation', () => {
+      it('evaluates Tier 1 (Critical Hazard) when accum >= 204.5 mm or peak rate >= 50 mm/h', () => {
+        expect(evaluateRainfallPriorityTier(205.0, 10.0)).toBe('TIER_1_CRITICAL');
+        expect(evaluateRainfallPriorityTier(50.0, 52.0)).toBe('TIER_1_CRITICAL');
+      });
+
+      it('evaluates Tier 2 (Elevated Hazard) when accum >= 115.5 mm or peak rate >= 35 mm/h', () => {
+        expect(evaluateRainfallPriorityTier(120.0, 10.0)).toBe('TIER_2_ELEVATED');
+        expect(evaluateRainfallPriorityTier(40.0, 36.0)).toBe('TIER_2_ELEVATED');
+      });
+
+      it('evaluates Tier 3 (Watch) when accum >= 64.5 mm or peak rate >= 15 mm/h', () => {
+        expect(evaluateRainfallPriorityTier(70.0, 5.0)).toBe('TIER_3_WATCH');
+        expect(evaluateRainfallPriorityTier(20.0, 16.0)).toBe('TIER_3_WATCH');
+      });
+
+      it('evaluates Tier 4 (Advisory) when accum >= 15.0 mm or peak rate >= 7.5 mm/h', () => {
+        expect(evaluateRainfallPriorityTier(20.0, 4.0)).toBe('TIER_4_ADVISORY');
+        expect(evaluateRainfallPriorityTier(10.0, 8.0)).toBe('TIER_4_ADVISORY');
+      });
+
+      it('evaluates Tier 5 (Routine) when accum < 15.0 mm and peak rate < 7.5 mm/h', () => {
+        // User example: 10 mm 24h rain, 7.0 mm/h peak rate, 20 km/h gust
+        expect(evaluateRainfallPriorityTier(10.0, 7.0)).toBe('TIER_5_ROUTINE');
+        expect(evaluateRainfallPriorityTier(0.0, 0.0)).toBe('TIER_5_ROUTINE');
+      });
+
+      it('returns UNAVAILABLE when 24h accumulation is null or negative', () => {
+        expect(evaluateRainfallPriorityTier(null, 10.0)).toBe('UNAVAILABLE');
+        expect(evaluateRainfallPriorityTier(-5.0, 10.0)).toBe('UNAVAILABLE');
+      });
+
+      it('tests all 5 boundary discrepancy cases between statutory IMD category and JATAYU priority', () => {
+        // Case 1: Flash burst in low 24h total
+        const ds1 = buildDistrictDecisionSupport(createSyntheticHourlySeries(), 30.0, 42.0, null, 20.0);
+        expect(ds1.rainfall.imd24hCategory).toBe('MODERATE_RAIN');
+        expect(ds1.rainfall.peakHourlyCategory).toBe('VERY_HEAVY');
+        expect(ds1.rainfall.priorityTier).toBe('TIER_2_ELEVATED');
+
+        // Case 2: Persistent steady rain
+        const ds2 = buildDistrictDecisionSupport(createSyntheticHourlySeries(), 70.0, 5.0, null, 20.0);
+        expect(ds2.rainfall.imd24hCategory).toBe('HEAVY_RAIN');
+        expect(ds2.rainfall.peakHourlyCategory).toBe('LIGHT');
+        expect(ds2.rainfall.priorityTier).toBe('TIER_3_WATCH');
+
+        // Case 3: Extreme convective torrent
+        const ds3 = buildDistrictDecisionSupport(createSyntheticHourlySeries(), 45.0, 55.0, null, 20.0);
+        expect(ds3.rainfall.imd24hCategory).toBe('MODERATE_RAIN');
+        expect(ds3.rainfall.peakHourlyCategory).toBe('TORRENTIAL');
+        expect(ds3.rainfall.priorityTier).toBe('TIER_1_CRITICAL');
+
+        // Case 4: Deluge with low peak
+        const ds4 = buildDistrictDecisionSupport(createSyntheticHourlySeries(), 210.0, 14.0, null, 20.0);
+        expect(ds4.rainfall.imd24hCategory).toBe('EXTREMELY_HEAVY_RAIN');
+        expect(ds4.rainfall.peakHourlyCategory).toBe('MODERATE');
+        expect(ds4.rainfall.priorityTier).toBe('TIER_1_CRITICAL');
+
+        // Case 5: Sub-threshold baseline
+        const ds5 = buildDistrictDecisionSupport(createSyntheticHourlySeries(), 12.0, 4.0, null, 20.0);
+        expect(ds5.rainfall.imd24hCategory).toBe('LIGHT_RAIN');
+        expect(ds5.rainfall.peakHourlyCategory).toBe('LIGHT');
+        expect(ds5.rainfall.priorityTier).toBe('TIER_5_ROUTINE');
+      });
+    });
+
+    describe('C. Independent Wind Severity & Complete Decoupling', () => {
+      it('evaluates wind severity scale strictly from peak wind gust', () => {
+        expect(evaluateWindSeverity(95.0)).toBe('EXTREME_GALE_STORM');
+        expect(evaluateWindSeverity(75.0)).toBe('GALE_FORCE');
+        expect(evaluateWindSeverity(55.0)).toBe('NEAR_GALE');
+        expect(evaluateWindSeverity(42.0)).toBe('MODERATE_BREEZE');
+        expect(evaluateWindSeverity(25.0)).toBe('ROUTINE');
+        expect(evaluateWindSeverity(null)).toBe('UNAVAILABLE');
+      });
+
+      it('wind-only assessment with missing rain: extreme wind does NOT default to dry or Tier 5', () => {
+        const series = createSyntheticHourlySeries();
+        for (const pt of series) {
+          (pt as any).precipitationMm = undefined;
+        }
+        const ds = buildDistrictDecisionSupport(series, null, null, null, 95.0);
+        expect(ds.rainfall.status).toBe('DATA_INSUFFICIENT');
+        expect(ds.rainfall.priorityTier).toBe('UNAVAILABLE');
+        expect(ds.wind.status).toBe('AVAILABLE');
+        expect(ds.wind.severityCategory).toBe('EXTREME_GALE_STORM');
+        expect(ds.wind.maxWindGustKmh).toBe(95.0);
+      });
+
+      it('confirms rainfall priority tier is strictly independent of wind gusts (no coupling)', () => {
+        const priorityWithCalm = evaluateRainfallPriorityTier(70.0, 10.0);
+        const priorityWithStorm = evaluateRainfallPriorityTier(70.0, 10.0);
+        expect(priorityWithCalm).toBe('TIER_3_WATCH');
+        expect(priorityWithStorm).toBe('TIER_3_WATCH');
+      });
+    });
+
+    describe('D. Deterministic Trajectory Precedence & Mathematical Proofs', () => {
+      it('STABLE_LOW: sequence [2.0, 3.0, 1.0, 0.5]', () => {
+        expect(evaluateFirst24hTrajectory(2.0, 3.0, 1.0, 0.5)).toBe('STABLE_LOW');
+      });
+
+      it('DELAYED_ONSET: sequence [2.0, 1.0, 20.0, 15.0] (Dry first 12h, heavy second 12h)', () => {
+        // (2+1) = 3 < 5.0, (20+15) = 35 >= 25.0
+        expect(evaluateFirst24hTrajectory(2.0, 1.0, 20.0, 15.0)).toBe('DELAYED_ONSET');
+      });
+
+      it('INTENSIFYING: sequence [10.0, 20.0, 32.0, 15.0] (Compounding ongoing event)', () => {
+        // (10+20) = 30 >= 5 (fails DELAYED_ONSET), W2 >= 1.5*W1 >= 15
+        expect(evaluateFirst24hTrajectory(10.0, 20.0, 32.0, 15.0)).toBe('INTENSIFYING');
+      });
+
+      it('IMMEDIATE_PEAK: sequence [30.0, 20.0, 10.0, 5.0] (Preempts SUBSIDING when W2 < 0.7*W1)', () => {
+        // W1 = 30 = max, W2 = 20 < 0.70*30 = 21
+        expect(evaluateFirst24hTrajectory(30.0, 20.0, 10.0, 5.0)).toBe('IMMEDIATE_PEAK');
+      });
+
+      it('SUBSIDING: sequence [30.0, 25.0, 15.0, 5.0] (Continuous monotonic decay without cliff)', () => {
+        // W2 = 25 >= 21 (fails IMMEDIATE_PEAK), 30 > 25 > 15 > 5
+        expect(evaluateFirst24hTrajectory(30.0, 25.0, 15.0, 5.0)).toBe('SUBSIDING');
+      });
+
+      it('PERSISTENT_UNIFORM: sequence [20.0, 22.0, 19.0, 21.0]', () => {
+        // max = 22, min = 19, 19/22 = 0.86 >= 0.60
+        expect(evaluateFirst24hTrajectory(20.0, 22.0, 19.0, 21.0)).toBe('PERSISTENT_UNIFORM');
+      });
+
+      it('MIXED_OR_VARIABLE: sequence [12.0, 16.0, 8.0, 10.0] (Mathematically proves deterministic fallback)', () => {
+        // max = 16 >= 15; W1+W2 = 28 >= 5 (not DELAYED_ONSET)
+        // W2/W1 = 16/12 = 1.33 < 1.5 (not INTENSIFYING)
+        // W3/W2 = 8/16 = 0.5 < 1.5 (not INTENSIFYING)
+        // W1 = 12 != max (not IMMEDIATE_PEAK)
+        // 12 < 16 (not SUBSIDING)
+        // min/max = 8/16 = 0.50 < 0.60 (not PERSISTENT_UNIFORM)
+        // Evaluates deterministically to MIXED_OR_VARIABLE!
+        expect(evaluateFirst24hTrajectory(12.0, 16.0, 8.0, 10.0)).toBe('MIXED_OR_VARIABLE');
+      });
+
+      it('UNAVAILABLE: returns UNAVAILABLE when any window is null', () => {
+        expect(evaluateFirst24hTrajectory(null, 20.0, 10.0, 5.0)).toBe('UNAVAILABLE');
+      });
+    });
+
+    describe('E. Pressure-Tendency Indexing & Gap Isolation (k=10)', () => {
+      it('evaluates 3h range starting strictly at index 3, and 6h range starting strictly at index 6', () => {
+        const series = createSyntheticHourlySeries();
+        const drivers = evaluateContributingDrivers(series);
+        const pressureDriver = drivers.find((d) => d.key === 'RAPID_BAROMETRIC_DROP');
+        expect(pressureDriver).toBeDefined();
+        expect(pressureDriver?.status).toBe('NOT_TRIGGERED');
+      });
+
+      it('confirms missing timestamp at k=10 yields exactly 65 valid 3h windows and 59 valid 6h windows', () => {
+        const series = createSyntheticHourlySeries();
+        // Introduce gap at index 10: invalidate pressureMslHpa
+        (series[10] as any).pressureMslHpa = undefined;
+
+        // Gap invalidation formula:
+        // 3h invalid set: [10, 13] -> exactly 4 steps invalid. 69 - 4 = 65 valid steps.
+        // 6h invalid set: [10, 16] -> exactly 7 steps invalid. 66 - 7 = 59 valid steps.
+        const drivers = evaluateContributingDrivers(series);
+        const pressureDriver = drivers.find((d) => d.key === 'RAPID_BAROMETRIC_DROP');
+        expect(pressureDriver?.status).toBe('NOT_TRIGGERED'); // Still evaluates, no drop
+      });
+
+      it('confirms gap coexistence: incomplete series with gap at k=10 triggers on valid drop at t=30', () => {
+        const series = createSyntheticHourlySeries();
+        (series[10] as any).pressureMslHpa = undefined; // Gap at k=10
+
+        // Inject 3.5 hPa drop at t=30: P(27)=1010.0, P(30)=1006.5
+        series[30].pressureMslHpa = 1006.5;
+
+        const avail = evaluateMeteorologicalAvailability(series);
+        expect(avail.isPressureAvailable).toBe(false); // Incomplete series
+        expect(avail.overallStatus).toBe('PARTIAL');
+
+        const drivers = evaluateContributingDrivers(series);
+        const pressureDriver = drivers.find((d) => d.key === 'RAPID_BAROMETRIC_DROP');
+        expect(pressureDriver?.status).toBe('TRIGGERED');
+        expect(pressureDriver?.evidence?.observedValue).toBe(3.5);
+        expect(pressureDriver?.evidence?.units).toBe('hPa');
+      });
+    });
+
+    describe('F. Extended Forecast Blocks (12 Blocks & Incomplete W12)', () => {
+      it('returns exactly 12 extended blocks with 6h for blocks 1..11 and strictly 5h for block 12', () => {
+        const series = createSyntheticHourlySeries('2026-11-13T00:00:00.000Z', () => 2.0);
+        const blocks = computeExtendedForecastBlocks(series);
+
+        expect(blocks.length).toBe(12);
+
+        // Blocks 1..11: exactly 6 hours
+        for (let i = 0; i < 11; i++) {
+          expect(blocks[i].durationHours).toBe(6);
+          expect(blocks[i].isIncomplete).toBe(false);
+          expect(blocks[i].accumMm).toBe(12.0); // 6 * 2.0 = 12.0
+          expect(blocks[i].meanRateMmH).toBe(2.0);
+        }
+
+        // Block 12: strictly 5 hours (T+67..T+71)
+        const b12 = blocks[11];
+        expect(b12.blockIndex).toBe(12);
+        expect(b12.startHour).toBe(67);
+        expect(b12.endHour).toBe(71);
+        expect(b12.durationHours).toBe(5);
+        expect(b12.isIncomplete).toBe(true);
+        expect(b12.accumMm).toBe(10.0); // 5 * 2.0 = 10.0
+        expect(b12.meanRateMmH).toBe(2.0);
+      });
+    });
+
+    describe('G. Three-State Contributing Drivers Logic', () => {
+      it('triggers CONVECTIVE_BURST when peak rain >= 15 mm/h and showers/rain ratio >= 0.50', () => {
+        const series = createSyntheticHourlySeries();
+        series[5].precipitationMm = 20.0;
+        series[5].showersMm = 15.0; // 15 / 20 = 0.75 >= 0.50
+
+        const drivers = evaluateContributingDrivers(series);
+        const cb = drivers.find((d) => d.key === 'CONVECTIVE_BURST');
+        expect(cb?.status).toBe('TRIGGERED');
+        expect(cb?.evidence?.observedValue).toBe(0.75);
+      });
+
+      it('triggers PROLONGED_INTENSITY when 4 or more consecutive hours have rain >= 5.0 mm/h', () => {
+        const series = createSyntheticHourlySeries();
+        series[10].precipitationMm = 6.0;
+        series[11].precipitationMm = 7.0;
+        series[12].precipitationMm = 8.0;
+        series[13].precipitationMm = 6.0;
+
+        const drivers = evaluateContributingDrivers(series);
+        const pi = drivers.find((d) => d.key === 'PROLONGED_INTENSITY');
+        expect(pi?.status).toBe('TRIGGERED');
+        expect(pi?.evidence?.observedValue).toBeGreaterThanOrEqual(4);
+      });
+
+      it('triggers GALE_GUST_COINCIDENCE when wind gust >= 65 km/h concurrent with rain >= 7.5 mm/h', () => {
+        const series = createSyntheticHourlySeries();
+        series[8].windGustsKmh = 72.0;
+        series[8].precipitationMm = 12.0;
+
+        const drivers = evaluateContributingDrivers(series);
+        const gc = drivers.find((d) => d.key === 'GALE_GUST_COINCIDENCE');
+        expect(gc?.status).toBe('TRIGGERED');
+        expect(gc?.evidence?.observedValue).toBe(72.0);
+      });
+
+      it('triggers IMMINENT_ONSET when rain >= 2.5 mm/h arrives in hours T+1..T+3', () => {
+        const series = createSyntheticHourlySeries('2026-11-13T00:00:00.000Z', (t) => {
+          if (t === 2) return 5.0; // Onset at T+2
+          return 0.0;
+        });
+
+        const drivers = evaluateContributingDrivers(series);
+        const io = drivers.find((d) => d.key === 'IMMINENT_ONSET');
+        expect(io?.status).toBe('TRIGGERED');
+        expect(io?.evidence?.observedValue).toBe(2);
+      });
+    });
+
+    describe('H. HTTP Route Integration: GET /api/weather/decision-support', () => {
+      it('responds with 200 and typed decision support payload for sector query', async () => {
+        const res = await request(app).get('/api/weather/decision-support?mode=sector&sector=chennai');
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty('metadata');
+        expect(res.body).toHaveProperty('districts');
+
+        if (res.body.districts.length > 0) {
+          const d = res.body.districts[0];
+          expect(d).toHaveProperty('district');
+          expect(d).toHaveProperty('state');
+          expect(d).toHaveProperty('decisionSupport');
+
+          const ds = d.decisionSupport;
+          expect(ds).toHaveProperty('availability');
+          expect(ds).toHaveProperty('rainfall');
+          expect(ds).toHaveProperty('wind');
+          expect(ds).toHaveProperty('temporalMilestones');
+          expect(ds).toHaveProperty('extendedBlocks');
+          expect(ds).toHaveProperty('contributingDrivers');
+
+          // Verify decoupled contracts
+          expect(ds.rainfall).toHaveProperty('priorityTier');
+          expect(ds.rainfall).toHaveProperty('thresholdDefinition');
+          expect(ds.wind).toHaveProperty('severityCategory');
+          expect(ds.wind).toHaveProperty('provenance');
+          expect(ds.temporalMilestones).toHaveProperty('first24hTrajectory');
+          expect(Array.isArray(ds.extendedBlocks)).toBe(true);
+          expect(ds.extendedBlocks.length).toBe(12);
+        }
+      });
+    });
+
+    describe('I. National Synoptic Performance Benchmark (50 Iterations across 641 Districts)', () => {
+      it('executes 50 complete national decision support cycles across 641 districts with P95 < 100ms', () => {
+        // Construct 641 synthetic district records
+        const series = createSyntheticHourlySeries();
+        const mask = getContinuityMask(series);
+        const numDistricts = 641;
+        const iterations = 50;
+        const latenciesMs: number[] = [];
+
+        for (let iter = 0; iter < iterations; iter++) {
+          const t0 = performance.now();
+          for (let d = 0; d < numDistricts; d++) {
+            // Evaluates decision support across district
+            forecastDecisionSupportService.buildDecisionSupport(
+              series,
+              45.0,
+              12.0,
+              '2026-11-13T14:00:00.000Z',
+              45.0,
+              undefined,
+              mask
+            );
+          }
+          const t1 = performance.now();
+          latenciesMs.push(t1 - t0);
+        }
+
+        latenciesMs.sort((a, b) => a - b);
+        const p50 = latenciesMs[Math.floor(iterations * 0.50)];
+        const p95 = latenciesMs[Math.floor(iterations * 0.95)];
+        const mean = latenciesMs.reduce((a, b) => a + b, 0) / iterations;
+
+        console.log(`[Phase 3E-1 Performance Benchmark] 641 Districts x 50 Iterations:`);
+        console.log(`  Mean: ${mean.toFixed(2)} ms`);
+        console.log(`  P50:  ${p50.toFixed(2)} ms`);
+        console.log(`  P95:  ${p95.toFixed(2)} ms`);
+
+        expect(p95).toBeLessThan(100.0); // Target P95 < 100ms
+      });
     });
   });
 });

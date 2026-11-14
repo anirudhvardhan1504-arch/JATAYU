@@ -56,6 +56,7 @@ import { forecastGridService, ForecastGridService } from './forecast-grid.servic
 import { DistrictBoundaryService } from './district.service.js';
 import { AlertService } from './alert.service.js';
 import { DisasterAlert } from '../types/alert.types.js';
+import { buildDistrictDecisionSupport } from './forecast-decision-support.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -696,6 +697,7 @@ export class ForecastImpactService {
           thresholdDefinition: 'IMD 24h: < 15mm (No Rain / Light Rain)',
         },
         localExposure: this.calculateLocalExposure(district),
+        decisionSupport: buildDistrictDecisionSupport([], null, null, null, null),
       };
     }
 
@@ -783,6 +785,76 @@ export class ForecastImpactService {
       officialImdAlert: officialAlertMatch,
     };
 
+    // Construct representative hourly timeseries for decision support
+    let representativeHourly: HourlyGridDataPoint[] = [];
+    if (contributingNodes.length === 1) {
+      representativeHourly = contributingNodes[0].hourly || [];
+    } else if (contributingNodes.length > 1) {
+      const numHours = contributingNodes[0]?.hourly?.length || 0;
+      for (let t = 0; t < numHours; t++) {
+        let pSum = 0, pCount = 0;
+        let sSum = 0, sCount = 0;
+        let maxG = -1;
+        let pmslSum = 0, pmslCount = 0;
+        let time = '';
+
+        for (const node of contributingNodes) {
+          const pt = node.hourly?.[t];
+          if (!pt) continue;
+          if (!time && pt.time) time = pt.time;
+          if (typeof pt.precipitationMm === 'number' && !isNaN(pt.precipitationMm) && pt.precipitationMm >= 0) {
+            pSum += pt.precipitationMm;
+            pCount++;
+          }
+          if (typeof pt.showersMm === 'number' && !isNaN(pt.showersMm) && pt.showersMm >= 0) {
+            sSum += pt.showersMm;
+            sCount++;
+          }
+          if (typeof pt.windGustsKmh === 'number' && !isNaN(pt.windGustsKmh) && pt.windGustsKmh > maxG) {
+            maxG = pt.windGustsKmh;
+          }
+          if (typeof pt.pressureMslHpa === 'number' && !isNaN(pt.pressureMslHpa) && pt.pressureMslHpa > 0) {
+            pmslSum += pt.pressureMslHpa;
+            pmslCount++;
+          }
+        }
+
+        representativeHourly.push({
+          time,
+          precipitationMm: pCount > 0 ? Math.round((pSum / pCount) * 10) / 10 : 0,
+          rainMm: pCount > 0 ? Math.round((pSum / pCount) * 10) / 10 : 0,
+          showersMm: sCount > 0 ? Math.round((sSum / sCount) * 10) / 10 : 0,
+          temperatureC: 25.0,
+          apparentTemperatureC: 25.0,
+          relativeHumidityPercent: 70,
+          pressureMslHpa: pmslCount > 0 ? Math.round((pmslSum / pmslCount) * 10) / 10 : 1010.0,
+          surfacePressureHpa: 1008.0,
+          windSpeedKmh: 15.0,
+          windDirectionDegrees: 180,
+          windGustsKmh: maxG >= 0 ? maxG : 0,
+          uMs: 0,
+          vMs: 0,
+        });
+      }
+    }
+
+    const decisionSupport = buildDistrictDecisionSupport(
+      representativeHourly,
+      futureAccum24hMm,
+      peakRate,
+      peakTime,
+      maxGust,
+      officialAlertMatch
+        ? {
+            severity: officialAlertMatch.severity,
+            color: officialAlertMatch.color,
+            headline: officialAlertMatch.headline,
+            issuedAt: officialAlertMatch.issuedAt,
+            authorityDisclosure: 'OFFICIAL IMD BULLETIN (SEPARATE AUTHORITY)',
+          }
+        : undefined
+    );
+
     return {
       district,
       state,
@@ -813,6 +885,7 @@ export class ForecastImpactService {
       dataQuality: quality,
       classification,
       localExposure: this.calculateLocalExposure(district),
+      decisionSupport,
     };
   }
 

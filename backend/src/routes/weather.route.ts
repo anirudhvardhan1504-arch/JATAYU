@@ -255,3 +255,71 @@ weatherRouter.get('/forecast-impact', async (req: Request, res: Response) => {
     });
   }
 });
+
+/**
+ * GET /api/weather/decision-support
+ *
+ * Dedicated endpoint for district-level meteorological decision support
+ * (Rainfall priority tiers, wind severity, first-24h trajectory, milestones,
+ * extended blocks, contributing drivers, and meteorological availability).
+ *
+ * Query Parameters:
+ * - mode: 'sector' | 'national' (default: 'sector')
+ * - sector: 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun' (default: 'chennai')
+ * - refresh: 'true' | 'false' (forces fresh upstream fetch if budget allows)
+ */
+weatherRouter.get('/decision-support', async (req: Request, res: Response) => {
+  const attemptedAt = new Date().toISOString();
+  try {
+    const rawMode = (req.query.mode as string) || 'sector';
+    const rawSector = (req.query.sector as string) || 'chennai';
+    const forceRefresh = req.query.refresh === 'true';
+
+    if (rawMode !== 'sector' && rawMode !== 'national') {
+      res.status(400).json({
+        error: "Invalid mode parameter. Must be either 'sector' or 'national'.",
+        code: 'INVALID_GRID_MODE',
+        attemptedAt,
+      });
+      return;
+    }
+    const mode = rawMode as ForecastGridMode;
+
+    let sectorKey: OperationalSectorKey = 'chennai';
+    if (rawSector) {
+      const lower = rawSector.toLowerCase() as OperationalSectorKey;
+      if (!OPERATIONAL_SECTOR_CLUSTERS[lower]) {
+        res.status(400).json({
+          error: `Invalid sector key '${rawSector}'. Must be one of: ${Object.keys(OPERATIONAL_SECTOR_CLUSTERS).join(', ')}.`,
+          code: 'INVALID_SECTOR_KEY',
+          attemptedAt,
+        });
+        return;
+      }
+      sectorKey = lower;
+    }
+
+    const impactResponse = await forecastImpactService.getForecastImpact(mode, sectorKey, forceRefresh);
+    const districtsDecisionSupport = impactResponse.districts.map((d) => ({
+      district: d.district,
+      state: d.state,
+      censusCode: d.censusCode,
+      coverage: d.coverage,
+      decisionSupport: d.decisionSupport,
+    }));
+
+    res.status(200).json({
+      metadata: impactResponse.metadata,
+      districts: districtsDecisionSupport,
+    });
+  } catch (err: any) {
+    const statusCode = err.message?.includes('exhausted') ? 429 : err.message?.includes('upstream') ? 502 : 500;
+    const code = statusCode === 429 ? 'DAILY_BUDGET_EXHAUSTED' : 'DECISION_SUPPORT_ERROR';
+
+    res.status(statusCode).json({
+      error: err.message || 'Failed to compute forecast decision support.',
+      code,
+      attemptedAt,
+    });
+  }
+});

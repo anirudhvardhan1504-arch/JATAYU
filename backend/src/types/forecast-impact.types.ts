@@ -1,11 +1,16 @@
 /**
- * Forecast Impact Types for JATAYU Tactical Map 2.0 (Phase 3D-1)
+ * Forecast Impact Types for JATAYU Tactical Map 2.0 (Phase 3D / Phase 3E)
  *
  * Defines typed models, metrics, quality assessments, and response contracts
- * for district-level meteorological rainfall hazard and local exposure analysis.
+ * for district-level meteorological rainfall hazard, aerodynamic wind kinematics,
+ * explainable decision support, and local exposure analysis.
  */
 
 import { ForecastGridMode, OperationalSectorKey } from './forecast-grid.types.js';
+
+// ==========================================
+// 1. STATUTORY & BENCHMARK CLASSIFICATIONS
+// ==========================================
 
 export type ImdRainfallCategory =
   | 'NO_RAIN'
@@ -23,6 +28,43 @@ export type ImdHourlyRateCategory =
   | 'VERY_HEAVY'
   | 'TORRENTIAL';
 
+export type RainfallPriorityTier =
+  | 'TIER_1_CRITICAL'
+  | 'TIER_2_ELEVATED'
+  | 'TIER_3_WATCH'
+  | 'TIER_4_ADVISORY'
+  | 'TIER_5_ROUTINE'
+  | 'UNAVAILABLE';
+
+export type WindSeverityCategory =
+  | 'EXTREME_GALE_STORM'
+  | 'GALE_FORCE'
+  | 'NEAR_GALE'
+  | 'MODERATE_BREEZE'
+  | 'ROUTINE'
+  | 'UNAVAILABLE';
+
+export type First24hTrajectory =
+  | 'STABLE_LOW'
+  | 'DELAYED_ONSET'
+  | 'INTENSIFYING'
+  | 'IMMEDIATE_PEAK'
+  | 'SUBSIDING'
+  | 'PERSISTENT_UNIFORM'
+  | 'MIXED_OR_VARIABLE'
+  | 'UNAVAILABLE';
+
+export type DriverStatus = 'TRIGGERED' | 'NOT_TRIGGERED' | 'UNAVAILABLE';
+
+export type ContributingDriverKey =
+  | 'CONVECTIVE_BURST'
+  | 'PROLONGED_INTENSITY'
+  | 'GALE_GUST_COINCIDENCE'
+  | 'RAPID_BAROMETRIC_DROP'
+  | 'IMMINENT_ONSET';
+
+export type OverallDataStatus = 'COMPLETE' | 'PARTIAL' | 'UNAVAILABLE';
+
 export type DistrictCoverageStatus =
   | 'SUFFICIENT_MESOSCALE'
   | 'SYNOPTIC_INDICATIVE'
@@ -38,6 +80,10 @@ export type DistrictSpatialDensity =
   | 'SINGLE_NODE_LOCALIZED'
   | 'CENTROID_PROXIMITY_ONLY'
   | 'UNREPRESENTED';
+
+// ==========================================
+// 2. DETAILED ASSESSMENT INTERFACES
+// ==========================================
 
 export interface DistrictImpactMetrics {
   /** Future 6-hour forecast accumulation from validStartTime: T+1 to T+6 (mm) */
@@ -105,6 +151,88 @@ export interface DistrictLocalExposure {
   exposureNotice: string;
 }
 
+export interface DistrictMeteorologicalAvailability {
+  overallStatus: OverallDataStatus;
+  isPrecipitationAvailable: boolean;
+  isWindAvailable: boolean;
+  isPressureAvailable: boolean;
+  missingVariables: string[];
+}
+
+export interface DistrictRainfallAssessment {
+  status: 'AVAILABLE' | 'DATA_INSUFFICIENT';
+  priorityTier: RainfallPriorityTier;
+  imd24hCategory: ImdRainfallCategory | 'UNAVAILABLE';
+  accum24hMm: number | null;
+  peakHourlyRateMmH: number | null;
+  peakHourlyCategory: ImdHourlyRateCategory | 'UNAVAILABLE';
+  peakHourlyTimeUtc: string | null;
+  thresholdDefinition: string; // "Official IMD 24-Hour Rainfall Standard"
+  priorityDefinition: string;  // "JATAYU Internal Decision-Support Heuristic"
+  insufficientReason?: string;
+}
+
+export interface DistrictWindAssessment {
+  status: 'AVAILABLE' | 'UNAVAILABLE';
+  severityCategory: WindSeverityCategory;
+  maxWindGustKmh: number | null;
+  peakGustTimeUtc: string | null;
+  provenance: 'PROPOSED_HEURISTIC_WIND_SCALE';
+  insufficientReason?: string;
+}
+
+export interface ContributingDriverState {
+  key: ContributingDriverKey;
+  status: DriverStatus;
+  missingDataReason?: string;
+  evidence?: {
+    observedValue?: number;
+    threshold?: number;
+    units?: string;
+    timestampUtc?: string;
+  };
+  provenance: 'PROPOSED_HEURISTIC';
+}
+
+export interface TemporalMilestones {
+  w1Mm: number | null;
+  w2Mm: number | null;
+  w3Mm: number | null;
+  w4Mm: number | null;
+  first24hTrajectory: First24hTrajectory;
+  onsetHourUtc: string | null;
+  peakHourUtc: string | null;
+  cessationHourUtc: string | null;
+  elevatedHoursTotal: number;
+  longestElevatedRunHours: number;
+}
+
+export interface ExtendedForecastBlock {
+  blockIndex: number; // 1 to 12
+  startHour: number;
+  endHour: number;
+  durationHours: number; // 6h for blocks 1..11, 5h for block 12
+  isIncomplete: boolean;
+  accumMm: number | null;
+  meanRateMmH: number | null;
+}
+
+export interface DistrictDecisionSupport {
+  availability: DistrictMeteorologicalAvailability;
+  rainfall: DistrictRainfallAssessment;
+  wind: DistrictWindAssessment;
+  temporalMilestones: TemporalMilestones;
+  extendedBlocks: ExtendedForecastBlock[];
+  contributingDrivers: ContributingDriverState[];
+  officialImdAlert?: {
+    severity: 'ADVISORY' | 'WATCH' | 'WARNING' | 'EMERGENCY';
+    color: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
+    headline: string;
+    issuedAt: string;
+    authorityDisclosure: string; // "OFFICIAL IMD BULLETIN (SEPARATE AUTHORITY)"
+  };
+}
+
 export interface DistrictForecastImpact {
   district: string;
   state: string;
@@ -121,6 +249,7 @@ export interface DistrictForecastImpact {
   dataQuality: DistrictDataQuality;
   classification: DistrictClassification;
   localExposure: DistrictLocalExposure;
+  decisionSupport: DistrictDecisionSupport;
 }
 
 export interface ForecastImpactMetadata {
