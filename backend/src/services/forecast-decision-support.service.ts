@@ -877,7 +877,7 @@ export function buildDistrictDecisionSupport(
       peakHourlyRateMmH: null,
       peakHourlyCategory: 'UNAVAILABLE',
       peakHourlyTimeUtc: null,
-      thresholdDefinition: 'Official IMD 24-Hour Rainfall Standard',
+      thresholdDefinition: 'JATAYU Implementation of IMD-Aligned 24h Rainfall Thresholds',
       priorityDefinition: 'JATAYU Internal Decision-Support Heuristic',
       hourlyIntensityBenchmark: 'JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)',
       insufficientReason: 'Precipitation timeseries incomplete or discontinuous across T+1..T+24',
@@ -894,7 +894,7 @@ export function buildDistrictDecisionSupport(
       peakHourlyRateMmH,
       peakHourlyCategory: imdRateCategory,
       peakHourlyTimeUtc,
-      thresholdDefinition: 'Official IMD 24-Hour Rainfall Standard',
+      thresholdDefinition: 'JATAYU Implementation of IMD-Aligned 24h Rainfall Thresholds',
       priorityDefinition: 'JATAYU Internal Decision-Support Heuristic',
       hourlyIntensityBenchmark: 'JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)',
     };

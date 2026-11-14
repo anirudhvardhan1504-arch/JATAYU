@@ -8,6 +8,7 @@ import {
   computeNodeFutureAccumulations,
   classifyImd24hRainfall,
   classifyImdHourlyRate,
+  getImdThresholdDefinition,
 } from '../services/forecast-impact.service.js';
 import {
   evaluateMeteorologicalAvailability,
@@ -1148,7 +1149,7 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
         );
 
         // 24h rainfall standard
-        expect(ds.rainfall.thresholdDefinition).toBe('Official IMD 24-Hour Rainfall Standard');
+        expect(ds.rainfall.thresholdDefinition).toBe('JATAYU Implementation of IMD-Aligned 24h Rainfall Thresholds');
         // Priority tier heuristic
         expect(ds.rainfall.priorityDefinition).toBe('JATAYU Internal Decision-Support Heuristic');
         // Hourly intensity benchmark
@@ -1243,6 +1244,77 @@ describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification',
           expect(dd.decisionSupport.extendedBlocks[0].meanRateMmH).toBe(id.decisionSupport.extendedBlocks[0].meanRateMmH);
         }
       });
+    });
+  });
+
+  describe('9. Phase 3E-1B: Final Rainfall Threshold Provenance & Continuous Interval Verification', () => {
+    it('accurately maps continuous rainfall intervals to IMD categories and definition strings', () => {
+      // 1. 0 mm -> exactly 0
+      const cat0 = classifyImd24hRainfall(0.0);
+      expect(cat0).toBe('NO_RAIN');
+      expect(getImdThresholdDefinition(cat0)).toBe('IMD-Aligned 24h: 0.0 mm (No Rain)');
+
+      // 2. Positive value below 0.1 mm -> greater than 0 and less than 15.0
+      const catSub01a = classifyImd24hRainfall(0.001);
+      expect(catSub01a).toBe('LIGHT_RAIN');
+      expect(getImdThresholdDefinition(catSub01a)).toBe('IMD-Aligned 24h: > 0 and < 15.0 mm (Light Rain)');
+
+      const catSub01b = classifyImd24hRainfall(0.05);
+      expect(catSub01b).toBe('LIGHT_RAIN');
+      expect(getImdThresholdDefinition(catSub01b)).toBe('IMD-Aligned 24h: > 0 and < 15.0 mm (Light Rain)');
+
+      // 3. 0.1 mm -> greater than 0 and less than 15.0
+      const cat01 = classifyImd24hRainfall(0.1);
+      expect(cat01).toBe('LIGHT_RAIN');
+      expect(getImdThresholdDefinition(cat01)).toBe('IMD-Aligned 24h: > 0 and < 15.0 mm (Light Rain)');
+
+      // 4. 14.9 mm -> greater than 0 and less than 15.0
+      const cat149 = classifyImd24hRainfall(14.9);
+      expect(cat149).toBe('LIGHT_RAIN');
+      expect(getImdThresholdDefinition(cat149)).toBe('IMD-Aligned 24h: > 0 and < 15.0 mm (Light Rain)');
+
+      // 5. 15.0 mm -> greater than or equal to 15.0 and less than 64.5
+      const cat150 = classifyImd24hRainfall(15.0);
+      expect(cat150).toBe('MODERATE_RAIN');
+      expect(getImdThresholdDefinition(cat150)).toBe('IMD-Aligned 24h: >= 15.0 and < 64.5 mm (Moderate Rain)');
+    });
+
+    it('verifies all continuous interval boundary transitions across the full 24h rainfall scale', () => {
+      // Moderate Rain upper boundary
+      expect(classifyImd24hRainfall(64.49)).toBe('MODERATE_RAIN');
+      expect(getImdThresholdDefinition('MODERATE_RAIN')).toBe('IMD-Aligned 24h: >= 15.0 and < 64.5 mm (Moderate Rain)');
+
+      // Heavy Rain lower & upper boundary
+      expect(classifyImd24hRainfall(64.50)).toBe('HEAVY_RAIN');
+      expect(classifyImd24hRainfall(115.49)).toBe('HEAVY_RAIN');
+      expect(getImdThresholdDefinition('HEAVY_RAIN')).toBe('IMD-Aligned 24h: >= 64.5 and < 115.5 mm (Heavy Rain)');
+
+      // Very Heavy Rain lower & upper boundary
+      expect(classifyImd24hRainfall(115.50)).toBe('VERY_HEAVY_RAIN');
+      expect(classifyImd24hRainfall(204.49)).toBe('VERY_HEAVY_RAIN');
+      expect(getImdThresholdDefinition('VERY_HEAVY_RAIN')).toBe('IMD-Aligned 24h: >= 115.5 and < 204.5 mm (Very Heavy Rain)');
+
+      // Extremely Heavy Rain lower boundary
+      expect(classifyImd24hRainfall(204.50)).toBe('EXTREMELY_HEAVY_RAIN');
+      expect(getImdThresholdDefinition('EXTREMELY_HEAVY_RAIN')).toBe('IMD-Aligned 24h: >= 204.5 mm (Extremely Heavy Rain)');
+    });
+
+    it('includes continuous interval thresholdDefinition in GET /api/weather/forecast-impact district classification', async () => {
+      const app = createApp();
+      const res = await request(app).get('/api/weather/forecast-impact?mode=sector&sector=chennai');
+      expect(res.status).toBe(200);
+
+      for (const d of res.body.districts) {
+        expect(d.classification).toHaveProperty('thresholdDefinition');
+        const def = d.classification.thresholdDefinition;
+        expect(def).toMatch(/^IMD-Aligned 24h: /);
+
+        if (d.classification.imdRainfallCategory === 'LIGHT_RAIN') {
+          expect(def).toBe('IMD-Aligned 24h: > 0 and < 15.0 mm (Light Rain)');
+        } else if (d.classification.imdRainfallCategory === 'NO_RAIN') {
+          expect(def).toBe('IMD-Aligned 24h: 0.0 mm (No Rain)');
+        }
+      }
     });
   });
 });

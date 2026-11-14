@@ -298,6 +298,27 @@ export function classifyImdHourlyRate(rateMmH: number | null): ImdHourlyRateCate
   return 'TORRENTIAL';
 }
 
+/**
+ * Helper to retrieve formal threshold definitions for IMD 24h categories using continuous interval notation.
+ * Uses transparent wording identifying it as the existing JATAYU implementation of IMD-aligned thresholds.
+ */
+export function getImdThresholdDefinition(cat: ImdRainfallCategory): string {
+  switch (cat) {
+    case 'NO_RAIN':
+      return 'IMD-Aligned 24h: 0.0 mm (No Rain)';
+    case 'LIGHT_RAIN':
+      return 'IMD-Aligned 24h: > 0 and < 15.0 mm (Light Rain)';
+    case 'MODERATE_RAIN':
+      return 'IMD-Aligned 24h: >= 15.0 and < 64.5 mm (Moderate Rain)';
+    case 'HEAVY_RAIN':
+      return 'IMD-Aligned 24h: >= 64.5 and < 115.5 mm (Heavy Rain)';
+    case 'VERY_HEAVY_RAIN':
+      return 'IMD-Aligned 24h: >= 115.5 and < 204.5 mm (Very Heavy Rain)';
+    case 'EXTREMELY_HEAVY_RAIN':
+      return 'IMD-Aligned 24h: >= 204.5 mm (Extremely Heavy Rain)';
+  }
+}
+
 export class ForecastImpactService {
   private gridService: ForecastGridService;
   private boundaryService: DistrictBoundaryService;
@@ -698,7 +719,7 @@ export class ForecastImpactService {
         },
         classification: {
           imdRainfallCategory: 'NO_RAIN',
-          thresholdDefinition: 'IMD 24h: < 15mm (No Rain / Light Rain)',
+          thresholdDefinition: getImdThresholdDefinition('NO_RAIN'),
         },
         localExposure: this.calculateLocalExposure(district),
         decisionSupport: buildDistrictDecisionSupport([], null, null, null, null),
@@ -913,20 +934,7 @@ export class ForecastImpactService {
    * Helper to retrieve formal threshold definitions for IMD 24h categories.
    */
   private getImdThresholdDefinition(cat: ImdRainfallCategory): string {
-    switch (cat) {
-      case 'NO_RAIN':
-        return 'IMD 24h: 0.0 mm (Nil / Trace)';
-      case 'LIGHT_RAIN':
-        return 'IMD 24h: 0.1 - 14.9 mm (Light Rain)';
-      case 'MODERATE_RAIN':
-        return 'IMD 24h: 15.0 - 64.4 mm (Moderate Rain)';
-      case 'HEAVY_RAIN':
-        return 'IMD 24h: 64.5 - 115.4 mm (Heavy Rain)';
-      case 'VERY_HEAVY_RAIN':
-        return 'IMD 24h: 115.5 - 204.4 mm (Very Heavy Rain)';
-      case 'EXTREMELY_HEAVY_RAIN':
-        return 'IMD 24h: >= 204.5 mm (Extremely Heavy Rain)';
-    }
+    return getImdThresholdDefinition(cat);
   }
 
   /**
