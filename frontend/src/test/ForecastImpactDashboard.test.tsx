@@ -211,7 +211,7 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
     render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
 
     await waitFor(() => {
-      expect(screen.getByText('3')).toBeDefined(); // Evaluated
+      expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1); // Evaluated
       expect(screen.getByText('SUFFICIENT MESOSCALE COVERAGE')).toBeDefined();
       expect(screen.getByText(/Mesoscale NWP Sampling \(0\.25° Grid; ~28 km nominal spacing\)/i)).toBeDefined();
       expect(screen.getAllByText('2').length).toBe(2); // Sufficient mesoscale coverage & Heavy or above
@@ -561,6 +561,549 @@ describe('ForecastImpactDashboard Component (Phase 3D-2A)', () => {
       });
 
       expect(() => unmount()).not.toThrow();
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* PHASE 3E-2: DECISION SUPPORT FRONTEND INTELLIGENCE SUITE                    */
+  /* -------------------------------------------------------------------------- */
+  describe('Phase 3E-2: Decision Support Frontend Intelligence Suite', () => {
+    function createDecisionDistrict(
+      district: string,
+      state: string,
+      opts: {
+        priorityTier: impactService.RainfallPriorityTier;
+        imd24hCategory: impactService.ImdRainfallCategory;
+        peakHourlyCategory: impactService.ImdHourlyRateCategory;
+        accum24hMm: number | null;
+        peakHourlyRateMmH: number | null;
+        windSeverity: impactService.WindSeverityCategory;
+        maxWindGustKmh: number | null;
+        peakGustTimeUtc?: string | null;
+        overallStatus?: impactService.OverallDataStatus;
+        missingVariables?: string[];
+        trajectoryPattern?: impactService.First24hTrajectory;
+        drivers?: Partial<Record<impactService.ContributingDriverKey, Partial<impactService.ContributingDriverState>>>;
+      }
+    ): impactService.DistrictForecastImpact {
+      const driverKeys: impactService.ContributingDriverKey[] = [
+        'CONVECTIVE_BURST',
+        'PROLONGED_INTENSITY',
+        'GALE_GUST_COINCIDENCE',
+        'RAPID_BAROMETRIC_DROP',
+        'IMMINENT_ONSET',
+      ];
+
+      const contributingDrivers: impactService.ContributingDriverState[] = driverKeys.map((key) => {
+        const override = opts.drivers?.[key];
+        return {
+          key,
+          status: override?.status || 'NOT_TRIGGERED',
+          evidence: override?.evidence || (override?.status === 'TRIGGERED' ? {
+            observedValue: 22.0,
+            threshold: 15.0,
+            units: 'mm/h',
+            timestampUtc: '2026-11-13T14:00:00.000Z',
+          } : undefined),
+          missingDataReason: override?.missingDataReason,
+          provenance: 'PROPOSED_HEURISTIC',
+        };
+      });
+
+      const extendedBlocks: impactService.ExtendedForecastBlock[] = Array.from({ length: 12 }, (_, i) => {
+        const idx = i + 1;
+        const start = (idx - 1) * 6 + 1;
+        const dur = idx === 12 ? 5 : 6;
+        const end = start + dur - 1;
+        return {
+          blockIndex: idx,
+          startHour: start,
+          endHour: end,
+          durationHours: dur,
+          isIncomplete: false,
+          accumMm: idx === 1 ? (opts.accum24hMm ? +(opts.accum24hMm * 0.4).toFixed(1) : 0) : 10.0,
+          meanRateMmH: +(10 / dur).toFixed(2),
+        };
+      });
+
+      const decisionSupport: impactService.DistrictDecisionSupport = {
+        availability: {
+          overallStatus: opts.overallStatus || 'COMPLETE',
+          isPrecipitationAvailable: opts.accum24hMm !== null,
+          isWindAvailable: opts.maxWindGustKmh !== null,
+          isPressureAvailable: true,
+          missingVariables: opts.missingVariables || [],
+        },
+        rainfall: {
+          status: opts.accum24hMm !== null ? 'AVAILABLE' : 'DATA_INSUFFICIENT',
+          priorityTier: opts.priorityTier,
+          imd24hCategory: opts.imd24hCategory,
+          accum24hMm: opts.accum24hMm,
+          peakHourlyRateMmH: opts.peakHourlyRateMmH,
+          peakHourlyCategory: opts.peakHourlyCategory,
+          peakHourlyTimeUtc: opts.peakHourlyRateMmH ? '2026-11-13T14:00:00.000Z' : null,
+          thresholdDefinition: 'JATAYU Implementation of IMD-Aligned 24h Rainfall Thresholds',
+          priorityDefinition: 'JATAYU Internal Decision-Support Heuristic',
+          hourlyIntensityBenchmark: 'JATAYU Hourly Intensity Benchmark (Informed by IMD Guidance)',
+        },
+        wind: {
+          status: opts.maxWindGustKmh !== null ? 'AVAILABLE' : 'UNAVAILABLE',
+          severityCategory: opts.windSeverity,
+          maxWindGustKmh: opts.maxWindGustKmh,
+          peakGustTimeUtc: opts.peakGustTimeUtc !== undefined ? opts.peakGustTimeUtc : '2026-11-13T15:00:00.000Z',
+          provenance: 'PROPOSED_HEURISTIC_WIND_SCALE',
+        },
+        temporalMilestones: {
+          first24hTrajectory: opts.trajectoryPattern || 'INTENSIFYING',
+          w1Mm: 5.0,
+          w2Mm: 12.0,
+          w3Mm: 25.0,
+          w4Mm: 35.0,
+          onsetHourUtc: '2026-11-13T02:00:00.000Z',
+          peakHourUtc: '2026-11-13T14:00:00.000Z',
+          cessationHourUtc: '2026-11-13T22:00:00.000Z',
+          elevatedHoursTotal: 4,
+          longestElevatedRunHours: 3,
+        },
+        extendedBlocks,
+        contributingDrivers,
+      };
+
+      return {
+        district,
+        state,
+        censusCode: '100',
+        coverage: {
+          status: 'SUFFICIENT_MESOSCALE',
+          spatialDensity: 'MULTI_NODE_REPRESENTATIVE',
+          nodeCount: 3,
+          method: 'POLYGON_INTERIOR',
+        },
+        metrics: {
+          futureAccum6hMm: 15.0,
+          futureAccum12hMm: 35.0,
+          futureAccum24hMm: opts.accum24hMm,
+          futureAccum48hMm: opts.accum24hMm ? opts.accum24hMm * 1.3 : null,
+          futureAccum72hMm: null,
+          accum72hQualityReason: 'NWP dataset spans 71 future hourly steps.',
+          peakHourlyRateMmH: opts.peakHourlyRateMmH,
+          peakHourlyTimeUtc: '2026-11-13T14:00:00.000Z',
+          peakHourlyRateCategory: opts.peakHourlyCategory,
+          maxWindGustKmh: opts.maxWindGustKmh,
+        },
+        dataQuality: {
+          isComplete: opts.overallStatus !== 'UNAVAILABLE',
+          totalExpectedHours: 71,
+          totalAvailableHours: opts.overallStatus === 'UNAVAILABLE' ? 0 : 71,
+          continuityValid: true,
+        },
+        classification: {
+          imdRainfallCategory: opts.imd24hCategory,
+          thresholdDefinition: 'JATAYU Implementation of IMD-Aligned 24h Rainfall Thresholds',
+        },
+        localExposure: {
+          verifiedEmergencyFacilitiesCount: 5,
+          facilityTypes: { hospitals: 2, shelters: 2, fireStations: 1, other: 0 },
+          exposureNotice: 'Co-location does not imply hydraulic inundation.',
+        },
+        decisionSupport,
+      };
+    }
+
+    it('renders all five rainfall priority tiers with distinct visual badges and explicit provenance definitions', async () => {
+      const districts: impactService.DistrictForecastImpact[] = [
+        createDecisionDistrict('DISTRICT_T1', 'TAMIL NADU', {
+          priorityTier: 'TIER_1_CRITICAL',
+          imd24hCategory: 'EXTREMELY_HEAVY_RAIN',
+          peakHourlyCategory: 'VERY_HEAVY',
+          accum24hMm: 215.0,
+          peakHourlyRateMmH: 35.0,
+          windSeverity: 'EXTREME_GALE_STORM',
+          maxWindGustKmh: 95.0,
+        }),
+        createDecisionDistrict('DISTRICT_T2', 'TAMIL NADU', {
+          priorityTier: 'TIER_2_ELEVATED',
+          imd24hCategory: 'VERY_HEAVY_RAIN',
+          peakHourlyCategory: 'HEAVY',
+          accum24hMm: 130.0,
+          peakHourlyRateMmH: 18.0,
+          windSeverity: 'GALE_FORCE',
+          maxWindGustKmh: 68.0,
+        }),
+        createDecisionDistrict('DISTRICT_T3', 'TAMIL NADU', {
+          priorityTier: 'TIER_3_WATCH',
+          imd24hCategory: 'HEAVY_RAIN',
+          peakHourlyCategory: 'MODERATE',
+          accum24hMm: 75.0,
+          peakHourlyRateMmH: 12.0,
+          windSeverity: 'ROUTINE',
+          maxWindGustKmh: 45.0,
+        }),
+        createDecisionDistrict('DISTRICT_T4', 'TAMIL NADU', {
+          priorityTier: 'TIER_4_ADVISORY',
+          imd24hCategory: 'MODERATE_RAIN',
+          peakHourlyCategory: 'LIGHT',
+          accum24hMm: 35.0,
+          peakHourlyRateMmH: 4.5,
+          windSeverity: 'ROUTINE',
+          maxWindGustKmh: 35.0,
+        }),
+        createDecisionDistrict('DISTRICT_T5', 'TAMIL NADU', {
+          priorityTier: 'TIER_5_ROUTINE',
+          imd24hCategory: 'LIGHT_RAIN',
+          peakHourlyCategory: 'LIGHT',
+          accum24hMm: 6.0,
+          peakHourlyRateMmH: 1.5,
+          windSeverity: 'ROUTINE',
+          maxWindGustKmh: 20.0,
+        }),
+      ];
+
+      const customResponse: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: {
+          ...mockResponse.summary,
+          districtsEvaluated: 5,
+        },
+        districts,
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(customResponse);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('DISTRICT_T1')).toBeDefined();
+        expect(screen.getByText('DISTRICT_T2')).toBeDefined();
+        expect(screen.getByText('DISTRICT_T3')).toBeDefined();
+        expect(screen.getByText('DISTRICT_T4')).toBeDefined();
+        expect(screen.getByText('DISTRICT_T5')).toBeDefined();
+      });
+
+      // Expand DISTRICT_T1 to inspect intelligence cards and provenance
+      fireEvent.click(screen.getByText('DISTRICT_T1'));
+
+      await waitFor(() => {
+        expect(screen.getByText(/JATAYU Internal Decision-Support Heuristic/i)).toBeDefined();
+        expect(screen.getAllByText(/JATAYU Implementation of IMD-Aligned 24h Rainfall Thresholds/i).length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByText(/JATAYU Hourly Intensity Benchmark \(Informed by IMD Guidance\)/i)).toBeDefined();
+      });
+
+      // Verify separate accumulation and hourly metrics
+      expect(screen.getAllByText('215.0 mm').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('35.0 mm/h')).toBeDefined();
+    });
+
+    it('displays independent wind severity, maximum gust speed, and UTC timestamp without coupling to rainfall tier', async () => {
+      // District has low rainfall (Tier 5 Routine) but severe wind (Gale Force)
+      const galeDistrict = createDecisionDistrict('GALE_DISTRICT', 'TAMIL NADU', {
+        priorityTier: 'TIER_5_ROUTINE',
+        imd24hCategory: 'LIGHT_RAIN',
+        peakHourlyCategory: 'LIGHT',
+        accum24hMm: 4.0,
+        peakHourlyRateMmH: 1.0,
+        windSeverity: 'GALE_FORCE',
+        maxWindGustKmh: 75.6,
+        peakGustTimeUtc: '2026-11-13T17:30:00.000Z',
+      });
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [galeDistrict],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('GALE_DISTRICT')).toBeDefined();
+      });
+
+      // Expand to view Wind Intelligence Card
+      fireEvent.click(screen.getByText('GALE_DISTRICT'));
+
+      await waitFor(() => {
+        expect(screen.getAllByText('75.6 km/h').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByText('PROPOSED_HEURISTIC_WIND_SCALE')).toBeDefined();
+        expect(screen.getByText(/Wind severity is computed independently from rainfall priority tier/i)).toBeDefined();
+        expect(screen.getByText('2026-11-13 17:30 UTC')).toBeDefined();
+      });
+    });
+
+    it('renders all three contributing driver states (TRIGGERED, NOT_TRIGGERED, UNAVAILABLE) with observed evidence and missing data reason', async () => {
+      const driverDistrict = createDecisionDistrict('DRIVER_DISTRICT', 'TAMIL NADU', {
+        priorityTier: 'TIER_2_ELEVATED',
+        imd24hCategory: 'VERY_HEAVY_RAIN',
+        peakHourlyCategory: 'HEAVY',
+        accum24hMm: 120.0,
+        peakHourlyRateMmH: 22.0,
+        windSeverity: 'ROUTINE',
+        maxWindGustKmh: 40.0,
+        drivers: {
+          CONVECTIVE_BURST: {
+            status: 'TRIGGERED',
+            evidence: {
+              observedValue: 22.0,
+              threshold: 15.0,
+              units: 'mm/h',
+            },
+          },
+          PROLONGED_INTENSITY: {
+            status: 'NOT_TRIGGERED',
+          },
+          RAPID_BAROMETRIC_DROP: {
+            status: 'UNAVAILABLE',
+            missingDataReason: 'Surface pressure series unavailable from local grid mesh',
+          },
+        },
+      });
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [driverDistrict],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('DRIVER_DISTRICT')).toBeDefined();
+      });
+
+      fireEvent.click(screen.getByText('DRIVER_DISTRICT'));
+
+      await waitFor(() => {
+        // Triggered driver evidence
+        expect(screen.getByText('TRIGGERED')).toBeDefined();
+        expect(screen.getByText(/22 mm\/h \(Threshold: 15 mm\/h\)/i)).toBeDefined();
+
+        // Not triggered driver
+        expect(screen.getAllByText('NOT_TRIGGERED').length).toBeGreaterThanOrEqual(1);
+
+        // Unavailable driver missing reason
+        expect(screen.getByText('UNAVAILABLE')).toBeDefined();
+        expect(screen.getByText('Surface pressure series unavailable from local grid mesh')).toBeDefined();
+      });
+    });
+
+    it('renders overall meteorological availability and lists missing variables for partial data', async () => {
+      const partialDistrict = createDecisionDistrict('PARTIAL_DATA_DISTRICT', 'TAMIL NADU', {
+        priorityTier: 'TIER_3_WATCH',
+        imd24hCategory: 'HEAVY_RAIN',
+        peakHourlyCategory: 'MODERATE',
+        accum24hMm: 70.0,
+        peakHourlyRateMmH: 10.0,
+        windSeverity: 'UNAVAILABLE',
+        maxWindGustKmh: null,
+        overallStatus: 'PARTIAL',
+        missingVariables: ['10m Wind Gusts', 'Surface Barometric Pressure'],
+      });
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [partialDistrict],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('PARTIAL_DATA_DISTRICT')).toBeDefined();
+        expect(screen.getAllByText('PARTIAL').length).toBeGreaterThanOrEqual(1);
+      });
+
+      fireEvent.click(screen.getByText('PARTIAL_DATA_DISTRICT'));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Missing Variables:/i)).toBeDefined();
+        expect(screen.getByText(/10m Wind Gusts, Surface Barometric Pressure/i)).toBeDefined();
+      });
+    });
+
+    it('renders First-24-hour rainfall trajectory and extended forecast blocks with Block 12 5h duration note', async () => {
+      const trajectoryDistrict = createDecisionDistrict('TRAJECTORY_DISTRICT', 'TAMIL NADU', {
+        priorityTier: 'TIER_2_ELEVATED',
+        imd24hCategory: 'VERY_HEAVY_RAIN',
+        peakHourlyCategory: 'HEAVY',
+        accum24hMm: 140.0,
+        peakHourlyRateMmH: 25.0,
+        windSeverity: 'NEAR_GALE',
+        maxWindGustKmh: 55.0,
+        trajectoryPattern: 'INTENSIFYING',
+      });
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [trajectoryDistrict],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('TRAJECTORY_DISTRICT')).toBeDefined();
+      });
+
+      fireEvent.click(screen.getByText('TRAJECTORY_DISTRICT'));
+
+      await waitFor(() => {
+        // Trajectory pattern
+        expect(screen.getAllByText('Intensifying').length).toBeGreaterThanOrEqual(1);
+
+        // Extended blocks: verify Block 12 duration note
+        expect(screen.getByText(/Block 12 is strictly 5h \(T\+67\.\.71\)/i)).toBeDefined();
+        expect(screen.getByText('W12 (5h)')).toBeDefined();
+      });
+    });
+
+    it('allows filtering districts by rainfall priority tier pills and resetting filter', async () => {
+      const districts: impactService.DistrictForecastImpact[] = [
+        createDecisionDistrict('CHENNAI_T1', 'TAMIL NADU', {
+          priorityTier: 'TIER_1_CRITICAL',
+          imd24hCategory: 'EXTREMELY_HEAVY_RAIN',
+          peakHourlyCategory: 'VERY_HEAVY',
+          accum24hMm: 220.0,
+          peakHourlyRateMmH: 40.0,
+          windSeverity: 'GALE_FORCE',
+          maxWindGustKmh: 75.0,
+        }),
+        createDecisionDistrict('TIRUVALLUR_T5', 'TAMIL NADU', {
+          priorityTier: 'TIER_5_ROUTINE',
+          imd24hCategory: 'LIGHT_RAIN',
+          peakHourlyCategory: 'LIGHT',
+          accum24hMm: 3.0,
+          peakHourlyRateMmH: 1.0,
+          windSeverity: 'ROUTINE',
+          maxWindGustKmh: 20.0,
+        }),
+      ];
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 2 },
+        districts,
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="chennai" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI_T1')).toBeDefined();
+        expect(screen.getByText('TIRUVALLUR_T5')).toBeDefined();
+      });
+
+      // Filter by Tier 1 Critical
+      const t1Pill = screen.getByRole('button', { name: /Tier 1 Critical/i });
+      fireEvent.click(t1Pill);
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI_T1')).toBeDefined();
+        expect(screen.queryByText('TIRUVALLUR_T5')).toBeNull();
+      });
+
+      // Reset filter
+      const allPill = screen.getByRole('button', { name: /All Tiers/i });
+      fireEvent.click(allPill);
+
+      await waitFor(() => {
+        expect(screen.getByText('CHENNAI_T1')).toBeDefined();
+        expect(screen.getByText('TIRUVALLUR_T5')).toBeDefined();
+      });
+    });
+
+    it('interactively expands district details and triggers onSelectDistrict when Center Map button is clicked', async () => {
+      const handleSelectDistrict = vi.fn();
+      const testDistrict = createDecisionDistrict('VELLORE', 'TAMIL NADU', {
+        priorityTier: 'TIER_3_WATCH',
+        imd24hCategory: 'HEAVY_RAIN',
+        peakHourlyCategory: 'MODERATE',
+        accum24hMm: 80.0,
+        peakHourlyRateMmH: 12.0,
+        windSeverity: 'ROUTINE',
+        maxWindGustKmh: 42.0,
+      });
+
+      const response: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        summary: { ...mockResponse.summary, districtsEvaluated: 1 },
+        districts: [testDistrict],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(response);
+
+      render(
+        <ForecastImpactDashboard
+          isOpen={true}
+          onClose={() => {}}
+          activeSectorKey="chennai"
+          onSelectDistrict={handleSelectDistrict}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('VELLORE')).toBeDefined();
+      });
+
+      // Click district to expand
+      fireEvent.click(screen.getByText('VELLORE'));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Center Map on VELLORE/i })).toBeDefined();
+      });
+
+      // Click Center Map button
+      const centerBtn = screen.getByRole('button', { name: /Center Map on VELLORE/i });
+      fireEvent.click(centerBtn);
+
+      expect(handleSelectDistrict).toHaveBeenCalledWith('VELLORE', 'TAMIL NADU');
+    });
+
+    it('displays national synoptic coarse-grid banner and indicative labeling in national mode', async () => {
+      const nationalResponse: impactService.ForecastImpactResponse = {
+        ...mockResponse,
+        metadata: {
+          ...mockResponse.metadata,
+          mode: 'national',
+          activeSector: undefined,
+        },
+        districts: [
+          createDecisionDistrict('NATION_WIDE_DISTRICT', 'MAHARASHTRA', {
+            priorityTier: 'TIER_4_ADVISORY',
+            imd24hCategory: 'MODERATE_RAIN',
+            peakHourlyCategory: 'MODERATE',
+            accum24hMm: 45.0,
+            peakHourlyRateMmH: 6.0,
+            windSeverity: 'ROUTINE',
+            maxWindGustKmh: 30.0,
+          }),
+        ],
+      };
+
+      vi.spyOn(impactService, 'getForecastImpact').mockResolvedValue(nationalResponse);
+
+      render(<ForecastImpactDashboard isOpen={true} onClose={() => {}} activeSectorKey="mumbai" />);
+
+      // Switch to National mode
+      const nationalBtn = screen.getByRole('button', { name: /National/i });
+      fireEvent.click(nationalBtn);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/NATIONAL SYNOPTIC COARSE-GRID \(INDICATIVE ONLY; NON-MUNICIPAL\)/i)
+        ).toBeDefined();
+        expect(
+          screen.getByText(/coarse synoptic prioritization across Indian districts/i)
+        ).toBeDefined();
+      });
     });
   });
 });

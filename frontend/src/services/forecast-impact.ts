@@ -100,6 +100,131 @@ export interface DistrictForecastImpact {
   dataQuality: DistrictDataQuality;
   classification: DistrictClassification;
   localExposure: DistrictLocalExposure;
+  decisionSupport?: DistrictDecisionSupport;
+}
+
+// -------------------------------------------------------------
+// Phase 3E: Meteorological Decision Support Types & Interfaces
+// -------------------------------------------------------------
+
+export type OverallDataStatus = 'COMPLETE' | 'PARTIAL' | 'UNAVAILABLE';
+
+export interface DistrictMeteorologicalAvailability {
+  overallStatus: OverallDataStatus;
+  isPrecipitationAvailable: boolean;
+  isWindAvailable: boolean;
+  isPressureAvailable: boolean;
+  missingVariables: string[];
+}
+
+export type RainfallPriorityTier =
+  | 'TIER_1_CRITICAL'
+  | 'TIER_2_ELEVATED'
+  | 'TIER_3_WATCH'
+  | 'TIER_4_ADVISORY'
+  | 'TIER_5_ROUTINE'
+  | 'UNAVAILABLE';
+
+export interface DistrictRainfallAssessment {
+  status: 'AVAILABLE' | 'DATA_INSUFFICIENT';
+  priorityTier: RainfallPriorityTier;
+  imd24hCategory: ImdRainfallCategory | 'UNAVAILABLE';
+  accum24hMm: number | null;
+  peakHourlyRateMmH: number | null;
+  peakHourlyCategory: ImdHourlyRateCategory | 'UNAVAILABLE';
+  peakHourlyTimeUtc: string | null;
+  thresholdDefinition: string;
+  priorityDefinition: string;
+  hourlyIntensityBenchmark?: string;
+  insufficientReason?: string;
+}
+
+export type WindSeverityCategory =
+  | 'EXTREME_GALE_STORM'
+  | 'GALE_FORCE'
+  | 'NEAR_GALE'
+  | 'MODERATE_BREEZE'
+  | 'ROUTINE'
+  | 'UNAVAILABLE';
+
+export interface DistrictWindAssessment {
+  status: 'AVAILABLE' | 'UNAVAILABLE';
+  severityCategory: WindSeverityCategory;
+  maxWindGustKmh: number | null;
+  peakGustTimeUtc: string | null;
+  provenance: 'PROPOSED_HEURISTIC_WIND_SCALE';
+  insufficientReason?: string;
+}
+
+export type First24hTrajectory =
+  | 'STABLE_LOW'
+  | 'DELAYED_ONSET'
+  | 'INTENSIFYING'
+  | 'IMMEDIATE_PEAK'
+  | 'SUBSIDING'
+  | 'PERSISTENT_UNIFORM'
+  | 'MIXED_OR_VARIABLE'
+  | 'UNAVAILABLE';
+
+export interface TemporalMilestones {
+  w1Mm: number | null;
+  w2Mm: number | null;
+  w3Mm: number | null;
+  w4Mm: number | null;
+  first24hTrajectory: First24hTrajectory;
+  onsetHourUtc: string | null;
+  peakHourUtc: string | null;
+  cessationHourUtc: string | null;
+  elevatedHoursTotal: number;
+  longestElevatedRunHours: number;
+}
+
+export interface ExtendedForecastBlock {
+  blockIndex: number;
+  startHour: number;
+  endHour: number;
+  durationHours: number;
+  isIncomplete: boolean;
+  accumMm: number | null;
+  meanRateMmH: number | null;
+}
+
+export type ContributingDriverKey =
+  | 'CONVECTIVE_BURST'
+  | 'PROLONGED_INTENSITY'
+  | 'GALE_GUST_COINCIDENCE'
+  | 'RAPID_BAROMETRIC_DROP'
+  | 'IMMINENT_ONSET';
+
+export type DriverStatus = 'TRIGGERED' | 'NOT_TRIGGERED' | 'UNAVAILABLE';
+
+export interface ContributingDriverState {
+  key: ContributingDriverKey;
+  status: DriverStatus;
+  missingDataReason?: string;
+  evidence?: {
+    observedValue?: number;
+    threshold?: number;
+    units?: string;
+    timestampUtc?: string;
+  };
+  provenance: 'PROPOSED_HEURISTIC';
+}
+
+export interface DistrictDecisionSupport {
+  availability: DistrictMeteorologicalAvailability;
+  rainfall: DistrictRainfallAssessment;
+  wind: DistrictWindAssessment;
+  temporalMilestones: TemporalMilestones;
+  extendedBlocks: ExtendedForecastBlock[];
+  contributingDrivers: ContributingDriverState[];
+  officialImdAlert?: {
+    severity: 'ADVISORY' | 'WATCH' | 'WARNING' | 'EMERGENCY';
+    color: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
+    headline: string;
+    issuedAt: string;
+    authorityDisclosure: string;
+  };
 }
 
 export interface ForecastImpactMetadata {
@@ -290,5 +415,220 @@ export const SPATIAL_DENSITY_CONFIG: Record<
     shortLabel: 'Insufficient Coverage',
     badge: 'bg-rose-950/80 text-rose-300 border-rose-600/60',
     notice: 'No NWP grid nodes within defensible distance. Metrics unavailable.',
+  },
+};
+
+/**
+ * Visual styling & information for Phase 3E Meteorological Rainfall Priority Tiers.
+ */
+export const RAINFALL_PRIORITY_STYLES: Record<
+  RainfallPriorityTier,
+  { label: string; shortLabel: string; badge: string; border: string; bg: string; text: string; description: string }
+> = {
+  TIER_1_CRITICAL: {
+    label: 'Tier 1 — Critical Hazard',
+    shortLabel: 'Tier 1 Critical',
+    badge: 'bg-rose-950 text-rose-300 border-rose-500 font-bold',
+    border: 'border-rose-500/80',
+    bg: 'bg-rose-950/40',
+    text: 'text-rose-400',
+    description: 'Critical rainfall threat (24h rain >= 204.5 mm or peak rate >= 50.0 mm/h)',
+  },
+  TIER_2_ELEVATED: {
+    label: 'Tier 2 — Elevated Hazard',
+    shortLabel: 'Tier 2 Elevated',
+    badge: 'bg-orange-950 text-orange-300 border-orange-500 font-bold',
+    border: 'border-orange-500/80',
+    bg: 'bg-orange-950/40',
+    text: 'text-orange-400',
+    description: 'Elevated rainfall threat (24h rain >= 115.5 mm or peak rate >= 35.0 mm/h)',
+  },
+  TIER_3_WATCH: {
+    label: 'Tier 3 — Watch',
+    shortLabel: 'Tier 3 Watch',
+    badge: 'bg-amber-950 text-amber-300 border-amber-500 font-bold',
+    border: 'border-amber-500/80',
+    bg: 'bg-amber-950/40',
+    text: 'text-amber-400',
+    description: 'Heavy rainfall watch (24h rain >= 64.5 mm or peak rate >= 15.0 mm/h)',
+  },
+  TIER_4_ADVISORY: {
+    label: 'Tier 4 — Advisory',
+    shortLabel: 'Tier 4 Advisory',
+    badge: 'bg-sky-950 text-sky-300 border-sky-600 font-semibold',
+    border: 'border-sky-600/70',
+    bg: 'bg-sky-950/40',
+    text: 'text-sky-400',
+    description: 'Rainfall advisory (24h rain >= 15.0 mm or peak rate >= 7.5 mm/h)',
+  },
+  TIER_5_ROUTINE: {
+    label: 'Tier 5 — Routine',
+    shortLabel: 'Tier 5 Routine',
+    badge: 'bg-slate-900 text-slate-400 border-slate-700',
+    border: 'border-slate-800',
+    bg: 'bg-slate-900/40',
+    text: 'text-slate-400',
+    description: 'Routine conditions; no rainfall priority criteria met',
+  },
+  UNAVAILABLE: {
+    label: 'Data Unavailable',
+    shortLabel: 'Unavailable',
+    badge: 'bg-slate-950 text-slate-500 border-slate-800',
+    border: 'border-slate-800/60',
+    bg: 'bg-slate-950/40',
+    text: 'text-slate-500',
+    description: 'Precipitation timeseries incomplete or discontinuous across T+1..T+24',
+  },
+};
+
+/**
+ * Visual styling & threshold benchmarks for Wind Severity Categories.
+ */
+export const WIND_SEVERITY_STYLES: Record<
+  WindSeverityCategory,
+  { label: string; badge: string; threshold: string; description: string }
+> = {
+  EXTREME_GALE_STORM: {
+    label: 'Extreme Gale / Storm',
+    badge: 'bg-rose-950 text-rose-200 border-rose-500 font-bold',
+    threshold: '>= 85 km/h',
+    description: 'Peak 10m wind gust >= 85 km/h (Extreme storm potential)',
+  },
+  GALE_FORCE: {
+    label: 'Gale Force',
+    badge: 'bg-orange-950 text-orange-200 border-orange-500 font-bold',
+    threshold: '65 - 84 km/h',
+    description: 'Peak 10m wind gust 65 - 84 km/h (Gale force winds)',
+  },
+  NEAR_GALE: {
+    label: 'Near Gale',
+    badge: 'bg-amber-950 text-amber-200 border-amber-600 font-semibold',
+    threshold: '50 - 64 km/h',
+    description: 'Peak 10m wind gust 50 - 64 km/h (Strong breeze / Near gale)',
+  },
+  MODERATE_BREEZE: {
+    label: 'Moderate Breeze',
+    badge: 'bg-blue-950 text-blue-200 border-blue-600',
+    threshold: '40 - 49 km/h',
+    description: 'Peak 10m wind gust 40 - 49 km/h (Moderate breeze)',
+  },
+  ROUTINE: {
+    label: 'Routine Wind',
+    badge: 'bg-slate-900 text-slate-400 border-slate-700',
+    threshold: '< 40 km/h',
+    description: 'Peak 10m wind gust < 40 km/h (Routine conditions)',
+  },
+  UNAVAILABLE: {
+    label: 'Unavailable',
+    badge: 'bg-slate-950 text-slate-500 border-slate-800',
+    threshold: 'Missing',
+    description: 'Wind gust timeseries incomplete across T+1..T+24',
+  },
+};
+
+/**
+ * Visual styling & descriptions for First 24-Hour Rainfall Trajectories.
+ */
+export const TRAJECTORY_STYLES: Record<
+  First24hTrajectory,
+  { label: string; badge: string; description: string }
+> = {
+  STABLE_LOW: {
+    label: 'Stable Low',
+    badge: 'bg-slate-900 text-slate-400 border-slate-700',
+    description: 'All four 6-hour blocks remain below 15 mm',
+  },
+  DELAYED_ONSET: {
+    label: 'Delayed Onset',
+    badge: 'bg-indigo-950 text-indigo-300 border-indigo-600 font-semibold',
+    description: 'Dry opening (W1+W2 < 5 mm) followed by heavy late surge (W3+W4 >= 25 mm)',
+  },
+  INTENSIFYING: {
+    label: 'Intensifying',
+    badge: 'bg-amber-950 text-amber-300 border-amber-500 font-bold',
+    description: 'Monotonic increase with step-increase >= 15 mm and >= 1.5x amplification',
+  },
+  IMMEDIATE_PEAK: {
+    label: 'Immediate Peak',
+    badge: 'bg-rose-950 text-rose-300 border-rose-500 font-bold',
+    description: 'Front-loaded burst in W1 (>= 20 mm) with steep subsequent subsidence',
+  },
+  SUBSIDING: {
+    label: 'Subsiding',
+    badge: 'bg-teal-950 text-teal-300 border-teal-600',
+    description: 'Steady monotonic decrease from elevated opening block',
+  },
+  PERSISTENT_UNIFORM: {
+    label: 'Persistent Uniform',
+    badge: 'bg-blue-950 text-blue-300 border-blue-600 font-semibold',
+    description: 'Sustained rain across all blocks within 20% of mean spread',
+  },
+  MIXED_OR_VARIABLE: {
+    label: 'Mixed / Variable',
+    badge: 'bg-purple-950 text-purple-300 border-purple-600',
+    description: 'Multi-pulse or complex distribution not matching single canonical profile',
+  },
+  UNAVAILABLE: {
+    label: 'Unavailable',
+    badge: 'bg-slate-950 text-slate-500 border-slate-800',
+    description: 'Incomplete or discontinuous 24-hour rainfall block timeseries',
+  },
+};
+
+/**
+ * Metadata and criteria descriptions for Contributing Drivers.
+ */
+export const CONTRIBUTING_DRIVERS_META: Record<
+  ContributingDriverKey,
+  { title: string; criterion: string; unit: string }
+> = {
+  CONVECTIVE_BURST: {
+    title: 'Convective Burst',
+    criterion: 'Peak rain >= 15 mm/h with >= 50% convective fraction (showers/rain ratio)',
+    unit: 'ratio',
+  },
+  PROLONGED_INTENSITY: {
+    title: 'Prolonged Intensity',
+    criterion: '>= 4 consecutive hours with rain >= 5.0 mm/h',
+    unit: 'hours',
+  },
+  GALE_GUST_COINCIDENCE: {
+    title: 'Gale-Gust Coincidence',
+    criterion: 'Peak gust >= 65 km/h coincident with rain >= 7.5 mm/h within +/- 1 hour',
+    unit: 'km/h',
+  },
+  RAPID_BAROMETRIC_DROP: {
+    title: 'Rapid Barometric Drop',
+    criterion: '>= 3.0 hPa drop over 3h or >= 5.0 hPa drop over 6h (MSLP only)',
+    unit: 'hPa',
+  },
+  IMMINENT_ONSET: {
+    title: 'Imminent Onset',
+    criterion: 'Rain >= 2.5 mm/h within initial 3 forecast hours (T+1..T+3)',
+    unit: 'hours',
+  },
+};
+
+/**
+ * Visual styling for overall meteorological data availability.
+ */
+export const DATA_STATUS_STYLES: Record<
+  OverallDataStatus,
+  { label: string; badge: string; text: string }
+> = {
+  COMPLETE: {
+    label: 'COMPLETE',
+    badge: 'bg-emerald-950 text-emerald-300 border-emerald-600 font-bold',
+    text: 'text-emerald-400',
+  },
+  PARTIAL: {
+    label: 'PARTIAL',
+    badge: 'bg-amber-950 text-amber-300 border-amber-600 font-bold',
+    text: 'text-amber-400',
+  },
+  UNAVAILABLE: {
+    label: 'UNAVAILABLE',
+    badge: 'bg-rose-950 text-rose-300 border-rose-600 font-bold',
+    text: 'text-rose-400',
   },
 };
