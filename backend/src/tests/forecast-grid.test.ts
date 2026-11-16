@@ -47,9 +47,9 @@ describe('Phase 3B-1: Forecast Grid Service & Mathematical Physics Verification'
   });
 
   describe('2. Hierarchical Grid Coordinate Generation & Sectors', () => {
-    it('generates exact 7x7 (49) mesoscale coordinates for all 5 operational sectors at 0.25° spacing', () => {
+    it('generates exact 7x7 (49) mesoscale coordinates for all 6 operational sectors at 0.25° spacing', () => {
       const sectors = Object.keys(OPERATIONAL_SECTOR_CLUSTERS) as Array<keyof typeof OPERATIONAL_SECTOR_CLUSTERS>;
-      expect(sectors).toEqual(['mumbai', 'chennai', 'guwahati', 'kolkata', 'dehradun']);
+      expect(sectors).toEqual(['hyderabad', 'mumbai', 'chennai', 'guwahati', 'kolkata', 'dehradun']);
 
       for (const sectorKey of sectors) {
         const coords = generateSectorClusterCoordinates(sectorKey);

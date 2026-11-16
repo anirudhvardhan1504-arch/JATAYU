@@ -147,14 +147,14 @@ weatherRouter.get('/historical', async (req: Request, res: Response) => {
  *
  * Query Parameters:
  * - mode: 'sector' | 'national' (default: 'sector')
- * - sector: 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun' (default: 'mumbai')
+ * - sector: 'hyderabad' | 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun' (default: 'hyderabad')
  * - refresh: 'true' | 'false' (forces fresh upstream fetch if budget allows)
  */
 weatherRouter.get('/forecast-grid', async (req: Request, res: Response) => {
   const attemptedAt = new Date().toISOString();
   try {
     const rawMode = (req.query.mode as string) || 'sector';
-    const rawSector = (req.query.sector as string) || 'mumbai';
+    const rawSector = (req.query.sector as string) || 'hyderabad';
     const forceRefresh = req.query.refresh === 'true';
 
     // Validate mode
@@ -169,7 +169,7 @@ weatherRouter.get('/forecast-grid', async (req: Request, res: Response) => {
     const mode = rawMode as ForecastGridMode;
 
     // Validate sector key
-    let sectorKey: OperationalSectorKey = 'mumbai';
+    let sectorKey: OperationalSectorKey = 'hyderabad';
     if (rawSector) {
       const lower = rawSector.toLowerCase() as OperationalSectorKey;
       if (!OPERATIONAL_SECTOR_CLUSTERS[lower]) {
@@ -206,14 +206,14 @@ weatherRouter.get('/forecast-grid', async (req: Request, res: Response) => {
  *
  * Query Parameters:
  * - mode: 'sector' | 'national' (default: 'sector')
- * - sector: 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun' (default: 'chennai')
+ * - sector: 'hyderabad' | 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun' (default: 'hyderabad')
  * - refresh: 'true' | 'false' (forces fresh upstream fetch if budget allows)
  */
 weatherRouter.get('/forecast-impact', async (req: Request, res: Response) => {
   const attemptedAt = new Date().toISOString();
   try {
     const rawMode = (req.query.mode as string) || 'sector';
-    const rawSector = (req.query.sector as string) || 'chennai';
+    const rawSector = (req.query.sector as string) || 'hyderabad';
     const forceRefresh = req.query.refresh === 'true';
 
     // Validate mode
@@ -228,7 +228,7 @@ weatherRouter.get('/forecast-impact', async (req: Request, res: Response) => {
     const mode = rawMode as ForecastGridMode;
 
     // Validate sector key
-    let sectorKey: OperationalSectorKey = 'chennai';
+    let sectorKey: OperationalSectorKey = 'hyderabad';
     if (rawSector) {
       const lower = rawSector.toLowerCase() as OperationalSectorKey;
       if (!OPERATIONAL_SECTOR_CLUSTERS[lower]) {

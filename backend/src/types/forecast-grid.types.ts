@@ -6,7 +6,7 @@
  */
 
 export type ForecastGridMode = 'national' | 'sector';
-export type OperationalSectorKey = 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun';
+export type OperationalSectorKey = 'hyderabad' | 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun';
 
 export interface GridCoordinate {
   latitude: number;

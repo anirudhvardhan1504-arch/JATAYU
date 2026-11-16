@@ -23,7 +23,7 @@ import { fetchJson } from './api';
 // Core Types & Contracts
 // ============================================================================
 
-export type OperationalSectorKey = 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun';
+export type OperationalSectorKey = 'hyderabad' | 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun';
 export type ForecastGridMode = 'sector' | 'national';
 export type ForecastProductType = 'precipitation' | 'wind' | 'temperature' | 'humidity' | 'pressure';
 
@@ -277,12 +277,12 @@ const clientCache = new Map<string, ClientCacheEntry>();
  * Retrieves the 72-hour forecast grid from the JATAYU backend.
  *
  * @param mode 'sector' (mesoscale cluster) or 'national' (synoptic macro grid)
- * @param sector 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun'
+ * @param sector 'hyderabad' | 'mumbai' | 'chennai' | 'guwahati' | 'kolkata' | 'dehradun'
  * @param forceRefresh Bypass client and backend caches
  */
 export async function getForecastGrid(
   mode: ForecastGridMode = 'sector',
-  sector: OperationalSectorKey = 'mumbai',
+  sector: OperationalSectorKey = 'hyderabad',
   forceRefresh: boolean = false
 ): Promise<ForecastGridResponse> {
   const cacheKey = `${mode}:${sector}`;

@@ -21,6 +21,13 @@ export const OPERATIONAL_SECTOR_CLUSTERS: Record<
   OperationalSectorKey,
   { name: string; centroid: [number, number]; latRange: [number, number]; lonRange: [number, number]; step: number }
 > = {
+  hyderabad: {
+    name: 'Hyderabad Metropolitan Region',
+    centroid: [17.385, 78.4867],
+    latRange: [16.75, 18.25],
+    lonRange: [77.75, 79.25],
+    step: 0.25,
+  },
   mumbai: {
     name: 'Mumbai Metropolitan Region & Western Ghats',
     centroid: [19.076, 72.8777],

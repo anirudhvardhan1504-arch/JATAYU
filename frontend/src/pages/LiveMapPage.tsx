@@ -60,6 +60,7 @@ export interface LiveMapPageProps {
 }
 
 export const SECTOR_QUICK_JUMPS = [
+  { name: 'Hyderabad Metropolitan Region', lat: 17.385, lon: 78.4867, label: 'Hyderabad', code: 'HYD' },
   { name: 'Mumbai Metropolitan Region', lat: 19.076, lon: 72.8777, label: 'Mumbai', code: 'MUM' },
   { name: 'Chennai Coastal Basin', lat: 13.0827, lon: 80.2707, label: 'Chennai', code: 'CHE' },
   { name: 'Brahmaputra Valley (Guwahati)', lat: 26.1445, lon: 91.7362, label: 'Assam', code: 'GHY' },
@@ -69,6 +70,7 @@ export const SECTOR_QUICK_JUMPS = [
 
 function getNearestSectorKey(lat: number, lon: number): OperationalSectorKey {
   const sectors: { key: OperationalSectorKey; lat: number; lon: number }[] = [
+    { key: 'hyderabad', lat: 17.385, lon: 78.4867 },
     { key: 'mumbai', lat: 19.076, lon: 72.8777 },
     { key: 'chennai', lat: 13.0827, lon: 80.2707 },
     { key: 'guwahati', lat: 26.1445, lon: 91.7362 },
@@ -720,6 +722,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         onSelectSector={(sectorKey) => {
           setSelectedDistrictName(null);
           const jump = SECTOR_QUICK_JUMPS.find((j) => {
+            if (sectorKey === 'hyderabad') return j.code === 'HYD';
             if (sectorKey === 'mumbai') return j.code === 'MUM';
             if (sectorKey === 'chennai') return j.code === 'CHE';
             if (sectorKey === 'guwahati') return j.code === 'GHY';
