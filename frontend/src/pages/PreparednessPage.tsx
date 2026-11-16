@@ -48,7 +48,7 @@ const DEFAULT_CHECKLIST: ChecklistItem[] = [
     title: 'Establish Incident Command Post (ICP)',
     description: 'Designate primary operations center with dual-redundant satellite uplink and backup generator verification.',
     assignedRole: 'District Disaster Officer',
-    completed: true,
+    completed: false,
   },
   {
     id: 'CHK-02',
@@ -56,7 +56,7 @@ const DEFAULT_CHECKLIST: ChecklistItem[] = [
     title: 'Inspect Low-Lying Stormwater Outfalls',
     description: 'Deploy inspection teams to clear debris from major drainage outfalls, flapper valves, and culverts.',
     assignedRole: 'Municipal Engineering Works',
-    completed: true,
+    completed: false,
   },
   {
     id: 'CHK-03',
@@ -126,7 +126,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
       <SectionHeader
         title="Civil Defense Preparedness Protocols"
         subtitle={`Standard Operating Procedure (SOP) readiness matrix for ${location.name}`}
-        badge={<Badge variant="emerald">SOP READINESS: {completedCount}/{items.length} VERIFIED</Badge>}
+        badge={<Badge variant="emerald">SOP CHECKLIST: {completedCount}/{items.length} CONFIRMED</Badge>}
       />
 
       {/* Dynamic Operational Threat Phase Assessment Banner */}
@@ -293,7 +293,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-mono uppercase text-slate-500">COMMS STATUS</span>
-            <div className="text-sm font-bold text-navy-900 font-mono">PRIMARY + HF BACKUP</div>
+            <div className="text-sm font-bold text-navy-900 font-mono">LOCAL STATUS NOT VERIFIED</div>
           </div>
         </div>
 
@@ -303,7 +303,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-mono uppercase text-slate-500">SHELTER CAPACITY</span>
-            <div className="text-sm font-bold text-navy-900 font-mono">14 NODES (STANDBY)</div>
+            <div className="text-sm font-bold text-navy-900 font-mono">LIVE CAPACITY UNAVAILABLE</div>
           </div>
         </div>
 
@@ -313,7 +313,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-mono uppercase text-slate-500">RESCUE ASSETS</span>
-            <div className="text-sm font-bold text-navy-900 font-mono">22 UNITS PRE-STAGED</div>
+            <div className="text-sm font-bold text-navy-900 font-mono">LOCAL STATUS NOT VERIFIED</div>
           </div>
         </div>
       </div>
@@ -430,20 +430,20 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
           <div className="p-3 bg-warm-200/60 border border-slate-200 rounded">
-            <span className="text-slate-500 block text-[11px]">STATE EOC:</span>
-            <span className="font-bold text-navy-900 text-sm">1070 / +91-22-22027990</span>
+            <span className="text-slate-500 block text-[11px]">EMERGENCY:</span>
+            <span className="font-bold text-navy-900 text-sm">112</span>
           </div>
           <div className="p-3 bg-warm-200/60 border border-slate-200 rounded">
-            <span className="text-slate-500 block text-[11px]">DISTRICT CONTROL ({resolvedDistrict.toUpperCase()}):</span>
-            <span className="font-bold text-navy-900 text-sm">1077 / EXT-402</span>
+            <span className="text-slate-500 block text-[11px]">LOCAL CONTROL ({resolvedDistrict.toUpperCase()}):</span>
+            <span className="font-bold text-navy-900 text-sm">SOURCE NOT CONFIGURED</span>
           </div>
           <div className="p-3 bg-warm-200/60 border border-slate-200 rounded">
-            <span className="text-slate-500 block text-[11px]">NDRF BATTALION:</span>
-            <span className="font-bold text-navy-900 text-sm">011-24363260</span>
+            <span className="text-slate-500 block text-[11px]">RESPONSE ASSETS:</span>
+            <span className="font-bold text-navy-900 text-sm">STATUS NOT VERIFIED</span>
           </div>
           <div className="p-3 bg-warm-200/60 border border-slate-200 rounded">
-            <span className="text-slate-500 block text-[11px]">MET OBSERVATORY:</span>
-            <span className="font-bold text-navy-900 text-sm">IMD REGIONAL DESK</span>
+            <span className="text-slate-500 block text-[11px]">WEATHER BULLETINS:</span>
+            <span className="font-bold text-navy-900 text-sm">CHECK IMD ALERTS</span>
           </div>
         </div>
       </div>

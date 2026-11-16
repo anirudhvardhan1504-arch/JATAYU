@@ -480,14 +480,14 @@ describe('Phase 2G: PreparednessPage Component Integration', () => {
       />
     );
 
-    // Initial counter is 2/6 verified
-    expect(screen.getByText(/SOP READINESS: 2\/6 VERIFIED/i)).toBeInTheDocument();
+    // Checklist starts unconfirmed until an operator records completion.
+    expect(screen.getByText(/SOP CHECKLIST: 0\/6 CONFIRMED/i)).toBeInTheDocument();
 
     // Click on an uncompleted item
     const item = screen.getByText('Pre-position Submersible Heavy De-watering Pumps');
     fireEvent.click(item);
 
-    // Counter increments to 3/6 verified
-    expect(screen.getByText(/SOP READINESS: 3\/6 VERIFIED/i)).toBeInTheDocument();
+    // Counter increments to 1/6 confirmed.
+    expect(screen.getByText(/SOP CHECKLIST: 1\/6 CONFIRMED/i)).toBeInTheDocument();
   });
 });

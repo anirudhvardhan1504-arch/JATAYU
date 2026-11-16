@@ -84,9 +84,9 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
       }
     }
     return {
-      name: 'Mumbai Metropolitan Region',
-      lat: 19.076,
-      lon: 72.8777,
+      name: 'Hyderabad Metropolitan Region',
+      lat: 17.385,
+      lon: 78.4867,
     };
   });
 
@@ -102,9 +102,9 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
         } else {
           sessionStorage.removeItem('jatayu_replay_mode');
           setSelectedLocation({
-            name: 'Mumbai Metropolitan Region',
-            lat: 19.076,
-            lon: 72.8777,
+            name: 'Hyderabad Metropolitan Region',
+            lat: 17.385,
+            lon: 78.4867,
           });
         }
       }

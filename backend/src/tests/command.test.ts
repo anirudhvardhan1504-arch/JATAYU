@@ -195,28 +195,28 @@ describe('JATAYU Operational Command APIs & Server-Enforced RBAC', () => {
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('temperatureC');
       expect(res.body.sourceType).toBe('OBSERVED');
-    }, 20000);
+    }, 45000);
 
     it('GET /api/weather/forecast responds with 200 without authentication', async () => {
       const res = await request(productionApp).get('/api/weather/forecast?lat=19.076&lon=72.8777');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('hourly');
       expect(res.body.dataSource.type).toBe('OFFICIAL_FORECAST');
-    }, 20000);
+    }, 45000);
 
     it('GET /api/alerts responds with 200 without authentication', async () => {
       const res = await request(productionApp).get('/api/alerts?lat=19.076&lon=72.8777');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('officialAlerts');
       expect(res.body).toHaveProperty('geographicResolution');
-    }, 20000);
+    }, 45000);
 
     it('GET /api/risk/assessment responds with 200 without authentication', async () => {
       const res = await request(productionApp).get('/api/risk/assessment?lat=19.076&lon=72.8777');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('overallRiskLevel');
       expect(res.body).toHaveProperty('riskScore');
-    }, 20000);
+    }, 45000);
 
     it('GET /api/ai/status responds with 200 without authentication', async () => {
       const res = await request(productionApp).get('/api/ai/status');

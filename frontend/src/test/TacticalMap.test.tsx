@@ -14,6 +14,8 @@ const mockSetPaintProperty = vi.fn();
 const mockSetLayoutProperty = vi.fn();
 const mockGetSource = vi.fn();
 const mockGetLayer = vi.fn();
+const mockRemoveSource = vi.fn();
+const mockRemoveLayer = vi.fn();
 const mockRemove = vi.fn();
 const mockOn = vi.fn();
 const mockOnce = vi.fn();
@@ -44,6 +46,8 @@ vi.mock('maplibre-gl', () => {
         addLayer: mockAddLayer,
         getSource: mockGetSource,
         getLayer: mockGetLayer,
+        removeSource: mockRemoveSource,
+        removeLayer: mockRemoveLayer,
         setPaintProperty: mockSetPaintProperty,
         setLayoutProperty: mockSetLayoutProperty,
         isStyleLoaded: mockIsStyleLoaded,
@@ -64,13 +68,19 @@ describe('TacticalMap Component Unit & Integration Tests', () => {
     Object.keys(addedLayers).forEach((k) => delete addedLayers[k]);
 
     mockAddSource.mockImplementation((id: string, def: any) => {
-      addedSources[id] = { setData: vi.fn(), ...def };
+      addedSources[id] = { setData: vi.fn(), setTiles: vi.fn(), updateImage: vi.fn(), ...def };
     });
     mockGetSource.mockImplementation((id: string) => addedSources[id]);
+    mockRemoveSource.mockImplementation((id: string) => {
+      delete addedSources[id];
+    });
     mockAddLayer.mockImplementation((layer: any) => {
       addedLayers[layer.id] = layer;
     });
     mockGetLayer.mockImplementation((id: string) => addedLayers[id]);
+    mockRemoveLayer.mockImplementation((id: string) => {
+      delete addedLayers[id];
+    });
   });
 
   it('initializes MapLibre instance, navigation control, and center marker', async () => {
@@ -170,6 +180,30 @@ describe('TacticalMap Component Unit & Integration Tests', () => {
     await waitFor(() => {
       expect(screen.getByText('Global radar feed offline or unreachable')).toBeInTheDocument();
     });
+  });
+
+  it('Scenario 7: handles basemap overlay reloads while forecast and satellite overlays are active without crashing', async () => {
+    const { rerender } = render(
+      <TacticalMap
+        center={[80.2707, 13.0827]}
+        locationName="Chennai Operational Sector"
+        showSatellite={true}
+        showForecast={true}
+      />
+    );
+
+    // Rerender with toggled layers
+    rerender(
+      <TacticalMap
+        center={[80.2707, 13.0827]}
+        locationName="Chennai Operational Sector"
+        showSatellite={false}
+        showForecast={true}
+        showPressureContours={true}
+      />
+    );
+
+    expect(screen.getByText('Chennai Operational Sector')).toBeInTheDocument();
   });
 });
 
@@ -539,5 +573,479 @@ describe('LiveMapPage Integration Tests', () => {
     expect(screen.queryByRole('button', { name: 'MUTED' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'ACTIVE' })).not.toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('initializes double-buffered NASA GIBS satellite raster sources and layers in MapLibre', async () => {
+    render(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={80}
+        satelliteProductKey="ir"
+      />
+    );
+
+    // Verify double-buffered sources registration (A and B)
+    expect(addedSources['nasa-gibs-satellite-source-a']).toBeDefined();
+    expect(addedSources['nasa-gibs-satellite-source-b']).toBeDefined();
+    expect(addedSources['nasa-gibs-satellite-source-a'].tiles[0]).toContain('Himawari_AHI_Band13_Clean_Infrared');
+    expect(addedSources['nasa-gibs-satellite-source-a'].maxzoom).toBe(6);
+
+    // Verify double-buffered layers registration (A active, B dormant)
+    expect(addedLayers['nasa-gibs-satellite-layer-a']).toBeDefined();
+    expect(addedLayers['nasa-gibs-satellite-layer-b']).toBeDefined();
+    expect(addedLayers['nasa-gibs-satellite-layer-a'].paint['raster-opacity']).toBe(0.8);
+    expect(addedLayers['nasa-gibs-satellite-layer-b'].paint['raster-opacity']).toBe(0);
+    expect(addedLayers['nasa-gibs-satellite-layer-a'].layout.visibility).toBe('visible');
+  });
+
+  it('performs smooth double-buffered frame swapping when active satellite tile URL changes', async () => {
+    const { rerender } = render(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={80}
+        satelliteProductKey="ir"
+        activeSatelliteTileUrl="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band13_Clean_Infrared/default/2026-11-13T03:50:00Z/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png"
+      />
+    );
+
+    expect(addedSources['nasa-gibs-satellite-source-a']).toBeDefined();
+
+    // Frame advances: next frame becomes active
+    const nextFrameUrl = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band13_Clean_Infrared/default/2026-11-13T04:00:00Z/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png";
+    const preloadFrameUrl = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band13_Clean_Infrared/default/2026-11-13T04:10:00Z/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png";
+
+    rerender(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={80}
+        satelliteProductKey="ir"
+        activeSatelliteTileUrl={nextFrameUrl}
+        preloadSatelliteTileUrl={preloadFrameUrl}
+      />
+    );
+
+    // Buffer B should be set to nextFrameUrl and faded in (opacity 0.8), Buffer A faded out (opacity 0)
+    expect(mockSetPaintProperty).toHaveBeenCalledWith('nasa-gibs-satellite-layer-b', 'raster-opacity', 0.8);
+    expect(mockSetPaintProperty).toHaveBeenCalledWith('nasa-gibs-satellite-layer-a', 'raster-opacity', 0);
+  });
+
+  it('updates satellite double buffers when product key changes', async () => {
+    const { rerender } = render(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={70}
+        satelliteProductKey="ir"
+      />
+    );
+
+    expect(addedSources['nasa-gibs-satellite-source-a'].tiles[0]).toContain('Himawari_AHI_Band13_Clean_Infrared');
+
+    // Switch to VIIRS HD
+    rerender(
+      <TacticalMap
+        center={[72.8777, 19.076]}
+        locationName="Mumbai Metropolitan Region"
+        showSatellite={true}
+        satelliteOpacity={90}
+        satelliteProductKey="viirs"
+      />
+    );
+
+    expect(addedSources['nasa-gibs-satellite-source-a'].tiles[0]).toContain('VIIRS_NOAA20_CorrectedReflectance_TrueColor');
+    expect(addedSources['nasa-gibs-satellite-source-a'].maxzoom).toBe(9);
+    expect(mockSetPaintProperty).toHaveBeenCalledWith('nasa-gibs-satellite-layer-a', 'raster-opacity', 0.9);
+  });
+
+  it('interactively toggles satellite mode, channels, and timeline playback in LiveMapPage', async () => {
+    render(
+      <LiveMapPage
+        location={mockLocation}
+        onSelectLocation={vi.fn()}
+      />
+    );
+
+    // By default satellite is hidden
+    const satToggleBtn = screen.getAllByRole('button', { name: 'HIDDEN' })[0];
+    fireEvent.click(satToggleBtn);
+
+    // Should now show Live channels & mode options
+    expect(screen.getByText('Live (10m)')).toBeInTheDocument();
+    expect(screen.getByText('HD (250m)')).toBeInTheDocument();
+    expect(screen.getByText('Infrared (10.4 µm)')).toBeInTheDocument();
+    expect(screen.getByText('Visible (0.64 µm)')).toBeInTheDocument();
+    expect(screen.getByText('Air Mass RGB')).toBeInTheDocument();
+
+    // Verify dual-track timeline has SAT and RADAR selectors when both are visible
+    expect(screen.getByRole('button', { name: /focus timeline on nasa gibs satellite/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /focus timeline on rainviewer radar/i })).toBeInTheDocument();
+
+    // Click Visible channel -> daylight notice
+    fireEvent.click(screen.getByText('Visible (0.64 µm)'));
+    expect(screen.getByText(/Optical band requires solar illumination/i)).toBeInTheDocument();
+
+    // Switch to HD mode
+    fireEvent.click(screen.getByText('HD (250m)'));
+    expect(screen.getByText('VIIRS NOAA-20')).toBeInTheDocument();
+    expect(screen.getByText('MODIS Terra')).toBeInTheDocument();
+    expect(screen.getByText('250m at equator')).toBeInTheDocument();
+  });
+
+  describe('Phase 3B-3A: Forecast Scalar Canvas Layer & Scientific Disclosure', () => {
+    const mockForecastData: any = {
+      metadata: {
+        provider: 'Open-Meteo ECMWF Open Data',
+        model: 'ECMWF IFS (0.25°)',
+        nativeResolution: '0.25° (~28 km) regular lat/lon',
+        isFallback: false,
+        runCycle: '00Z',
+        initializationTime: '2026-11-13T00:00',
+        generatedAt: '2026-11-13T06:00:00Z',
+        validStartTime: '2026-11-13T00:00',
+        validEndTime: '2026-11-15T23:00',
+        totalTimesteps: 72,
+        gridNodeCount: 2,
+        deduplicatedNodeCount: 2,
+        mode: 'sector',
+        activeSector: 'mumbai',
+        isInterpolatedMesh: true,
+        disclosure:
+          'Spatial surface reconstructed via mesoscale grid interpolation. Not a raw native-resolution GRIB2 raster.',
+        attribution: 'Weather data by Open-Meteo under CC BY 4.0',
+        isStale: false,
+        cacheTtlMs: 7200000,
+        billableCallsIncurred: 2,
+        dailyBudgetRemaining: 7990,
+      },
+      nodes: [
+        {
+          requestedLat: 19.0,
+          requestedLon: 72.8,
+          modelLat: 19.0,
+          modelLon: 72.75,
+          elevationM: 10,
+          accum24hMm: 25.0,
+          accum72hMm: 60.0,
+          maxWindGustKmh: 45.0,
+          minPressureMslHpa: 1008.0,
+          hourly: Array.from({ length: 72 }, (_, i) => ({
+            time: `2026-11-13T${i.toString().padStart(2, '0')}:00`,
+            precipitationMm: i === 12 ? 22.0 : 1.5,
+            rainMm: 1.5,
+            showersMm: 0,
+            temperatureC: 30.0,
+            apparentTemperatureC: 34.0,
+            relativeHumidityPercent: 75,
+            pressureMslHpa: 1008.0,
+            surfacePressureHpa: 1007.0,
+            windSpeedKmh: 20,
+            windDirectionDegrees: 240,
+            windGustsKmh: 35,
+            uMs: -4.8,
+            vMs: -2.8,
+          })),
+        },
+      ],
+    };
+
+    it('renders forecast scalar layer, image source, and mandatory scientific disclosure', async () => {
+      render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="precipitation"
+          forecastTimestepIndex={0}
+          forecastOpacity={85}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      // Verify layer and source added to MapLibre
+      expect(mockAddSource).toHaveBeenCalledWith(
+        'jatayu-forecast-scalar-source',
+        expect.objectContaining({
+          type: 'image',
+          coordinates: expect.any(Array),
+        })
+      );
+
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'jatayu-forecast-scalar-layer',
+          type: 'raster',
+          source: 'jatayu-forecast-scalar-source',
+          paint: expect.objectContaining({
+            'raster-opacity': 0.85,
+          }),
+        }),
+        'adyar-simulation-fill'
+      );
+
+      // Verify mandatory scientific disclosure banner
+      expect(
+        screen.getByText(
+          'Spatial surface reconstructed via mesoscale grid interpolation. Not a raw native-resolution GRIB2 raster.'
+        )
+      ).toBeInTheDocument();
+
+      // Verify model and run cycle metadata
+      expect(screen.getByText('ECMWF IFS (0.25°)')).toBeInTheDocument();
+      expect(screen.getByText(/Provider: Open-Meteo ECMWF Open Data/)).toBeInTheDocument();
+      expect(screen.getAllByText(/T\+00h/)[0]).toBeInTheDocument();
+
+      // Verify product legend
+      expect(screen.getByText('FORECAST: PRECIPITATION')).toBeInTheDocument();
+      expect(screen.getByText('Preceding 1-hour total accumulation (mm)')).toBeInTheDocument();
+    });
+
+    it('updates raster opacity and visibility dynamically without reinitializing map', () => {
+      const { rerender } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="temperature"
+          forecastTimestepIndex={5}
+          forecastOpacity={70}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      expect(mockSetPaintProperty).toHaveBeenCalledWith('jatayu-forecast-scalar-layer', 'raster-opacity', 0.7);
+
+      // Change opacity to 90
+      rerender(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="temperature"
+          forecastTimestepIndex={5}
+          forecastOpacity={90}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      expect(mockSetPaintProperty).toHaveBeenCalledWith('jatayu-forecast-scalar-layer', 'raster-opacity', 0.9);
+
+      // Hide layer
+      rerender(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={false}
+          forecastProduct="temperature"
+          forecastTimestepIndex={5}
+          forecastOpacity={90}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-forecast-scalar-layer', 'visibility', 'none');
+    });
+
+    it('displays FAILOVER ACTIVE and STALE CACHE notices appropriately', () => {
+      const fallbackData = {
+        ...mockForecastData,
+        metadata: {
+          ...mockForecastData.metadata,
+          provider: 'Open-Meteo NOAA GFS',
+          model: 'NOAA GFS (0.25°)',
+          isFallback: true,
+          isStale: true,
+        },
+      };
+
+      render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="pressure"
+          forecastTimestepIndex={12}
+          forecastOpacity={80}
+          forecastGridData={fallbackData}
+        />
+      );
+
+      expect(screen.getByText('NOAA GFS (0.25°)')).toBeInTheDocument();
+      expect(screen.getByText('FAILOVER ACTIVE')).toBeInTheDocument();
+      expect(screen.getByText('STALE CACHE')).toBeInTheDocument();
+      expect(screen.getByText('FORECAST: MSLP')).toBeInTheDocument();
+    });
+
+    it('cleans up forecast scalar layer and source on unmount', () => {
+      const { unmount } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showForecast={true}
+          forecastProduct="precipitation"
+          forecastTimestepIndex={0}
+          forecastOpacity={80}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      unmount();
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-forecast-scalar-layer');
+      expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-forecast-scalar-source');
+    });
+
+    it('adds pressure contour lines, labels, and extrema layers before adyar-simulation-fill', () => {
+      // 4-point grid to generate contours and test layer addition
+      const multiNodeData = {
+        ...mockForecastData,
+        nodes: [
+          { ...mockForecastData.nodes[0], modelLat: 18.0, modelLon: 72.0, hourly: mockForecastData.nodes[0].hourly.map((h: any) => ({ ...h, pressureMslHpa: 1004.0 })) },
+          { ...mockForecastData.nodes[0], modelLat: 18.0, modelLon: 74.0, hourly: mockForecastData.nodes[0].hourly.map((h: any) => ({ ...h, pressureMslHpa: 1012.0 })) },
+          { ...mockForecastData.nodes[0], modelLat: 20.0, modelLon: 72.0, hourly: mockForecastData.nodes[0].hourly.map((h: any) => ({ ...h, pressureMslHpa: 1004.0 })) },
+          { ...mockForecastData.nodes[0], modelLat: 20.0, modelLon: 74.0, hourly: mockForecastData.nodes[0].hourly.map((h: any) => ({ ...h, pressureMslHpa: 1012.0 })) },
+        ],
+      };
+
+      const { rerender } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showPressureContours={true}
+          pressureContourInterval={4}
+          forecastTimestepIndex={0}
+          forecastGridData={multiNodeData}
+        />
+      );
+
+      // Verify pressure contour and extrema sources were added
+      expect(mockAddSource).toHaveBeenCalledWith(
+        'jatayu-pressure-contours-source',
+        expect.objectContaining({ type: 'geojson' })
+      );
+      expect(mockAddSource).toHaveBeenCalledWith(
+        'jatayu-pressure-extrema-source',
+        expect.objectContaining({ type: 'geojson' })
+      );
+
+      // Verify layers were added before 'adyar-simulation-fill'
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'jatayu-pressure-contours-line' }),
+        'adyar-simulation-fill'
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'jatayu-pressure-contours-label' }),
+        'adyar-simulation-fill'
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'jatayu-pressure-extrema-circle' }),
+        'adyar-simulation-fill'
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'jatayu-pressure-extrema-label' }),
+        'adyar-simulation-fill'
+      );
+
+      // Verify HUD indicator badge
+      expect(screen.getByText(/Isobars: MSLP \(4 hPa\)/i)).toBeInTheDocument();
+
+      // Toggle off pressure contours
+      rerender(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showPressureContours={false}
+          pressureContourInterval={4}
+          forecastTimestepIndex={0}
+          forecastGridData={multiNodeData}
+        />
+      );
+
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-pressure-contours-line', 'visibility', 'none');
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-pressure-contours-label', 'visibility', 'none');
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-pressure-extrema-circle', 'visibility', 'none');
+      expect(mockSetLayoutProperty).toHaveBeenCalledWith('jatayu-pressure-extrema-label', 'visibility', 'none');
+    });
+
+    it('cleans up pressure contour layers and sources on unmount', () => {
+      const { unmount } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showPressureContours={true}
+          pressureContourInterval={2}
+          forecastTimestepIndex={0}
+          forecastGridData={mockForecastData}
+        />
+      );
+
+      unmount();
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-pressure-extrema-label');
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-pressure-extrema-circle');
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-pressure-contours-label');
+      expect(mockRemoveLayer).toHaveBeenCalledWith('jatayu-pressure-contours-line');
+      expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-pressure-extrema-source');
+      expect(mockRemoveSource).toHaveBeenCalledWith('jatayu-pressure-contours-source');
+    });
+
+    it('renders wind particle streamline canvas overlay and disclosure badge', () => {
+      const onToggleWind = vi.fn();
+      const onTogglePlay = vi.fn();
+
+      const { rerender, unmount } = render(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showWindParticles={true}
+          windParticleDensity="standard"
+          windSpeedMultiplier={1.0}
+          isWindPlaying={true}
+          forecastTimestepIndex={0}
+          forecastGridData={mockForecastData}
+          onToggleWindParticles={onToggleWind}
+          onToggleWindPlay={onTogglePlay}
+        />
+      );
+
+      // Verify canvas element exists and is visible
+      const canvas = screen.getByTestId('wind-particle-canvas');
+      expect(canvas).toBeInTheDocument();
+      expect(canvas).toHaveStyle({ display: 'block' });
+
+      // Verify HUD indicator badge
+      expect(screen.getByText(/Wind Streamlines: 10m Vectors/i)).toBeInTheDocument();
+
+      // Verify controls palette shows pause and hide buttons
+      const pauseBtn = screen.getByTitle(/Pause wind animation/i);
+      expect(pauseBtn).toBeInTheDocument();
+      fireEvent.click(pauseBtn);
+      expect(onTogglePlay).toHaveBeenCalledWith(false);
+
+      // Toggle visibility off
+      rerender(
+        <TacticalMap
+          center={[72.8777, 19.076]}
+          locationName="Mumbai Metropolitan Region"
+          showWindParticles={false}
+          windParticleDensity="standard"
+          windSpeedMultiplier={1.0}
+          isWindPlaying={true}
+          forecastTimestepIndex={0}
+          forecastGridData={mockForecastData}
+          onToggleWindParticles={onToggleWind}
+          onToggleWindPlay={onTogglePlay}
+        />
+      );
+
+      expect(canvas).toHaveStyle({ display: 'none' });
+
+      // Unmount cleanly without errors
+      unmount();
+    });
   });
 });

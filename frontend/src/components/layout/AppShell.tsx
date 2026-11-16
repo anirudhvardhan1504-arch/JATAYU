@@ -30,6 +30,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   children,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Operational status bar is only displayed on tactical dashboard tabs (not 3D command globe)
   const isOperatorTab = [
@@ -71,6 +72,8 @@ export const AppShell: React.FC<AppShellProps> = ({
             activeTab={activeTab}
             onSelectTab={onSelectTab}
             onCloseMobile={() => setIsMobileMenuOpen(false)}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           />
         </div>
 
