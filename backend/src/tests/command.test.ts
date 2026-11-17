@@ -10,7 +10,7 @@
  * 7. Token Lifecycle, Revocation, Account Deactivation & Role Version Invalidation
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { app as productionApp } from '../app.js';
@@ -184,6 +184,87 @@ describe('JATAYU Operational Command APIs & Server-Enforced RBAC', () => {
   });
 
   describe('1. Public API Backward Compatibility (No Auth Required)', () => {
+    let fetchSpy: any;
+
+    beforeAll(() => {
+      const mockWeatherPayload = {
+        latitude: 19.076,
+        longitude: 72.8777,
+        elevation: 14,
+        current: {
+          time: new Date().toISOString().slice(0, 16),
+          temperature_2m: 29.5,
+          apparent_temperature: 33.2,
+          relative_humidity_2m: 78,
+          precipitation: 4.5,
+          rain: 4.5,
+          showers: 0.0,
+          weather_code: 61,
+          surface_pressure: 1008.2,
+          wind_speed_10m: 18.5,
+          wind_direction_10m: 240,
+          wind_gusts_10m: 32.0,
+        },
+        hourly: {
+          time: Array.from({ length: 72 }, (_, i) => {
+            const d = new Date(Date.now() + i * 3600 * 1000);
+            return d.toISOString().slice(0, 16);
+          }),
+          temperature_2m: Array.from({ length: 72 }, () => 29.5),
+          apparent_temperature: Array.from({ length: 72 }, () => 33.2),
+          relative_humidity_2m: Array.from({ length: 72 }, () => 78),
+          precipitation: Array.from({ length: 72 }, () => 4.5),
+          precipitation_probability: Array.from({ length: 72 }, () => 60),
+          rain: Array.from({ length: 72 }, () => 4.5),
+          showers: Array.from({ length: 72 }, () => 0),
+          weather_code: Array.from({ length: 72 }, () => 61),
+          surface_pressure: Array.from({ length: 72 }, () => 1008.2),
+          wind_speed_10m: Array.from({ length: 72 }, () => 18.5),
+          wind_direction_10m: Array.from({ length: 72 }, () => 240),
+          wind_gusts_10m: Array.from({ length: 72 }, () => 32.0),
+          soil_moisture_0_to_7cm: Array.from({ length: 72 }, () => 0.35),
+          soil_moisture_7_to_28cm: Array.from({ length: 72 }, () => 0.29),
+          soil_moisture_28_to_100cm: Array.from({ length: 72 }, () => 0.25),
+        },
+      };
+
+      const mockImdRss = `<?xml version='1.0' encoding='UTF-8' ?>
+<rss version='2.0'>
+<channel>
+<title>IMD WARNING</title>
+<description>IMD RSS</description>
+<item>
+<title>MUMBAI</title>
+<guid>guid-mum-01</guid>
+<sent>${new Date().toISOString()}</sent>
+<Expires>${new Date(Date.now() + 12 * 3600 * 1000).toISOString()}</Expires>
+<description><![CDATA[Moderate rain: 5-15 mm/hr]]></description>
+</item>
+</channel>
+</rss>`;
+
+      fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: any) => {
+        const urlStr = String(url);
+        if (urlStr.includes('open-meteo.com')) {
+          return new Response(JSON.stringify(mockWeatherPayload), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        if (urlStr.includes('imd')) {
+          return new Response(mockImdRss, {
+            status: 200,
+            headers: { 'Content-Type': 'application/rss+xml' },
+          });
+        }
+        return new Response('Not Found', { status: 404 });
+      });
+    });
+
+    afterAll(() => {
+      fetchSpy?.mockRestore();
+    });
+
     it('GET /api/health responds with 200 without authentication', async () => {
       const res = await request(productionApp).get('/api/health');
       expect(res.status).toBe(200);

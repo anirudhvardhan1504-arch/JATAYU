@@ -8,7 +8,10 @@ import {
   parseDateToISO,
   extractRecommendedActions,
 } from '../services/alert.service.js';
+import { RiskService } from '../services/risk.service.js';
 import { IndicativeFloodRiskAssessment } from '../types/risk.types.js';
+
+let riskSpy: any;
 
 beforeAll(() => {
   // Anchor system time to 2026-10-10 08:00 IST (02:30 UTC)
@@ -16,9 +19,11 @@ beforeAll(() => {
   // are deterministically active across all calendar dates, while expired fixtures (Oct 09) remain expired.
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-10T08:00:00+05:30'));
+  riskSpy = vi.spyOn(RiskService.prototype, 'assessRisk').mockResolvedValue(null);
 });
 
 afterAll(() => {
+  riskSpy?.mockRestore();
   vi.useRealTimers();
 });
 

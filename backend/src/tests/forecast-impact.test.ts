@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import {
@@ -25,6 +25,66 @@ import {
 import { HourlyGridDataPoint, ForecastGridResponse } from '../types/forecast-grid.types.js';
 
 describe('Phase 3D-1: Backend Forecast Impact Engine & Scientific Verification', () => {
+  let globalFetchSpy: any;
+
+  beforeAll(() => {
+    const startTime = Math.floor(Date.now() / 3600000) * 3600000;
+    const mockImdRss = `<?xml version='1.0' encoding='UTF-8' ?>
+<rss version='2.0'>
+<channel>
+<title>IMD WARNING</title>
+<description>IMD RSS</description>
+</channel>
+</rss>`;
+
+    globalFetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('open-meteo.com')) {
+        const u = new URL(urlStr);
+        const latArr = (u.searchParams.get('latitude') || '13.08').split(',').map(Number);
+        const lonArr = (u.searchParams.get('longitude') || '80.27').split(',').map(Number);
+        const mockPayload = latArr.map((lat, idx) => ({
+          latitude: lat,
+          longitude: lonArr[idx],
+          elevation: 14,
+          hourly: {
+            time: Array.from({ length: 72 }, (_, h) => new Date(startTime + h * 3600000).toISOString()),
+            temperature_2m: Array.from({ length: 72 }, () => 24.5),
+            apparent_temperature: Array.from({ length: 72 }, () => 26.0),
+            relative_humidity_2m: Array.from({ length: 72 }, () => 65),
+            precipitation: Array.from({ length: 72 }, () => 0.5),
+            rain: Array.from({ length: 72 }, () => 0.4),
+            showers: Array.from({ length: 72 }, () => 0.1),
+            pressure_msl: Array.from({ length: 72 }, () => 1013.2),
+            surface_pressure: Array.from({ length: 72 }, () => 1011.8),
+            wind_speed_10m: Array.from({ length: 72 }, () => 12),
+            wind_direction_10m: Array.from({ length: 72 }, () => 180),
+            wind_gusts_10m: Array.from({ length: 72 }, () => 20),
+          },
+        }));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => mockPayload,
+          text: async () => JSON.stringify(mockPayload),
+        } as Response;
+      }
+
+      if (urlStr.includes('imd')) {
+        return new Response(mockImdRss, {
+          status: 200,
+          headers: { 'Content-Type': 'application/rss+xml' },
+        });
+      }
+
+      return new Response('Not Found', { status: 404 });
+    });
+  });
+
+  afterAll(() => {
+    globalFetchSpy?.mockRestore();
+  });
+
   // Helper to build a clean 72-hour timeseries (indices 0..71)
   function createSyntheticHourlySeries(
     baseTimeIso: string = '2026-11-13T00:00:00.000Z',
