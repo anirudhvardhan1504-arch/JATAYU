@@ -81,6 +81,9 @@ const allowedOrigins = parseAllowedOrigins(rawCorsOrigin, nodeEnv);
 
 function resolveAuthDbPath(configured?: string): string {
   if (configured && path.isAbsolute(configured)) return configured;
+  if (!configured && (nodeEnv === 'test' || process.env.VITEST)) {
+    return ':memory:';
+  }
   const rel = configured || path.join('data', 'jatayu_auth.db');
   const direct = path.resolve(process.cwd(), rel);
   if (fs.existsSync(direct)) return direct;

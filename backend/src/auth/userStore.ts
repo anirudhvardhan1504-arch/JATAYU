@@ -113,6 +113,7 @@ export function createPersistentUserStore({
 
   // Initialize SQLite schema with write-ahead logging and strict constraints
   db.exec(`
+    PRAGMA busy_timeout = 10000;
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
 
