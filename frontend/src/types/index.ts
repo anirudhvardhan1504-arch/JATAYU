@@ -264,7 +264,8 @@ export type NavigationTab =
   | 'alerts'
   | 'ai'
   | 'preparedness'
-  | 'command3d';
+  | 'command3d'
+  | 'admin';
 
 export type TravelMode = 'driving' | 'walking' | 'cycling';
 
@@ -329,8 +330,28 @@ export interface RoutePlanResponse {
   disclaimer: string;
 }
 
-export type FacilityCategory = 'SHELTER' | 'HOSPITAL' | 'EMERGENCY_OPS' | 'RELIEF_CAMP' | 'FIRE_STATION';
-export type VerificationStatus = 'OFFICIALLY_VERIFIED' | 'GENERAL_DIRECTORY' | 'COMMUNITY_MAPPED' | 'COMMUNITY_VERIFIED';
+export type FacilityCategory =
+  | 'SHELTER'
+  | 'HOSPITAL'
+  | 'TRAUMA_CENTRE'
+  | 'ORR_TRAUMA_CENTRE'
+  | 'AMBULANCE_SERVICE'
+  | 'GOVT_SCHOOL_SHELTER'
+  | 'EMERGENCY_OPS'
+  | 'RELIEF_CAMP'
+  | 'FIRE_STATION';
+
+export type VerificationStatus =
+  | 'VERIFIED'
+  | 'PENDING_VERIFICATION'
+  | 'UNVERIFIED'
+  | 'INACTIVE'
+  | 'UNKNOWN'
+  | 'OFFICIALLY_VERIFIED'
+  | 'GENERAL_DIRECTORY'
+  | 'COMMUNITY_MAPPED'
+  | 'COMMUNITY_VERIFIED';
+
 export type CurrentAvailability = 'UNKNOWN' | 'OPEN' | 'AT_CAPACITY';
 export type SourceProvenance = 'OFFICIAL_SOURCE' | 'COMMUNITY_MAPPED' | 'CURATED_SOURCE' | 'UNVERIFIED';
 
@@ -352,6 +373,11 @@ export interface EmergencyFacility {
   verificationStatus: VerificationStatus;
   currentAvailability: CurrentAvailability;
   operationalStatus?: string;
+  responsibleAuthority?: string;
+  lastVerified?: string;
+  accessibilityInfo?: string;
+  capacity?: number;
+  notes?: string;
   distanceKm?: number;
 }
 

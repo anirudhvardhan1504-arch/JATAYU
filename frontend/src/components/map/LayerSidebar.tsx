@@ -825,7 +825,7 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
               <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
                 <span className="text-slate-300 flex items-center gap-1.5">
                   <ShieldAlert className="w-3 h-3 text-amber-400" />
-                  <span>Flood Vulnerability Points</span>
+                  <span>Flood-Prone Risk Points</span>
                 </span>
                 <button
                   onClick={() => onToggleVulnerabilityPoints && onToggleVulnerabilityPoints(!showVulnerabilityPoints)}
@@ -842,7 +842,7 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
               <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
                 <span className="text-slate-300 flex items-center gap-1.5">
                   <Building2 className="w-3 h-3 text-emerald-400" />
-                  <span>Emergency Facilities (GCC/EOC)</span>
+                  <span>Emergency Facilities & Shelters</span>
                 </span>
                 <button
                   onClick={() => onToggleFacilities && onToggleFacilities(!showFacilities)}

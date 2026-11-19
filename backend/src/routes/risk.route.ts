@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { RiskService } from '../services/risk.service.js';
+import { routeService } from '../services/route.service.js';
 import { replayService } from '../services/replay.service.js';
 
 export const riskRouter = Router();
@@ -60,6 +61,23 @@ riskRouter.get('/assessment', async (req: Request, res: Response) => {
         lon: req.query.lon,
         name: req.query.name,
       },
+    });
+  }
+});
+
+riskRouter.get('/vulnerabilities', (_req: Request, res: Response) => {
+  try {
+    const points = routeService.getVulnerabilityPoints();
+    res.status(200).json({
+      points,
+      count: points.length,
+      sourceAttribution: 'Municipal Historical Inundation & Vulnerability Chokepoint Registry (2015/2023 Benchmarks)',
+      lastUpdated: '2026-01-15T00:00:00Z',
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      error: err.message || 'Failed to fetch vulnerability points',
+      code: 'VULNERABILITY_RETRIEVAL_ERROR',
     });
   }
 });

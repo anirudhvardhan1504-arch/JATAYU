@@ -35,6 +35,8 @@ import {
   syncForecastImpactLayers,
   removeForecastImpactLayers,
 } from '../../services/forecast-impact-layer';
+import { FloodVulnerabilityPoint } from '../../services/risk';
+import { EmergencyFacility, DisasterAlert } from '../../types';
 
 export interface TacticalMapProps {
   center: [number, number]; // [lon, lat]
@@ -92,6 +94,13 @@ export interface TacticalMapProps {
   selectedImpactDistrict?: string | null;
   districtImpactOpacity?: number; // 0 - 100
   onSelectImpactDistrict?: (districtName: string, state: string) => void;
+  // Intelligence Overlays
+  showVulnerabilityPoints?: boolean;
+  vulnerabilityPoints?: FloodVulnerabilityPoint[] | null;
+  showFacilities?: boolean;
+  facilities?: EmergencyFacility[] | null;
+  showAlertsLayer?: boolean;
+  alerts?: DisasterAlert[] | null;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -146,6 +155,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   selectedImpactDistrict = null,
   districtImpactOpacity = 65,
   onSelectImpactDistrict,
+  showVulnerabilityPoints = false,
+  vulnerabilityPoints = null,
+  showFacilities = false,
+  facilities = null,
+  showAlertsLayer: _showAlertsLayer = false,
+  alerts: _alerts = null,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -970,6 +985,264 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     onSelectImpactDistrict,
   ]);
 
+  // Synchronize Flood Vulnerability Points Layer
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const sourceId = 'flood-vulnerabilities-source';
+    const circleLayerId = 'flood-vulnerabilities-circle';
+    const labelLayerId = 'flood-vulnerabilities-label';
+
+    const cleanUp = () => {
+      try {
+        if (map.getLayer(labelLayerId)) map.removeLayer(labelLayerId);
+        if (map.getLayer(circleLayerId)) map.removeLayer(circleLayerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+      } catch {
+        // ignore style unmount
+      }
+    };
+
+    if (!showVulnerabilityPoints || !vulnerabilityPoints || vulnerabilityPoints.length === 0) {
+      if (map.isStyleLoaded()) cleanUp();
+      return;
+    }
+
+    const geojson: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: vulnerabilityPoints.map((pt) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: pt.coordinate,
+        },
+        properties: {
+          id: pt.id,
+          name: pt.name,
+          severity: pt.severity,
+          type: pt.type,
+          description: pt.description,
+          source: pt.source,
+          radiusMeters: pt.radiusMeters,
+        },
+      })),
+    };
+
+    const applyLayer = () => {
+      cleanUp();
+      map.addSource(sourceId, {
+        type: 'geojson',
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: circleLayerId,
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-color': [
+            'match',
+            ['get', 'severity'],
+            'CRITICAL', '#EF4444',
+            'HIGH', '#F97316',
+            'MODERATE', '#FBBF24',
+            '#38BDF8',
+          ],
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 6, 12, 12, 16, 20],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-opacity': 0.85,
+        },
+      });
+
+      map.addLayer({
+        id: labelLayerId,
+        type: 'symbol',
+        source: sourceId,
+        minzoom: 11,
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-size': 11,
+          'text-offset': [0, 1.4],
+          'text-anchor': 'top',
+        },
+        paint: {
+          'text-color': '#FFFFFF',
+          'text-halo-color': '#0F172A',
+          'text-halo-width': 1.5,
+        },
+      });
+
+      map.on('click', circleLayerId, (e) => {
+        if (!e.features || !e.features[0]) return;
+        const props = e.features[0].properties as any;
+        const coords = (e.features[0].geometry as any).coordinates.slice();
+        new maplibregl.Popup({ offset: 12 })
+          .setLngLat(coords)
+          .setHTML(`
+            <div style="font-family: ui-monospace, monospace; font-size: 11px; padding: 6px; color: #0F172A; max-width: 260px;">
+              <div style="font-weight: bold; color: #EA580C; margin-bottom: 2px;">⚠️ ${props.name}</div>
+              <div style="font-size: 10px; margin-bottom: 3px; font-weight: 600;">Type: ${props.type} | Severity: ${props.severity}</div>
+              <div style="font-size: 10px; color: #334155; margin-bottom: 4px;">${props.description}</div>
+              <div style="font-size: 9px; color: #64748B;">Source: ${props.source}</div>
+            </div>
+          `)
+          .addTo(map);
+      });
+
+      map.on('mouseenter', circleLayerId, () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', circleLayerId, () => {
+        map.getCanvas().style.cursor = '';
+      });
+    };
+
+    if (map.isStyleLoaded()) {
+      applyLayer();
+    } else {
+      map.once('load', applyLayer);
+    }
+
+    return () => {
+      if (map.isStyleLoaded()) cleanUp();
+    };
+  }, [showVulnerabilityPoints, vulnerabilityPoints]);
+
+  // Synchronize Emergency Facilities Layer
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const sourceId = 'emergency-facilities-source';
+    const circleLayerId = 'emergency-facilities-circle';
+    const labelLayerId = 'emergency-facilities-label';
+
+    const cleanUp = () => {
+      try {
+        if (map.getLayer(labelLayerId)) map.removeLayer(labelLayerId);
+        if (map.getLayer(circleLayerId)) map.removeLayer(circleLayerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+      } catch {
+        // ignore style unmount
+      }
+    };
+
+    if (!showFacilities || !facilities || facilities.length === 0) {
+      if (map.isStyleLoaded()) cleanUp();
+      return;
+    }
+
+    const geojson: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: facilities.map((fac) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [fac.location.longitude, fac.location.latitude],
+        },
+        properties: {
+          id: fac.id,
+          name: fac.name,
+          category: fac.category,
+          address: fac.address || '',
+          phone: fac.phone || '',
+          verificationStatus: fac.verificationStatus,
+          currentAvailability: fac.currentAvailability,
+          source: fac.source || '',
+        },
+      })),
+    };
+
+    const applyLayer = () => {
+      cleanUp();
+      map.addSource(sourceId, {
+        type: 'geojson',
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: circleLayerId,
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-color': [
+            'match',
+            ['get', 'category'],
+            'HOSPITAL', '#DC2626',
+            'SHELTER', '#2563EB',
+            'RELIEF_CAMP', '#2563EB',
+            'FIRE_STATION', '#D97706',
+            '#0D9488',
+          ],
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 5, 12, 10, 16, 16],
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-opacity': 0.9,
+        },
+      });
+
+      map.addLayer({
+        id: labelLayerId,
+        type: 'symbol',
+        source: sourceId,
+        minzoom: 12,
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-size': 10,
+          'text-offset': [0, 1.3],
+          'text-anchor': 'top',
+        },
+        paint: {
+          'text-color': '#FFFFFF',
+          'text-halo-color': '#0F172A',
+          'text-halo-width': 1.5,
+        },
+      });
+
+      map.on('click', circleLayerId, (e) => {
+        if (!e.features || !e.features[0]) return;
+        const props = e.features[0].properties as any;
+        const coords = (e.features[0].geometry as any).coordinates.slice();
+        new maplibregl.Popup({ offset: 12 })
+          .setLngLat(coords)
+          .setHTML(`
+            <div style="font-family: ui-monospace, monospace; font-size: 11px; padding: 6px; color: #0F172A; max-width: 260px;">
+              <div style="font-weight: bold; color: #1E3A8A; margin-bottom: 2px;">🏥 ${props.name}</div>
+              <div style="font-size: 10px; margin-bottom: 2px; font-weight: 600;">Category: ${props.category}</div>
+              <div style="font-size: 10px; color: #334155; margin-bottom: 3px;">${props.address}</div>
+              <div style="font-size: 10px; margin-bottom: 2px;">
+                Status: <span style="font-weight: bold; color: ${props.verificationStatus === 'OFFICIALLY_VERIFIED' ? '#047857' : '#64748B'}">${props.verificationStatus}</span>
+              </div>
+              <div style="font-size: 9px; color: #B45309; font-weight: bold; margin-bottom: 3px;">
+                ⚠️ Vacancy: ${props.currentAvailability} (Verify before dispatch)
+              </div>
+              ${props.phone ? `<div style="font-size: 10px; font-weight: 600; color: #0284C7;">📞 ${props.phone}</div>` : ''}
+            </div>
+          `)
+          .addTo(map);
+      });
+
+      map.on('mouseenter', circleLayerId, () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', circleLayerId, () => {
+        map.getCanvas().style.cursor = '';
+      });
+    };
+
+    if (map.isStyleLoaded()) {
+      applyLayer();
+    } else {
+      map.once('load', applyLayer);
+    }
+
+    return () => {
+      if (map.isStyleLoaded()) cleanUp();
+    };
+  }, [showFacilities, facilities]);
+
   const handleRecenter = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.flyTo({ center: initialCenter, zoom: 10 });
@@ -1093,6 +1366,60 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Flood Vulnerability Points Legend */}
+      {showVulnerabilityPoints && (
+        <div className="absolute bottom-6 right-3 z-20 pointer-events-auto max-w-xs bg-navy-950/90 border border-amber-700/80 p-2.5 rounded shadow-lg text-slate-200 font-mono text-[10px] space-y-1">
+          <div className="flex items-center gap-1.5 font-bold text-amber-400 border-b border-navy-800 pb-1">
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>HISTORICAL FLOOD CHOKEPOINTS</span>
+          </div>
+          <div className="text-[9px] text-slate-400">
+            Municipal 2015/2023 Inundation Benchmarks & Surcharge Points
+          </div>
+          <div className="flex items-center gap-2 pt-0.5">
+            <span className="flex items-center gap-1 text-[9px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
+              Critical
+            </span>
+            <span className="flex items-center gap-1 text-[9px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-orange-500 border border-white" />
+              High Pinch
+            </span>
+            <span className="flex items-center gap-1 text-[9px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white" />
+              Moderate
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Emergency Facilities Legend */}
+      {showFacilities && (
+        <div className="absolute bottom-28 right-3 z-20 pointer-events-auto max-w-xs bg-navy-950/90 border border-sky-700/80 p-2.5 rounded shadow-lg text-slate-200 font-mono text-[10px] space-y-1">
+          <div className="flex items-center gap-1.5 font-bold text-sky-400 border-b border-navy-800 pb-1">
+            <Globe className="w-3.5 h-3.5" />
+            <span>EMERGENCY FACILITIES</span>
+          </div>
+          <div className="flex items-center gap-3 pt-0.5 flex-wrap">
+            <span className="flex items-center gap-1 text-[9px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-white" />
+              Hospital
+            </span>
+            <span className="flex items-center gap-1 text-[9px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 border border-white" />
+              Shelter
+            </span>
+            <span className="flex items-center gap-1 text-[9px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-600 border border-white" />
+              Fire/Ops
+            </span>
+          </div>
+          <div className="text-[8.5px] text-amber-300/90 italic pt-0.5">
+            Availability: UNKNOWN (verify before dispatch)
+          </div>
         </div>
       )}
 

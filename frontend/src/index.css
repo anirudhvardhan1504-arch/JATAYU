@@ -4,9 +4,20 @@
 
 @layer base {
   :root {
-    --color-bg-base: #FBFBF9;
-    --color-text-main: #0F172A;
-    --color-border-subtle: #E2E8F0;
+    --color-bg-base: #080D0D;
+    --color-bg-secondary: #101A17;
+    --color-bg-elevated: #14221E;
+    --color-bg-charcoal: #101817;
+    --color-bg-dark-emerald: #10251F;
+    --color-emerald-primary: #00D99A;
+    --color-emerald-mint: #42F5B0;
+    --color-emerald-soft: #75EFC0;
+    --color-text-primary: #F0F7F4;
+    --color-text-secondary: #B5C5BF;
+    --color-text-muted: #8A9C95;
+    --color-text-disabled: #71827B;
+    --color-glass-surface: rgba(255, 255, 255, 0.055);
+    --color-glass-border: rgba(255, 255, 255, 0.12);
   }
 
   html, body {
@@ -18,29 +29,137 @@
   }
 
   body {
-    background-color: #FBFBF9;
-    color: #0F172A;
+    background-color: #080D0D;
+    background-image: 
+      radial-gradient(circle at 12% 15%, rgba(16, 37, 31, 0.85) 0%, transparent 45%),
+      radial-gradient(circle at 88% 85%, rgba(0, 217, 154, 0.07) 0%, transparent 45%),
+      radial-gradient(circle at 50% 50%, rgba(16, 24, 23, 0.95) 0%, #080D0D 100%);
+    background-attachment: fixed;
+    color: #F0F7F4;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  input, select, textarea {
+    color-scheme: dark;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #8A9C95 !important;
+    opacity: 1;
   }
 }
 
-/* Operational clean panel styles */
+/* Explicit High-Contrast Semantic Typography Classes (WCAG AA Certified) */
+.text-jatayu-primary { color: #F0F7F4 !important; }
+.text-jatayu-secondary { color: #B5C5BF !important; }
+.text-jatayu-muted { color: #8A9C95 !important; }
+.text-jatayu-disabled { color: #71827B !important; }
+.text-jatayu-accent { color: #42F5B0 !important; }
+.text-jatayu-link { color: #64DDB5 !important; }
+
+/* Safe text fallback for legacy navy classes */
+.text-navy-900, .text-navy-950, .text-blue-950 {
+  color: #F0F7F4 !important;
+}
+
+/* Glassmorphism Surface Classes */
+.glass-surface {
+  background: rgba(16, 26, 23, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 12px 32px -8px rgba(0, 0, 0, 0.65);
+}
+
+.glass-surface-elevated {
+  background: rgba(20, 34, 30, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.18), 0 16px 40px -10px rgba(0, 0, 0, 0.75);
+}
+
+.glass-surface-glow {
+  background: rgba(16, 37, 31, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 217, 154, 0.35);
+  box-shadow: 0 0 30px -4px rgba(0, 217, 154, 0.3), inset 0 1px 1px 0 rgba(66, 245, 176, 0.25);
+}
+
+/* Bento Card Design System */
+.bento-card {
+  background: rgba(16, 26, 23, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  border-color: rgba(66, 245, 176, 0.38);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.75), 0 0 25px -6px rgba(0, 217, 154, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Operational clean panel styles (Preserved for compatibility) */
 .operational-panel {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  background: rgba(16, 24, 23, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  color: #F0F7F4;
 }
 
 .operational-panel-dark {
-  background-color: #0F172A;
-  border: 1px solid #1E293B;
-  color: #F8FAFC;
+  background: rgba(8, 13, 13, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 1rem;
+  color: #F0F7F4;
 }
 
 /* Monospace telemetry styles */
 .font-telemetry {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+}
+
+/* Gradient text accents */
+.text-gradient-emerald {
+  background: linear-gradient(135deg, #FFFFFF 0%, #75EFC0 50%, #00D99A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-mint {
+  background: linear-gradient(135deg, #E6FAF3 0%, #42F5B0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom Scrollbar for Sleek Dark Glass UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(8, 13, 13, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 217, 154, 0.5);
 }
 
 /* MapLibre canvas full reset */

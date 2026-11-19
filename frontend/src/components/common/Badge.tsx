@@ -14,47 +14,47 @@ export const Badge: React.FC<BadgeProps> = ({
   variant,
   size = 'sm',
 }) => {
-  const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs';
+  const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs';
 
   if (sourceType) {
     switch (sourceType) {
       case 'OBSERVED':
         return (
           <span
-            className={`inline-flex items-center font-medium font-mono uppercase tracking-wider rounded border border-teal-300 bg-teal-50 text-teal-800 ${sizeClasses}`}
+            className={`inline-flex items-center font-medium font-mono uppercase tracking-wider rounded border border-emerald-500/40 bg-emerald-950/60 text-emerald-300 shadow-[0_0_10px_rgba(0,217,154,0.15)] ${sizeClasses}`}
             title="Actual observed telemetry from ground station or verified radar"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 mr-1.5"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse shadow-[0_0_6px_#00D99A]"></span>
             {children || 'LIVE OBSERVED'}
           </span>
         );
       case 'OFFICIAL_FORECAST':
         return (
           <span
-            className={`inline-flex items-center font-medium font-mono uppercase tracking-wider rounded border border-blue-300 bg-blue-50 text-blue-800 ${sizeClasses}`}
+            className={`inline-flex items-center font-medium font-mono uppercase tracking-wider rounded border border-cyan-500/40 bg-cyan-950/60 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.15)] ${sizeClasses}`}
             title="Official numerical prediction from meteorological agency"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1.5"></span>
             {children || 'OFFICIAL FORECAST'}
           </span>
         );
       case 'INDICATIVE_MODEL':
         return (
           <span
-            className={`inline-flex items-center font-medium font-mono uppercase tracking-wider rounded border border-amber-300 bg-amber-50 text-amber-900 ${sizeClasses}`}
+            className={`inline-flex items-center font-medium font-mono uppercase tracking-wider rounded border border-amber-500/40 bg-amber-950/60 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.15)] ${sizeClasses}`}
             title="Calculated indicative risk metric — not a validated hydraulic forecast"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span>
             {children || 'INDICATIVE MODEL'}
           </span>
         );
       case 'DEMO_DATA':
         return (
           <span
-            className={`inline-flex items-center font-medium font-mono uppercase tracking-wider rounded border border-slate-300 bg-slate-100 text-slate-700 ${sizeClasses}`}
+            className={`inline-flex items-center font-medium font-mono uppercase tracking-wider rounded border border-slate-600 bg-slate-900/80 text-slate-400 ${sizeClasses}`}
             title="Synthetic offline simulation data for testing and drills"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-500 mr-1.5"></span>
             {children || 'DEMO / SIMULATION'}
           </span>
         );
@@ -62,12 +62,12 @@ export const Badge: React.FC<BadgeProps> = ({
   }
 
   const colorMap = {
-    crimson: 'border-red-200 bg-red-50 text-red-700',
-    amber: 'border-amber-200 bg-amber-50 text-amber-800',
-    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    cyan: 'border-sky-200 bg-sky-50 text-sky-800',
-    slate: 'border-slate-200 bg-slate-100 text-slate-700',
-    navy: 'border-navy-700 bg-navy-800 text-slate-200',
+    crimson: 'border-red-500/40 bg-red-950/60 text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.2)]',
+    amber: 'border-amber-500/40 bg-amber-950/60 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.2)]',
+    emerald: 'border-emerald-500/40 bg-emerald-950/60 text-emerald-300 shadow-[0_0_8px_rgba(0,217,154,0.2)]',
+    cyan: 'border-cyan-500/40 bg-cyan-950/60 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.2)]',
+    slate: 'border-white/10 bg-white/5 text-jatayu-secondary',
+    navy: 'border-emerald-900/60 bg-dark-emerald/50 text-emerald-200',
   };
 
   const selectedClass = variant ? colorMap[variant] : colorMap.slate;

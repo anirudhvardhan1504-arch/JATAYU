@@ -167,27 +167,27 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
   }, [forecast]);
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 font-sans">
       {/* Top Header & Context Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bento-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-blue-600">
-            <Compass className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400">
+            <Compass className="w-4 h-4 text-emerald-400" />
             <span>NUMERICAL WEATHER PREDICTION OBSERVATORY</span>
             <Badge variant="cyan" size="sm">LIVE NWP</Badge>
           </div>
-          <h1 className="text-2xl font-bold text-navy-900 mt-1 flex items-center gap-2 flex-wrap">
+          <h1 className="text-2xl font-bold text-jatayu-primary mt-1.5 flex items-center gap-2 flex-wrap">
             <span>{location.name}</span>
-            <span className="text-xs font-mono font-normal text-slate-500 px-2 py-0.5 bg-slate-100 rounded border border-slate-200">
+            <span className="text-xs font-mono font-normal text-emerald-300 px-2.5 py-0.5 bg-dark-emerald/70 rounded-lg border border-emerald-500/30">
               {location.lat.toFixed(4)}°N, {location.lon.toFixed(4)}°E
             </span>
             {forecast?.elevation !== undefined && forecast.elevation !== null && (
-              <span className="text-xs font-mono font-normal text-slate-500 px-2 py-0.5 bg-slate-100 rounded border border-slate-200">
+              <span className="text-xs font-mono font-normal text-jatayu-secondary px-2.5 py-0.5 bg-charcoal/80 rounded-lg border border-white/10">
                 Alt: {forecast.elevation}m
               </span>
             )}
           </h1>
-          <p className="text-xs text-slate-500 mt-1 font-sans">
+          <p className="text-xs text-jatayu-secondary mt-1 max-w-2xl leading-relaxed">
             High-resolution multi-variable meteorological forecast powered by ECMWF IFS & DWD ICON NWP models.
           </p>
         </div>
@@ -196,35 +196,35 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
         <div className="flex items-center gap-2 self-start md:self-center flex-wrap">
           <button
             onClick={() => onSelectTab('map')}
-            className="px-3.5 py-2 bg-navy-900 hover:bg-navy-800 text-white text-xs font-medium rounded-lg shadow-xs flex items-center gap-2 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-charcoal/90 hover:bg-white/10 text-jatayu-primary text-xs font-medium rounded-xl border border-white/15 shadow-subtle flex items-center gap-2 transition-all cursor-pointer"
           >
-            <Layers className="w-4 h-4 text-amber-400" />
+            <Layers className="w-4 h-4 text-emerald-400" />
             <span>Open Weather Map</span>
           </button>
           <button
             onClick={() => onSelectTab('alerts')}
-            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium rounded-lg shadow-xs flex items-center gap-2 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-medium rounded-xl shadow-subtle flex items-center gap-2 transition-all cursor-pointer"
           >
-            <AlertTriangle className="w-4 h-4" />
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
             <span>Official Alerts ({officialAlerts.length})</span>
           </button>
         </div>
       </div>
 
       {/* Preset Sector Quick Selectors */}
-      <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-xs flex items-center gap-2 overflow-x-auto">
-        <span className="text-xs font-mono font-semibold text-slate-500 uppercase whitespace-nowrap pl-1">
+      <div className="bento-card p-3.5 flex items-center gap-2 overflow-x-auto">
+        <span className="text-xs font-mono font-semibold text-emerald-400/90 uppercase whitespace-nowrap pl-1 tracking-wider">
           REGIONAL HUBS:
         </span>
-        <div className="flex items-center gap-1.5 flex-nowrap">
+        <div className="flex items-center gap-2 flex-nowrap">
           {PRESET_SECTORS.map((s) => (
             <button
               key={s.name}
               onClick={() => onSelectLocation && onSelectLocation(s)}
-              className={`px-2.5 py-1 text-xs font-mono rounded border transition-colors whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1 text-xs font-mono rounded-xl border transition-all whitespace-nowrap cursor-pointer ${
                 location.name === s.name
-                  ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
-                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold shadow-[0_0_12px_rgba(0,217,154,0.25)]'
+                  : 'bg-charcoal/80 text-jatayu-secondary border-white/10 hover:border-emerald-500/30 hover:text-jatayu-primary'
               }`}
             >
               {s.name.split(' ')[0]}
@@ -254,47 +254,47 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
       {/* 1. CURRENT CONDITIONS HERO & METRICS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Observation Hero Card */}
-        <div className="bg-gradient-to-br from-navy-900 via-navy-800 to-slate-900 rounded-2xl text-white p-6 shadow-md border border-navy-700 flex flex-col justify-between">
+        <div className="bento-card p-6 relative overflow-hidden bg-gradient-to-br from-charcoal via-dark-emerald/40 to-charcoal border border-emerald-500/30 flex flex-col justify-between shadow-panel">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
+              <span className="text-xs font-mono uppercase tracking-wider text-emerald-400 font-semibold flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-emerald-400" />
                 <span>CURRENT CONDITIONS</span>
               </span>
-              <span className="text-[11px] font-mono text-slate-400">
+              <span className="text-[11px] font-mono text-emerald-300/80 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/30">
                 {weather?.timestamp
                   ? new Date(weather.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                   : 'Live'}
               </span>
             </div>
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-5 flex items-center justify-between">
               <div>
                 <div className="text-5xl sm:text-6xl font-extrabold tracking-tight text-white font-mono">
                   {weather ? `${weather.temperatureC}°` : '--°'}
                 </div>
-                <div className="text-sm font-medium text-slate-300 mt-1">
+                <div className="text-sm font-medium text-jatayu-secondary mt-1">
                   Feels like {weather ? `${weather.apparentTemperatureC}°C` : '--'}
                 </div>
               </div>
-              <div className="p-3 bg-white/10 rounded-2xl border border-white/10">
+              <div className="p-3.5 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 shadow-[0_0_15px_rgba(0,217,154,0.15)]">
                 {getWeatherIcon(weather?.weatherCode || 0, weather?.precipitationMm || 0)}
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-navy-700/80">
-              <div className="text-base font-bold text-sky-300 capitalize">
+            <div className="mt-5 pt-4 border-t border-white/10">
+              <div className="text-base font-bold text-mint capitalize">
                 {weather?.weatherDescription || 'Atmospheric observation active'}
               </div>
-              <div className="text-xs text-slate-400 mt-0.5">
+              <div className="text-xs text-jatayu-muted mt-0.5 font-mono">
                 Attribution: {weather?.sourceAttribution || 'Open-Meteo High-Res IFS'}
               </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-3 border-t border-navy-700/60 flex items-center justify-between text-xs font-mono text-slate-400">
+          <div className="mt-6 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-mono text-jatayu-secondary">
             <span>BAROMETRIC STATE</span>
-            <span className="text-slate-200 font-bold">
+            <span className="text-emerald-300 font-bold">
               {weather?.surfacePressureHpa ? `${weather.surfacePressureHpa} hPa` : 'N/A'}
             </span>
           </div>
@@ -303,110 +303,110 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
         {/* Detailed Metrics Grid (2 cols) */}
         <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
           {/* Rain Rate */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase">
+          <div className="bento-card p-4.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
-                <CloudRain className="w-4 h-4 text-blue-500" />
+                <CloudRain className="w-4 h-4 text-cyan-400" />
                 <span>Precipitation</span>
               </span>
-              <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className="text-[10px] bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded-md font-mono font-bold">
                 Rate
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-navy-900 font-mono">
+            <div className="mt-2 text-2xl font-extrabold text-jatayu-primary font-mono">
               {weather ? `${weather.precipitationMm} mm/h` : '--'}
             </div>
-            <div className="mt-1 text-xs text-slate-500">
-              Past 24h: <strong>{forecast ? `${forecast.accumulations.past24hRainfallMm} mm` : '--'}</strong>
+            <div className="mt-1 text-xs text-jatayu-secondary">
+              Past 24h: <strong className="text-white font-mono">{forecast ? `${forecast.accumulations.past24hRainfallMm} mm` : '--'}</strong>
             </div>
           </div>
 
           {/* 24h & 72h Rain Accumulations */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase">
+          <div className="bento-card p-4.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
-                <TrendingUp className="w-4 h-4 text-indigo-500" />
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
                 <span>24h Expected</span>
               </span>
-              <span className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className="text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded-md font-mono font-bold">
                 NWP
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-navy-900 font-mono">
+            <div className="mt-2 text-2xl font-extrabold text-jatayu-primary font-mono">
               {forecast ? `${forecast.accumulations.next24hRainfallMm} mm` : '--'}
             </div>
-            <div className="mt-1 text-xs text-slate-500">
-              Next 72h: <strong>{forecast ? `${forecast.accumulations.next72hRainfallMm} mm` : '--'}</strong>
+            <div className="mt-1 text-xs text-jatayu-secondary">
+              Next 72h: <strong className="text-white font-mono">{forecast ? `${forecast.accumulations.next72hRainfallMm} mm` : '--'}</strong>
             </div>
           </div>
 
           {/* Wind Speed & Gusts */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase">
+          <div className="bento-card p-4.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
-                <Wind className="w-4 h-4 text-teal-600" />
+                <Wind className="w-4 h-4 text-teal-400" />
                 <span>Wind & Gusts</span>
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-navy-900 font-mono">
+            <div className="mt-2 text-2xl font-extrabold text-jatayu-primary font-mono">
               {weather ? `${weather.windSpeedKmh} km/h` : '--'}
             </div>
-            <div className="mt-1 text-xs text-slate-500">
-              Gusts: <strong>{weather ? `${weather.windGustsKmh} km/h` : '--'}</strong> (Dir: {weather ? `${weather.windDirectionDegrees}°` : '--'})
+            <div className="mt-1 text-xs text-jatayu-secondary">
+              Gusts: <strong className="text-white font-mono">{weather ? `${weather.windGustsKmh} km/h` : '--'}</strong> (Dir: {weather ? `${weather.windDirectionDegrees}°` : '--'})
             </div>
           </div>
 
           {/* Relative Humidity */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase">
+          <div className="bento-card p-4.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
-                <Droplets className="w-4 h-4 text-cyan-600" />
+                <Droplets className="w-4 h-4 text-sky-400" />
                 <span>Humidity</span>
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-navy-900 font-mono">
+            <div className="mt-2 text-2xl font-extrabold text-jatayu-primary font-mono">
               {weather ? `${weather.relativeHumidityPercent}%` : '--'}
             </div>
-            <div className="mt-1 text-xs text-slate-500">
+            <div className="mt-1 text-xs text-jatayu-secondary">
               Surface saturation level
             </div>
           </div>
 
           {/* Surface Pressure */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase">
+          <div className="bento-card p-4.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
-                <Gauge className="w-4 h-4 text-amber-600" />
+                <Gauge className="w-4 h-4 text-amber-400" />
                 <span>Pressure</span>
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-navy-900 font-mono">
+            <div className="mt-2 text-2xl font-extrabold text-jatayu-primary font-mono">
               {weather ? `${weather.surfacePressureHpa} hPa` : '--'}
             </div>
-            <div className="mt-1 text-xs text-slate-500">
+            <div className="mt-1 text-xs text-jatayu-secondary">
               Sea-level normalized
             </div>
           </div>
 
           {/* Soil Moisture */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase">
+          <div className="bento-card p-4.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-emerald-600" />
+                <Layers className="w-4 h-4 text-emerald-400" />
                 <span>Soil Moisture</span>
               </span>
-              <span className="text-[10px] bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className="text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded-md font-mono font-bold">
                 {forecast?.soilProfile.saturationTier || 'LOW'}
               </span>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-navy-900 font-mono">
+            <div className="mt-2 text-2xl font-extrabold text-jatayu-primary font-mono">
               {weather?.soilMoisture0To7cm !== undefined
                 ? `${(weather.soilMoisture0To7cm * 100).toFixed(1)}%`
                 : forecast?.soilProfile.moisture0To7cm !== undefined
                 ? `${(forecast.soilProfile.moisture0To7cm * 100).toFixed(1)}%`
                 : 'N/A'}
             </div>
-            <div className="mt-1 text-xs text-slate-500">
+            <div className="mt-1 text-xs text-jatayu-secondary">
               Depth: 0–7cm topsoil layer
             </div>
           </div>
@@ -414,15 +414,15 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
       </div>
 
       {/* 2. HOURLY FORECAST STRIP (24 Hours) */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="bento-card p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-blue-600" />
-            <h2 className="text-sm font-bold text-navy-900 uppercase font-mono tracking-wider">
+            <Clock className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm font-bold text-jatayu-primary uppercase font-mono tracking-wider">
               24-Hour Hourly Forecast Strip
             </h2>
           </div>
-          <span className="text-xs font-mono text-slate-400">
+          <span className="text-xs font-mono text-jatayu-muted">
             Scroll horizontally for all hours
           </span>
         </div>
@@ -434,27 +434,27 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
             return (
               <div
                 key={h.time}
-                className="flex-shrink-0 w-24 p-3 rounded-lg bg-slate-50 border border-slate-200 text-center flex flex-col items-center justify-between space-y-2 hover:border-blue-300 transition-colors"
+                className="flex-shrink-0 w-24 p-3 rounded-xl bg-charcoal/80 border border-white/10 text-center flex flex-col items-center justify-between space-y-2 hover:border-emerald-500/40 hover:bg-white/5 transition-all shadow-xs"
               >
-                <span className="text-xs font-mono font-semibold text-slate-600">{hourLabel}</span>
+                <span className="text-xs font-mono font-semibold text-jatayu-secondary">{hourLabel}</span>
                 <div className="my-1">{getWeatherIcon(0, h.precipitationMm)}</div>
-                <div className="text-base font-extrabold text-navy-900 font-mono">
+                <div className="text-base font-extrabold text-jatayu-primary font-mono">
                   {Math.round(h.temperatureC)}°
                 </div>
                 {/* Rain probability bar */}
                 <div className="w-full space-y-0.5">
-                  <div className="flex justify-between text-[10px] font-mono text-blue-600 font-semibold">
+                  <div className="flex justify-between text-[10px] font-mono text-cyan-300 font-semibold">
                     <span>Rain</span>
                     <span>{h.precipitationProbabilityPercent}%</span>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-1 overflow-hidden">
+                  <div className="w-full bg-obsidian rounded-full h-1 overflow-hidden border border-white/5">
                     <div
-                      className="bg-blue-600 h-1 rounded-full"
+                      className="bg-cyan-400 h-1 rounded-full"
                       style={{ width: `${Math.min(100, h.precipitationProbabilityPercent)}%` }}
                     />
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">
+                <span className="text-[10px] font-mono text-jatayu-muted">
                   {h.windSpeedKmh} km/h
                 </span>
               </div>
@@ -464,38 +464,38 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
       </div>
 
       {/* 3. WEATHER TREND CHARTS (RECHARTS) */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
+      <div className="bento-card p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-white/10 gap-3">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-blue-600" />
-            <h2 className="text-sm font-bold text-navy-900 uppercase font-mono tracking-wider">
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm font-bold text-jatayu-primary uppercase font-mono tracking-wider">
               Weather Trend Telemetry
             </h2>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             {/* Chart variable tabs */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-xs font-mono">
+            <div className="flex items-center bg-charcoal/90 border border-white/10 p-0.5 rounded-xl text-xs font-mono">
               <button
                 onClick={() => setActiveChartTab('temp')}
-                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
-                  activeChartTab === 'temp' ? 'bg-white font-bold text-navy-900 shadow-xs' : 'text-slate-600'
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  activeChartTab === 'temp' ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-xs' : 'text-jatayu-secondary hover:text-white'
                 }`}
               >
                 Temperature (°C)
               </button>
               <button
                 onClick={() => setActiveChartTab('precip')}
-                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
-                  activeChartTab === 'precip' ? 'bg-white font-bold text-navy-900 shadow-xs' : 'text-slate-600'
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  activeChartTab === 'precip' ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-xs' : 'text-jatayu-secondary hover:text-white'
                 }`}
               >
                 Precipitation (mm)
               </button>
               <button
                 onClick={() => setActiveChartTab('wind')}
-                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
-                  activeChartTab === 'wind' ? 'bg-white font-bold text-navy-900 shadow-xs' : 'text-slate-600'
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  activeChartTab === 'wind' ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-xs' : 'text-jatayu-secondary hover:text-white'
                 }`}
               >
                 Wind (km/h)
@@ -503,19 +503,19 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
             </div>
 
             {/* Range selector */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-xs font-mono">
+            <div className="flex items-center bg-charcoal/90 border border-white/10 p-0.5 rounded-xl text-xs font-mono">
               <button
                 onClick={() => setSelectedHourlyRange(24)}
-                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                  selectedHourlyRange === 24 ? 'bg-blue-600 text-white font-bold' : 'text-slate-600'
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  selectedHourlyRange === 24 ? 'bg-emerald-500/30 text-emerald-300 font-bold border border-emerald-500/40' : 'text-jatayu-secondary hover:text-white'
                 }`}
               >
                 24h
               </button>
               <button
                 onClick={() => setSelectedHourlyRange(48)}
-                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                  selectedHourlyRange === 48 ? 'bg-blue-600 text-white font-bold' : 'text-slate-600'
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  selectedHourlyRange === 48 ? 'bg-emerald-500/30 text-emerald-300 font-bold border border-emerald-500/40' : 'text-jatayu-secondary hover:text-white'
                 }`}
               >
                 48h
@@ -527,7 +527,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
         {/* Chart Stage */}
         <div className="h-64 sm:h-72 w-full pt-2">
           {chartData.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-xs font-mono text-slate-400">
+            <div className="h-full flex items-center justify-center text-xs font-mono text-jatayu-muted">
               No forecast hourly telemetry available.
             </div>
           ) : activeChartTab === 'temp' ? (
@@ -539,11 +539,11 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
                     <stop offset="95%" stopColor="#EF4444" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748B' }} unit="°" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#B5C5BF' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#B5C5BF' }} unit="°" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0A1128', borderColor: '#1E293B', borderRadius: 8, color: '#fff', fontSize: 12 }}
+                  contentStyle={{ backgroundColor: '#101817', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#F0F7F4', fontSize: 12 }}
                   formatter={(value: any) => [`${value}°C`, 'Temperature']}
                   labelFormatter={(l, items) => items[0]?.payload?.fullTime || l}
                 />
@@ -553,34 +553,34 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
           ) : activeChartTab === 'precip' ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748B' }} unit="mm" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#B5C5BF' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#B5C5BF' }} unit="mm" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0A1128', borderColor: '#1E293B', borderRadius: 8, color: '#fff', fontSize: 12 }}
+                  contentStyle={{ backgroundColor: '#101817', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#F0F7F4', fontSize: 12 }}
                   formatter={(val: any, name: string) => [
                     name === 'rainMm' ? `${val} mm` : `${val}%`,
                     name === 'rainMm' ? 'Precipitation' : 'Probability',
                   ]}
                   labelFormatter={(l, items) => items[0]?.payload?.fullTime || l}
                 />
-                <Bar dataKey="rainMm" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="rainMm" fill="#00D99A" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748B' }} unit="km/h" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#B5C5BF' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#B5C5BF' }} unit="km/h" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0A1128', borderColor: '#1E293B', borderRadius: 8, color: '#fff', fontSize: 12 }}
+                  contentStyle={{ backgroundColor: '#101817', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#F0F7F4', fontSize: 12 }}
                   formatter={(val: any, name: string) => [`${val} km/h`, name === 'windSpeed' ? 'Sustained Wind' : 'Wind Gusts']}
                   labelFormatter={(l, items) => items[0]?.payload?.fullTime || l}
                 />
-                <Line type="monotone" dataKey="windSpeed" stroke="#0D9488" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="windSpeed" stroke="#42F5B0" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="windGusts" stroke="#F59E0B" strokeWidth={2} strokeDasharray="4 4" dot={false} />
-                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8, color: '#B5C5BF' }} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -588,39 +588,39 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
       </div>
 
       {/* 4. DAILY 7-DAY EXTENDED FORECAST SECTION */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="bento-card p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-blue-600" />
-            <h2 className="text-sm font-bold text-navy-900 uppercase font-mono tracking-wider">
+            <Calendar className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm font-bold text-jatayu-primary uppercase font-mono tracking-wider">
               7-Day Extended Weather Outlook
             </h2>
           </div>
-          <span className="text-xs font-mono text-slate-400">
+          <span className="text-xs font-mono text-jatayu-muted">
             Aggregated from verified NWP data
           </span>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-white/5">
           {dailyForecast.map((day) => (
             <div
               key={day.date}
-              className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-slate-50/70 px-2 rounded-lg transition-colors"
+              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-white/5 px-3 rounded-xl transition-all"
             >
               {/* Day & Date */}
               <div className="w-36 flex-shrink-0">
-                <div className="font-bold text-navy-900">{day.dayName}</div>
-                <div className="text-[11px] font-mono text-slate-400">{day.date}</div>
+                <div className="font-bold text-jatayu-primary">{day.dayName}</div>
+                <div className="text-[11px] font-mono text-jatayu-muted">{day.date}</div>
               </div>
 
               {/* Rain Chance & Icon */}
               <div className="flex items-center gap-3 w-40 flex-shrink-0">
                 {getWeatherIcon(0, day.rainTotal)}
                 <div>
-                  <div className="font-medium text-slate-800">
+                  <div className="font-medium text-jatayu-primary">
                     {day.rainTotal > 10 ? 'Heavy Rain' : day.rainTotal > 2 ? 'Showers' : 'Partly Cloudy'}
                   </div>
-                  <div className="text-[11px] font-mono text-blue-600 font-semibold">
+                  <div className="text-[11px] font-mono text-emerald-400 font-semibold">
                     {day.maxPrecipProb}% chance • {day.rainTotal} mm
                   </div>
                 </div>
@@ -628,25 +628,25 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
 
               {/* Temperature Bar Visual */}
               <div className="flex items-center gap-3 flex-1 max-w-xs">
-                <span className="w-8 text-right font-mono font-medium text-slate-500">
+                <span className="w-8 text-right font-mono font-medium text-jatayu-secondary">
                   {day.minTemp}°
                 </span>
-                <div className="flex-1 bg-slate-200 rounded-full h-2 relative overflow-hidden">
+                <div className="flex-1 bg-obsidian/80 border border-white/5 rounded-full h-2 relative overflow-hidden">
                   <div
-                    className="absolute h-full rounded-full bg-gradient-to-r from-blue-400 via-amber-400 to-red-400"
+                    className="absolute h-full rounded-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-400"
                     style={{
                       left: '15%',
                       right: '15%',
                     }}
                   />
                 </div>
-                <span className="w-8 font-mono font-bold text-navy-900">
+                <span className="w-8 font-mono font-bold text-jatayu-primary">
                   {day.maxTemp}°
                 </span>
               </div>
 
               {/* Peak Wind */}
-              <div className="w-24 text-right font-mono text-slate-500 flex-shrink-0 hidden sm:block">
+              <div className="w-24 text-right font-mono text-jatayu-secondary flex-shrink-0 hidden sm:block">
                 <span>Peak {Math.round(day.windMax)} km/h</span>
               </div>
             </div>
@@ -655,21 +655,21 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
       </div>
 
       {/* 5. DATA PROVENANCE & TRANSPARENCY CARD */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2 text-slate-600">
-        <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 uppercase">
-          <span className="flex items-center gap-1.5 font-bold text-navy-900">
-            <Info className="w-4 h-4 text-blue-600" />
+      <div className="bento-card p-5 text-xs space-y-2 text-jatayu-secondary border-white/10 bg-charcoal/60">
+        <div className="flex items-center justify-between font-mono text-[11px] uppercase">
+          <span className="flex items-center gap-1.5 font-bold text-jatayu-primary">
+            <Info className="w-4 h-4 text-emerald-400" />
             <span>OPERATIONAL METEOROLOGICAL PROVENANCE</span>
           </span>
-          <span className="text-emerald-700 font-bold">VERIFIED REAL-TIME STREAM</span>
+          <span className="text-emerald-400 font-bold">VERIFIED REAL-TIME STREAM</span>
         </div>
-        <p className="leading-relaxed font-sans">
+        <p className="leading-relaxed font-sans text-jatayu-secondary">
           Weather telemetry and multi-day projections are derived directly from the Open-Meteo operational API integrating the European Centre for Medium-Range Weather Forecasts (ECMWF IFS) and Deutscher Wetterdienst (DWD ICON). No synthetic or fabricated weather data is rendered. Missing variables are flagged explicitly.
         </p>
-        <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-slate-500 pt-1 border-t border-slate-200">
-          <div>MODEL GENERATION: <strong>{forecast?.generationTimeMs || 15} ms</strong></div>
-          <div>FETCHED AT: <strong>{forecast?.fetchedAt ? new Date(forecast.fetchedAt).toLocaleTimeString() : 'Current session'}</strong></div>
-          <div>DATA TRUST TIER: <strong className="text-navy-900 font-bold">OFFICIAL_FORECAST</strong></div>
+        <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-jatayu-muted pt-2 border-t border-white/10">
+          <div>MODEL GENERATION: <strong className="text-jatayu-primary">{forecast?.generationTimeMs || 15} ms</strong></div>
+          <div>FETCHED AT: <strong className="text-jatayu-primary">{forecast?.fetchedAt ? new Date(forecast.fetchedAt).toLocaleTimeString() : 'Current session'}</strong></div>
+          <div>DATA TRUST TIER: <strong className="text-emerald-300 font-bold">OFFICIAL_FORECAST</strong></div>
         </div>
       </div>
     </div>

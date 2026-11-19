@@ -28,7 +28,10 @@ import {
   WeatherForecastResponse,
   IndicativeFloodRiskAssessment,
   AlertFeedResponse,
+  EmergencyFacility,
 } from '../types';
+import { getFloodVulnerabilityPoints, FloodVulnerabilityPoint } from '../services/risk';
+import { getEmergencyFacilities } from '../services/route';
 import {
   SatelliteMode,
   LiveSatelliteChannel,
@@ -209,8 +212,42 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationError, setSimulationError] = useState<string | null>(null);
   const [simulationData, setSimulationData] = useState<SimulationResponse | null>(null);
-  const [showVulnerabilityPoints, setShowVulnerabilityPoints] = useState(false);
-  const [showFacilities, setShowFacilities] = useState(false);
+  const [showVulnerabilityPoints, setShowVulnerabilityPoints] = useState(true);
+  const [vulnerabilityPoints, setVulnerabilityPoints] = useState<FloodVulnerabilityPoint[]>([]);
+  const [showFacilities, setShowFacilities] = useState(true);
+  const [facilitiesList, setFacilitiesList] = useState<EmergencyFacility[]>([]);
+
+  // Load vulnerability points on mount
+  useEffect(() => {
+    let isSubscribed = true;
+    getFloodVulnerabilityPoints()
+      .then((res) => {
+        if (isSubscribed && res && res.points) {
+          setVulnerabilityPoints(res.points);
+        }
+      })
+      .catch((err) => console.warn('[LiveMapPage] Failed to load vulnerability points:', err));
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
+  // Load facilities for active location when enabled
+  useEffect(() => {
+    let isSubscribed = true;
+    if (showFacilities) {
+      getEmergencyFacilities(location.lat, location.lon, 'ALL', 35000)
+        .then((res) => {
+          if (isSubscribed && res && res.facilities) {
+            setFacilitiesList(res.facilities);
+          }
+        })
+        .catch((err) => console.warn('[LiveMapPage] Failed to load facilities:', err));
+    }
+    return () => {
+      isSubscribed = false;
+    };
+  }, [showFacilities, location.lat, location.lon]);
 
   // Radar Timeline Animation State
   const [timeline, setTimeline] = useState<RainViewerTimeline | null>(null);
@@ -365,18 +402,18 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   }, [showPrecipLayer, showWindLayer, showTempLayer, showHumidityLayer, showPressureLayer]);
 
   return (
-    <div className="relative w-full h-[calc(100vh-58px)] min-h-[580px] flex flex-col overflow-hidden bg-navy-950 select-none">
+    <div className="relative w-full h-[calc(100vh-58px)] min-h-[580px] flex flex-col overflow-hidden bg-obsidian select-none">
       {/* 1. TOP STREAMLINED COMMAND & INTELLIGENCE BAR (RESPONSIVE SINGLE LINE) */}
       <header className="absolute top-2.5 left-2.5 right-2.5 z-30 pointer-events-none flex flex-row items-center justify-between gap-2 flex-nowrap">
         {/* Left: Branding, Layers Toggle, and Sector Quick Jumps */}
-        <div className="pointer-events-auto flex items-center gap-1.5 flex-nowrap bg-navy-900/95 backdrop-blur-md border border-navy-700/80 p-1 rounded-xl shadow-lg flex-shrink-0">
-          <div className="px-2 py-0.5 flex items-center gap-1.5 text-white font-mono font-bold text-xs border-r border-navy-700/80">
-            <Radio className="w-3.5 h-3.5 text-blue-400 animate-pulse flex-shrink-0" />
+        <div className="pointer-events-auto flex items-center gap-2 flex-nowrap bg-charcoal/85 backdrop-blur-xl border border-white/15 p-1.5 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.6)] flex-shrink-0">
+          <div className="px-2.5 py-0.5 flex items-center gap-2 text-white font-mono font-bold text-xs border-r border-white/10">
+            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse flex-shrink-0" />
             <span className="hidden xl:inline">Tactical Geospatial Command Center</span>
             <span className="xl:hidden hidden sm:inline">Tactical Command</span>
             <span className="sm:hidden">GIS</span>
             {geoRes?.resolvedDistrict && (
-              <span className="text-[10px] text-emerald-400 font-normal hidden 2xl:inline">
+              <span className="text-[10px] text-mint font-normal hidden 2xl:inline">
                 ({geoRes.resolvedDistrict})
               </span>
             )}
@@ -385,29 +422,29 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           {/* Collapsible Layers Sidebar Toggle */}
           <button
             onClick={() => setShowLayerSidebar(!showLayerSidebar)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 transition-colors cursor-pointer flex-shrink-0 ${
+            className={`px-3 py-1 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 ${
               showLayerSidebar
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-navy-800 text-slate-300 hover:text-white'
+                ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 shadow-[0_0_12px_rgba(0,217,154,0.2)]'
+                : 'bg-charcoal text-jatayu-secondary hover:text-white hover:bg-white/5 border border-transparent'
             }`}
             title="Toggle Geospatial Layers Sidebar"
             aria-label="Toggle Geospatial Layers Sidebar"
           >
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5 text-emerald-400" />
             <span className="hidden sm:inline">LAYERS</span>
           </button>
 
           {/* Operational Sector Segmented Control */}
-          <div className="flex items-center gap-0.5 pl-1 border-l border-navy-700/80 flex-shrink-0">
-            <span className="text-[9px] font-mono text-slate-400 uppercase px-1 hidden lg:inline">SECTORS:</span>
+          <div className="flex items-center gap-1 pl-1 border-l border-white/10 flex-shrink-0">
+            <span className="text-[9px] font-mono text-jatayu-muted uppercase px-1 hidden lg:inline">SECTORS:</span>
             {SECTOR_QUICK_JUMPS.map((sec) => (
               <button
                 key={sec.name}
                 onClick={() => onSelectLocation(sec)}
-                className={`px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] font-mono rounded transition-colors cursor-pointer whitespace-nowrap ${
+                className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-mono rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                   location.name === sec.name
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-navy-800'
+                    ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 font-bold shadow-[0_0_8px_rgba(0,217,154,0.2)]'
+                    : 'text-jatayu-secondary hover:text-white hover:bg-white/5'
                 }`}
                 title={sec.name}
               >
@@ -419,12 +456,12 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
         </div>
 
         {/* Right: Warnings, Cesium 3D Shortcut, and Telemetry Toggle */}
-        <div className="pointer-events-auto flex items-center gap-1.5 flex-nowrap flex-shrink-0">
+        <div className="pointer-events-auto flex items-center gap-2 flex-nowrap flex-shrink-0">
           {/* Official Warning Entry Point Banner */}
           {hasActiveAlert ? (
             <button
               onClick={() => onSelectTab && onSelectTab('alerts')}
-              className="bg-red-950/90 border border-red-500/80 hover:bg-red-900/90 text-red-200 px-2.5 py-1 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 shadow-lg transition-all animate-pulse cursor-pointer whitespace-nowrap flex-shrink-0"
+              className="bg-red-950/90 border border-red-500/80 hover:bg-red-900/90 text-red-200 px-3 py-1.5 rounded-2xl text-xs font-mono font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.35)] transition-all animate-pulse cursor-pointer whitespace-nowrap flex-shrink-0 backdrop-blur-xl"
               title="Click to view full official warnings in Alerts page"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
@@ -432,7 +469,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
               <span className="sm:hidden">{officialAlerts.length} ALERTS</span>
             </button>
           ) : (
-            <div className="bg-emerald-950/80 border border-emerald-600/50 text-emerald-300 px-2.5 py-1 rounded-xl text-xs font-mono flex items-center gap-1.5 shadow-md hidden lg:flex flex-shrink-0">
+            <div className="bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-3 py-1.5 rounded-2xl text-xs font-mono flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,217,154,0.15)] hidden lg:flex flex-shrink-0 backdrop-blur-xl">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
               <span className="text-[10px] whitespace-nowrap">IMD NOWCAST: NO ACTIVE WARNINGS</span>
             </div>
@@ -442,7 +479,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           {hasCesiumPermission && onSelectTab && (
             <button
               onClick={() => onSelectTab('command3d')}
-              className="bg-navy-900/90 hover:bg-navy-800 border border-navy-700 text-amber-300 px-2.5 py-1 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 shadow-md transition-colors cursor-pointer whitespace-nowrap flex-shrink-0"
+              className="bg-charcoal/85 hover:bg-white/5 border border-white/10 text-amber-300 px-3 py-1.5 rounded-2xl text-xs font-mono font-bold flex items-center gap-1.5 shadow-panel transition-all cursor-pointer whitespace-nowrap flex-shrink-0 backdrop-blur-xl"
               title="Switch to Cesium 3D Global Visualization"
             >
               <Globe className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
@@ -453,30 +490,30 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           {/* Forecast Impact Intelligence Dashboard Toggle */}
           <button
             onClick={() => setShowImpactDashboard(!showImpactDashboard)}
-            className={`px-2.5 py-1 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer flex-shrink-0 ${
+            className={`px-3 py-1.5 rounded-2xl text-xs font-mono font-semibold flex items-center gap-1.5 border transition-all cursor-pointer flex-shrink-0 backdrop-blur-xl ${
               showImpactDashboard
-                ? 'bg-teal-900/80 border-teal-500 text-teal-300 shadow-md ring-1 ring-teal-500/50'
-                : 'bg-navy-900/90 border-navy-700 text-slate-300 hover:text-teal-300'
+                ? 'bg-mint/20 border-emerald-400 text-mint shadow-[0_0_15px_rgba(66,245,176,0.3)] ring-1 ring-emerald-400/50'
+                : 'bg-charcoal/85 border-white/10 text-jatayu-primary hover:text-mint hover:bg-white/5'
             }`}
             title="Toggle district-level forecast impact intelligence dashboard"
             aria-label="Toggle district-level forecast impact intelligence dashboard"
           >
-            <FileText className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" />
+            <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
             <span className="hidden sm:inline">IMPACT ANALYSIS</span>
           </button>
 
           {/* Telemetry Details Panel Toggle */}
           <button
             onClick={() => setShowDetailsPanel(!showDetailsPanel)}
-            className={`px-2.5 py-1 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer flex-shrink-0 ${
+            className={`px-3 py-1.5 rounded-2xl text-xs font-mono font-semibold flex items-center gap-1.5 border transition-all cursor-pointer flex-shrink-0 backdrop-blur-xl ${
               showDetailsPanel
-                ? 'bg-navy-800 border-navy-700 text-amber-400 shadow-md'
-                : 'bg-navy-900/90 border-navy-700 text-slate-400 hover:text-white'
+                ? 'bg-dark-emerald/80 border-emerald-500 text-emerald-300 shadow-[0_0_15px_rgba(0,217,154,0.25)]'
+                : 'bg-charcoal/85 border-white/10 text-jatayu-secondary hover:text-white hover:bg-white/5'
             }`}
             title="Toggle contextual telemetry panel"
             aria-label="Toggle contextual telemetry panel"
           >
-            <Compass className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            <Compass className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
             <span className="hidden sm:inline">TELEMETRY</span>
           </button>
         </div>
@@ -539,6 +576,13 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
             setSelectedDistrictName(districtName);
             setShowImpactDashboard(true);
           }}
+          // Intelligence Overlays (Vulnerabilities & Facilities)
+          showVulnerabilityPoints={showVulnerabilityPoints}
+          vulnerabilityPoints={vulnerabilityPoints}
+          showFacilities={showFacilities}
+          facilities={facilitiesList}
+          showAlertsLayer={true}
+          alerts={alertFeed?.officialAlerts}
           variant="full"
           hideDefaultControls={true}
           className="w-full h-full min-h-full rounded-none border-none"

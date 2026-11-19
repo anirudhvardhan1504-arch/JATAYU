@@ -32,6 +32,7 @@ import {
 import { SafeRouteMap } from '../components/route/SafeRouteMap';
 import { RouteComparisonCard } from '../components/route/RouteComparisonCard';
 import { FacilityCard } from '../components/route/FacilityCard';
+import { EvacuationInstructionsPanel } from '../components/route/EvacuationInstructionsPanel';
 
 interface SafeRoutePageProps {
   currentSector: { name: string; lat: number; lon: number };
@@ -173,12 +174,11 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
             }
           })
           .catch(() => {
-            // Keep fallback coordinate name, coordinates intact
+            // Keep fallback coordinate name
           });
       },
       (err) => {
         if (retryCount === 0 && (err.code === 2 || err.code === 3)) {
-          // Retry once with standard accuracy
           executeGeolocation(1);
           return;
         }
@@ -229,7 +229,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
           return;
         }
       } catch {
-        // Permissions query optional support
+        // Optional permission query
       }
     }
 
@@ -277,18 +277,19 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
   const handleOriginSearch = (val: string) => {
     setOriginInput(val);
     if (originDebounceRef.current) clearTimeout(originDebounceRef.current);
+
     if (val.trim().length < 2) {
       setOriginSuggestions([]);
-      setIsSearchingOrigin(false);
       return;
     }
+
     setIsSearchingOrigin(true);
     originDebounceRef.current = setTimeout(async () => {
       try {
         const results = await searchPlaces(val);
         setOriginSuggestions(results);
-      } catch {
-        setOriginSuggestions([]);
+      } catch (err) {
+        console.warn('Geocoding search error:', err);
       } finally {
         setIsSearchingOrigin(false);
       }
@@ -299,41 +300,41 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
   const handleDestSearch = (val: string) => {
     setDestinationInput(val);
     if (destDebounceRef.current) clearTimeout(destDebounceRef.current);
+
     if (val.trim().length < 2) {
       setDestSuggestions([]);
-      setIsSearchingDest(false);
       return;
     }
+
     setIsSearchingDest(true);
     destDebounceRef.current = setTimeout(async () => {
       try {
         const results = await searchPlaces(val);
         setDestSuggestions(results);
-      } catch {
-        setDestSuggestions([]);
+      } catch (err) {
+        console.warn('Geocoding search error:', err);
       } finally {
         setIsSearchingDest(false);
       }
     }, 300);
   };
 
-  // Select Facility as Destination
-  const handleSelectFacilityAsDestination = (fac: EmergencyFacility) => {
+  // Select Facility directly as Destination
+  const handleSelectFacilityAsDestination = (facility: EmergencyFacility) => {
     setDestinationCoords({
-      latitude: fac.location.latitude,
-      longitude: fac.location.longitude,
-      name: fac.name,
-      address: fac.address,
+      latitude: facility.location.latitude,
+      longitude: facility.location.longitude,
+      name: facility.name,
+      address: facility.address,
     });
-    setDestinationInput(fac.name);
-    setSelectedFacility(fac);
+    setDestinationInput(facility.name);
+    setSelectedFacility(facility);
   };
 
-  // Calculate Safe Route
+  // Route Planning Execution
   const handleCalculateRoute = useCallback(async () => {
     setIsCalculating(true);
     setRouteError(null);
-
     try {
       const plan = await planSafeRoute(originCoords, destinationCoords, travelMode);
       setRoutePlan(plan);
@@ -354,65 +355,68 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
   });
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto pb-12">
+    <div className="space-y-5 max-w-7xl mx-auto pb-12">
       {/* Top Banner / Disclaimer */}
-      <div className="bg-navy-900 border border-navy-800 rounded-lg p-4 shadow-sm text-slate-200">
+      <div className="bento-card p-4 text-jatayu-primary shadow-panel">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse" />
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#00D99A]" />
             <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
               {t('tab.saferoute')}
             </h3>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-sky-500/20 text-sky-300 border border-sky-500/40">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_8px_rgba(0,217,154,0.2)]">
               {t('badge.saferoute')}
             </span>
           </div>
 
-          <div className="text-[11px] font-mono text-slate-400">
+          <div className="text-[11px] font-mono text-jatayu-muted">
             SECTOR: <span className="text-amber-300 font-semibold">{currentSector.name}</span>
           </div>
         </div>
 
-        <p className="text-xs text-slate-400 leading-relaxed font-sans">
+        <p className="text-xs text-jatayu-secondary leading-relaxed font-sans">
           {t('saferoute.advisoryDisclaimer')}
         </p>
       </div>
 
       {/* Main Grid: Control & Comparison Sidebars + Map Canvas */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Column: Route Inputs & Alternatives (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
           {/* Input Panel Card */}
-          <div className="bg-navy-900 border border-navy-800 rounded-lg p-4 shadow-sm space-y-3.5">
-            <div className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
-              <span>ROUTE CONFIGURATION</span>
-              <span className="text-[10px] text-slate-500 font-normal">OSRM + IMD HAZARD ENGINE</span>
+          <div className="bento-card p-5 space-y-4">
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-jatayu-primary flex items-center justify-between border-b border-white/10 pb-2.5">
+              <span className="flex items-center gap-2">
+                <Navigation2 className="w-4 h-4 text-emerald-400" />
+                ROUTE CONFIGURATION
+              </span>
+              <span className="text-[10px] text-jatayu-muted font-normal">OSRM + IMD HAZARD ENGINE</span>
             </div>
 
             {/* Origin Input */}
             <div className="relative">
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-mono font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-mono font-semibold text-emerald-400 uppercase tracking-wider">
                   {t('saferoute.origin')}
                 </label>
                 {accuracyMeters !== null && (
-                  <span className="text-[9px] font-mono text-emerald-400">
+                  <span className="text-[9px] font-mono text-mint">
                     GPS Accuracy: ±{accuracyMeters}m
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <input
                     type="text"
                     value={originInput}
                     onChange={(e) => handleOriginSearch(e.target.value)}
                     placeholder="Type landmark, station, or lat, lon..."
-                    className="w-full bg-navy-950 border border-navy-700 rounded px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
+                    className="w-full bg-obsidian/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-jatayu-primary placeholder:text-jatayu-muted focus:outline-none focus:border-emerald-500 font-mono transition-colors"
                   />
                   {isSearchingOrigin && (
-                    <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin absolute right-2.5 top-2.5" />
+                    <Loader2 className="w-3.5 h-3.5 text-emerald-400 animate-spin absolute right-2.5 top-2.5" />
                   )}
                 </div>
 
@@ -420,10 +424,10 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                 <button
                   type="button"
                   onClick={() => setPickingMode(pickingMode === 'origin' ? null : 'origin')}
-                  className={`px-2 py-1.5 border rounded text-[11px] font-mono flex items-center gap-1 transition-colors ${
+                  className={`px-2.5 py-2 border rounded-xl text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
                     pickingMode === 'origin'
-                      ? 'bg-amber-500 border-amber-300 text-slate-950 font-bold animate-pulse'
-                      : 'bg-navy-800 hover:bg-navy-700 text-amber-400 border-navy-700'
+                      ? 'bg-amber-500 border-amber-300 text-slate-950 font-bold animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                      : 'bg-charcoal hover:bg-white/5 text-amber-400 border-white/10'
                   }`}
                   title="Pick start location on 2D map"
                 >
@@ -436,7 +440,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                   type="button"
                   onClick={handleUseMyLocation}
                   disabled={isRequestingGeo}
-                  className="px-2 py-1.5 bg-navy-800 hover:bg-navy-700 text-sky-400 border border-navy-700 rounded text-[11px] font-mono flex items-center gap-1 transition-colors disabled:opacity-50"
+                  className="px-2.5 py-2 bg-dark-emerald/50 hover:bg-dark-emerald text-emerald-300 border border-emerald-500/40 rounded-xl text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-[0_0_8px_rgba(0,217,154,0.15)]"
                   title={t('saferoute.useLocation')}
                 >
                   <Compass className={`w-3.5 h-3.5 ${isRequestingGeo ? 'animate-spin' : ''}`} />
@@ -446,7 +450,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
 
               {/* Geolocation Warning / Error State */}
               {geoError && (
-                <div className="p-2.5 bg-red-950/70 border border-red-800/80 rounded mt-2 text-[11px] text-red-300 space-y-1.5 font-sans">
+                <div className="p-3 bg-red-950/70 border border-red-500/50 rounded-xl mt-2 text-[11px] text-red-200 space-y-1.5 font-sans backdrop-blur-md">
                   <div className="flex items-center gap-1.5 text-red-400 font-mono font-bold text-[10px] uppercase">
                     <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>GEOLOCATION NOTICE</span>
@@ -456,7 +460,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                     <button
                       type="button"
                       onClick={handleUseMyLocation}
-                      className="px-2 py-0.5 bg-red-900 hover:bg-red-800 text-white rounded text-[10px] font-mono font-bold flex items-center gap-1 transition-colors"
+                      className="px-2.5 py-1 bg-red-850 hover:bg-red-800 text-white rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer"
                     >
                       <RotateCcw className="w-3 h-3" />
                       <span>RETRY GPS</span>
@@ -467,7 +471,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                         setPickingMode('origin');
                         setGeoError(null);
                       }}
-                      className="px-2 py-0.5 bg-navy-800 hover:bg-navy-700 text-amber-300 border border-navy-700 rounded text-[10px] font-mono font-bold flex items-center gap-1 transition-colors"
+                      className="px-2.5 py-1 bg-charcoal hover:bg-white/5 text-amber-300 border border-white/10 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer"
                     >
                       <MapPin className="w-3 h-3 text-amber-400" />
                       <span>PICK ON MAP</span>
@@ -478,7 +482,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
 
               {/* Suggestions dropdown */}
               {originSuggestions.length > 0 && (
-                <div className="absolute z-20 left-0 right-0 mt-1 bg-navy-950 border border-navy-700 rounded-md shadow-xl max-h-48 overflow-y-auto">
+                <div className="absolute z-20 left-0 right-0 mt-1.5 bg-charcoal/95 border border-white/15 rounded-2xl shadow-2xl max-h-48 overflow-y-auto backdrop-blur-2xl">
                   {originSuggestions.map((s, idx) => (
                     <div
                       key={idx}
@@ -491,10 +495,10 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                         setOriginInput(s.displayName);
                         setOriginSuggestions([]);
                       }}
-                      className="p-2 hover:bg-navy-800 cursor-pointer text-[11px] text-slate-300 border-b border-navy-900 last:border-0 font-mono flex items-center justify-between"
+                      className="p-2.5 hover:bg-white/5 cursor-pointer text-[11px] text-jatayu-primary border-b border-white/5 last:border-0 font-mono flex items-center justify-between"
                     >
                       <span className="truncate pr-2">{s.displayName}</span>
-                      <span className="text-[9px] text-slate-500 uppercase flex-shrink-0">
+                      <span className="text-[9px] text-emerald-400 uppercase flex-shrink-0">
                         {s.type || 'place'}
                       </span>
                     </div>
@@ -508,30 +512,30 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
               <button
                 type="button"
                 onClick={handleSwapLocations}
-                className="px-3 py-1 bg-navy-950 hover:bg-navy-800 text-slate-400 hover:text-white border border-navy-700 rounded-full text-[10px] font-mono flex items-center gap-1.5 transition-colors shadow"
+                className="px-3.5 py-1 bg-charcoal hover:bg-white/5 text-jatayu-secondary hover:text-white border border-white/10 rounded-full text-[10px] font-mono flex items-center gap-1.5 transition-all shadow-subtle cursor-pointer"
                 title={t('saferoute.swap')}
               >
-                <ArrowUpDown className="w-3 h-3 text-sky-400" />
+                <ArrowUpDown className="w-3 h-3 text-emerald-400" />
                 <span>{t('saferoute.swap')}</span>
               </button>
             </div>
 
             {/* Destination Input */}
             <div className="relative">
-              <label className="block text-[11px] font-mono font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-mono font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">
                 {t('saferoute.destination')}
               </label>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <input
                     type="text"
                     value={destinationInput}
                     onChange={(e) => handleDestSearch(e.target.value)}
                     placeholder="Type landmark, hospital, shelter, or city..."
-                    className="w-full bg-navy-950 border border-navy-700 rounded px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
+                    className="w-full bg-obsidian/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-jatayu-primary placeholder:text-jatayu-muted focus:outline-none focus:border-emerald-500 font-mono transition-colors"
                   />
                   {isSearchingDest && (
-                    <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin absolute right-2.5 top-2.5" />
+                    <Loader2 className="w-3.5 h-3.5 text-emerald-400 animate-spin absolute right-2.5 top-2.5" />
                   )}
                 </div>
 
@@ -539,10 +543,10 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                 <button
                   type="button"
                   onClick={() => setPickingMode(pickingMode === 'destination' ? null : 'destination')}
-                  className={`px-2 py-1.5 border rounded text-[11px] font-mono flex items-center gap-1 transition-colors ${
+                  className={`px-2.5 py-2 border rounded-xl text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
                     pickingMode === 'destination'
-                      ? 'bg-amber-500 border-amber-300 text-slate-950 font-bold animate-pulse'
-                      : 'bg-navy-800 hover:bg-navy-700 text-amber-400 border-navy-700'
+                      ? 'bg-amber-500 border-amber-300 text-slate-950 font-bold animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                      : 'bg-charcoal hover:bg-white/5 text-amber-400 border-white/10'
                   }`}
                   title="Pick destination location on 2D map"
                 >
@@ -553,7 +557,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
 
               {/* Suggestions dropdown */}
               {destSuggestions.length > 0 && (
-                <div className="absolute z-20 left-0 right-0 mt-1 bg-navy-950 border border-navy-700 rounded-md shadow-xl max-h-48 overflow-y-auto">
+                <div className="absolute z-20 left-0 right-0 mt-1.5 bg-charcoal/95 border border-white/15 rounded-2xl shadow-2xl max-h-48 overflow-y-auto backdrop-blur-2xl">
                   {destSuggestions.map((s, idx) => (
                     <div
                       key={idx}
@@ -566,10 +570,10 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                         setDestinationInput(s.displayName);
                         setDestSuggestions([]);
                       }}
-                      className="p-2 hover:bg-navy-800 cursor-pointer text-[11px] text-slate-300 border-b border-navy-900 last:border-0 font-mono flex items-center justify-between"
+                      className="p-2.5 hover:bg-white/5 cursor-pointer text-[11px] text-jatayu-primary border-b border-white/5 last:border-0 font-mono flex items-center justify-between"
                     >
                       <span className="truncate pr-2">{s.displayName}</span>
-                      <span className="text-[9px] text-slate-500 uppercase flex-shrink-0">
+                      <span className="text-[9px] text-emerald-400 uppercase flex-shrink-0">
                         {s.type || 'place'}
                       </span>
                     </div>
@@ -580,7 +584,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
 
             {/* Quick Nationwide Presets */}
             <div>
-              <label className="block text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-mono font-semibold text-jatayu-muted uppercase tracking-wider mb-1.5">
                 {t('saferoute.presets')}
               </label>
               <div className="flex flex-wrap gap-1.5">
@@ -594,7 +598,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                       setDestinationCoords({ latitude: p.dest.lat, longitude: p.dest.lon, name: p.dest.name });
                       setDestinationInput(p.dest.name);
                     }}
-                    className="px-2 py-0.5 bg-navy-950 hover:bg-navy-800 text-slate-300 hover:text-white border border-navy-700 rounded text-[10px] font-mono transition-colors"
+                    className="px-2.5 py-1 bg-obsidian/60 hover:bg-white/5 text-jatayu-secondary hover:text-jatayu-primary border border-white/10 rounded-lg text-[10px] font-mono transition-colors cursor-pointer"
                   >
                     {p.label}
                   </button>
@@ -604,7 +608,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
 
             {/* Travel Mode Toggle */}
             <div>
-              <label className="block text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-mono font-semibold text-jatayu-muted uppercase tracking-wider mb-1">
                 TRAVEL MODE
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -617,10 +621,10 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                     key={mode}
                     type="button"
                     onClick={() => setTravelMode(mode)}
-                    className={`py-1.5 px-2 rounded border text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                    className={`py-2 px-2 rounded-xl border text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       travelMode === mode
-                        ? 'bg-sky-600 border-sky-400 text-white'
-                        : 'bg-navy-950 border-navy-700 text-slate-400 hover:text-white hover:bg-navy-800'
+                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-[0_0_12px_rgba(0,217,154,0.2)]'
+                        : 'bg-obsidian/70 border-white/10 text-jatayu-secondary hover:text-white hover:bg-white/5'
                     }`}
                   >
                     {icon}
@@ -634,7 +638,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
             <button
               onClick={handleCalculateRoute}
               disabled={isCalculating}
-              className="w-full py-2 px-4 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded font-mono font-bold text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-mono font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(0,217,154,0.3)] flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {isCalculating ? (
                 <>
@@ -652,7 +656,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
 
           {/* Route Calculation Error */}
           {routeError && (
-            <div className="p-4 bg-red-950/60 border border-red-800/80 rounded-lg text-red-300 text-xs space-y-2 font-sans">
+            <div className="p-4 bg-red-950/60 border border-red-500/50 rounded-2xl text-red-200 text-xs space-y-2 font-sans shadow-panel backdrop-blur-md">
               <div className="font-mono font-bold text-red-400 flex items-center gap-1.5 uppercase text-[11px]">
                 <AlertTriangle className="w-4 h-4 text-red-400" />
                 <span>ROUTING ERROR</span>
@@ -665,7 +669,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                 <button
                   type="button"
                   onClick={handleCalculateRoute}
-                  className="px-2.5 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-[10px] font-mono font-bold uppercase flex items-center gap-1 transition-colors"
+                  className="px-3 py-1 bg-red-800 hover:bg-red-700 text-white rounded-lg text-[10px] font-mono font-bold uppercase flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>{t('saferoute.retry')}</span>
@@ -678,12 +682,12 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
           {routePlan && routePlan.routes.length > 0 && (
             <div className="space-y-3">
               {/* Comparison Summary Banner */}
-              <div className="p-3 bg-navy-900 border border-navy-800 rounded-lg text-xs text-slate-300 space-y-1">
+              <div className="p-3.5 bento-card text-xs text-jatayu-primary space-y-1">
                 <div className="font-mono font-bold text-amber-400 text-[10px] uppercase flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
                   <span>HAZARD EVALUATION SYNTHESIS</span>
                 </div>
-                <p className="text-slate-300 font-sans text-xs leading-relaxed">
+                <p className="text-jatayu-secondary font-sans text-xs leading-relaxed">
                   {routePlan.comparisonSummary}
                 </p>
               </div>
@@ -704,12 +708,12 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
               </div>
 
               {/* Data Limits Caveats */}
-              <div className="p-3 bg-navy-950 border border-navy-800 rounded-lg text-[10px] text-slate-400 space-y-1 font-mono">
-                <div className="font-bold text-slate-300 uppercase flex items-center gap-1">
-                  <Info className="w-3 h-3 text-slate-400" />
+              <div className="p-3 bg-obsidian/70 border border-white/10 rounded-2xl text-[10px] text-jatayu-muted space-y-1 font-mono">
+                <div className="font-bold text-jatayu-secondary uppercase flex items-center gap-1">
+                  <Info className="w-3 h-3 text-jatayu-muted" />
                   <span>{t('saferoute.limitationsTitle')}</span>
                 </div>
-                <ul className="list-disc list-inside space-y-0.5 text-slate-400 pl-1 font-sans">
+                <ul className="list-disc list-inside space-y-0.5 text-jatayu-muted pl-1 font-sans">
                   {routePlan.knownLimitations.map((lim, idx) => (
                     <li key={idx}>{lim}</li>
                   ))}
@@ -722,7 +726,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
         {/* Right Column: Map Visualization & Nearby Verified Facilities (7 cols) */}
         <div className="lg:col-span-7 space-y-4 flex flex-col">
           {/* Map Container */}
-          <div className="h-[460px] w-full rounded-lg overflow-hidden border border-navy-800 shadow-md">
+          <div className="h-[460px] w-full rounded-2xl overflow-hidden border border-white/10 shadow-bento">
             <SafeRouteMap
               center={[currentSector.lon, currentSector.lat]}
               origin={originCoords}
@@ -741,18 +745,18 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
           </div>
 
           {/* Dynamic Emergency Facilities Discovery Directory */}
-          <div className="bg-navy-900 border border-navy-800 rounded-lg p-4 shadow-sm space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-navy-800 pb-2.5">
+          <div className="bento-card p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2.5">
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-jatayu-primary">
                     {t('saferoute.facilitiesTitle')}
                   </h4>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-sky-950 text-sky-400 border border-sky-800/60">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
                     {facilities.length} found
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-sans">
+                <p className="text-[10px] text-jatayu-muted font-sans">
                   Live OpenStreetMap & verified civil defense registries within {(facilityRadiusMeters / 1000).toFixed(0)} km
                 </p>
               </div>
@@ -760,14 +764,14 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
               {/* Controls: Focal Point & Radius Selector */}
               <div className="flex flex-wrap items-center gap-2">
                 {/* Focal Point Toggle */}
-                <div className="flex items-center bg-navy-950 p-0.5 rounded border border-navy-800 text-[10px] font-mono">
+                <div className="flex items-center bg-obsidian/70 p-0.5 rounded-xl border border-white/10 text-[10px] font-mono">
                   <button
                     type="button"
                     onClick={() => setFacilityFocalPoint('origin')}
-                    className={`px-2 py-0.5 rounded transition-colors ${
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                       facilityFocalPoint === 'origin'
-                        ? 'bg-sky-600 text-white font-bold'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold'
+                        : 'text-jatayu-muted hover:text-jatayu-primary'
                     }`}
                   >
                     {t('saferoute.nearOrigin')}
@@ -775,10 +779,10 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                   <button
                     type="button"
                     onClick={() => setFacilityFocalPoint('destination')}
-                    className={`px-2 py-0.5 rounded transition-colors ${
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                       facilityFocalPoint === 'destination'
-                        ? 'bg-sky-600 text-white font-bold'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold'
+                        : 'text-jatayu-muted hover:text-jatayu-primary'
                     }`}
                   >
                     {t('saferoute.nearDestination')}
@@ -789,7 +793,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                 <select
                   value={facilityRadiusMeters}
                   onChange={(e) => setFacilityRadiusMeters(Number(e.target.value))}
-                  className="bg-navy-950 border border-navy-800 rounded px-2 py-1 text-[10px] font-mono text-slate-300 focus:outline-none focus:border-sky-500"
+                  className="bg-charcoal border border-white/10 rounded-xl px-2.5 py-1 text-[10px] font-mono text-jatayu-primary focus:outline-none focus:border-emerald-500"
                 >
                   <option value={5000}>Radius: 5 km</option>
                   <option value={10000}>Radius: 10 km</option>
@@ -802,17 +806,17 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                   type="button"
                   onClick={loadFacilities}
                   disabled={isLoadingFacilities}
-                  className="p-1 bg-navy-950 hover:bg-navy-800 border border-navy-800 rounded text-slate-400 hover:text-white transition-colors"
+                  className="p-1.5 bg-charcoal hover:bg-white/5 border border-white/10 rounded-xl text-jatayu-secondary hover:text-jatayu-primary transition-colors cursor-pointer"
                   title={t('saferoute.refreshFacilities')}
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingFacilities ? 'animate-spin text-sky-400' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingFacilities ? 'animate-spin text-emerald-400' : ''}`} />
                 </button>
               </div>
             </div>
 
             {/* Category Filter Buttons */}
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-1 bg-navy-950 p-0.5 rounded border border-navy-800 text-[10px] font-mono">
+              <div className="flex flex-wrap items-center gap-1.5 bg-obsidian/70 p-1 rounded-xl border border-white/10 text-[10px] font-mono">
                 {[
                   { id: 'ALL' as const, label: t('saferoute.filterAll') },
                   { id: 'SHELTER' as const, label: t('saferoute.filterShelters') },
@@ -823,10 +827,10 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                   <button
                     key={id}
                     onClick={() => setFacilityFilter(id)}
-                    className={`px-2 py-0.5 rounded transition-colors ${
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                       facilityFilter === id
-                        ? 'bg-sky-600 text-white font-bold'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold'
+                        : 'text-jatayu-muted hover:text-jatayu-primary'
                     }`}
                   >
                     {label}
@@ -851,7 +855,7 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                   />
                 ))
               ) : (
-                <div className="col-span-2 p-6 text-center text-xs text-slate-500 font-mono">
+                <div className="col-span-2 p-6 text-center text-xs text-jatayu-muted font-mono">
                   {isLoadingFacilities
                     ? 'Discovering emergency facilities within radius...'
                     : 'No emergency facilities matched the selected category and search radius.'}
@@ -861,6 +865,14 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
           </div>
         </div>
       </div>
+
+      {/* Multilingual Intelligent Evacuation Instructions & Guidance Protocol */}
+      <EvacuationInstructionsPanel
+        locality={originCoords.name || destinationCoords.name || currentSector.name}
+        disasterType="FLOOD"
+        severity={routePlan?.routes.some((r) => r.riskTier === 'CRITICAL') ? 'CRITICAL' : 'HIGH'}
+        nearbyFacilities={facilities}
+      />
     </div>
   );
 };

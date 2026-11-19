@@ -90,6 +90,12 @@ function runProvisioningOnDb(dbPath: string): { success: boolean; accounts: Arra
       password: 'JatayuResearcher2026!',
       role: 'RESEARCHER',
     },
+    {
+      username: 'admin@jatayu.gov.in',
+      displayName: 'JATAYU System Administrator',
+      password: process.env.DEMO_ADMIN_PASSWORD?.trim() || 'AdminDemo2026!',
+      role: 'ADMIN',
+    },
   ];
 
   const now = new Date().toISOString();

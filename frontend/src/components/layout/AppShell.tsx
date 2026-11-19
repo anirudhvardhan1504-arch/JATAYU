@@ -32,7 +32,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Operational status bar is only displayed on tactical dashboard tabs (not 3D command globe)
+  // Operational status bar is displayed on tactical dashboard tabs
   const isOperatorTab = [
     'overview',
     'map',
@@ -43,8 +43,8 @@ export const AppShell: React.FC<AppShellProps> = ({
   ].includes(activeTab);
 
   return (
-    <div className="flex flex-col h-screen w-full max-w-full overflow-hidden bg-warm-100 text-slate-900 font-sans">
-      {/* Top Banner / Operational Status Bar (Restrained: only on operator tabs) */}
+    <div className="flex flex-col h-screen w-full max-w-full overflow-hidden bg-obsidian text-jatayu-primary font-sans">
+      {/* Top Banner / Operational Status Bar */}
       {isOperatorTab && (
         <OperationalStatusBar
           systemStatus="active"
@@ -57,7 +57,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         {/* Mobile Sidebar Overlay */}
         {isMobileMenuOpen && (
           <div
-            className="fixed inset-0 bg-navy-950/60 z-40 md:hidden backdrop-blur-xs"
+            className="fixed inset-0 bg-obsidian/80 z-40 md:hidden backdrop-blur-md"
             onClick={() => setIsMobileMenuOpen(false)}
           />
         )}
@@ -96,8 +96,8 @@ export const AppShell: React.FC<AppShellProps> = ({
           <main
             className={`flex-1 ${
               activeTab === 'map' || activeTab === 'command3d'
-                ? 'overflow-hidden p-0 relative bg-navy-950'
-                : 'overflow-y-auto p-4 sm:p-6 lg:p-8 bg-warm-100'
+                ? 'overflow-hidden p-0 relative bg-obsidian'
+                : 'overflow-y-auto p-4 sm:p-6 lg:p-8 bg-transparent'
             }`}
           >
             <div

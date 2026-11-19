@@ -11,6 +11,7 @@ import { PreparednessPage } from './pages/PreparednessPage';
 import { SafeRoutePage } from './pages/SafeRoutePage';
 import { FacilitiesPage } from './pages/FacilitiesPage';
 import { ClimateResearchPage } from './pages/ClimateResearchPage';
+import { AdminPage } from './pages/AdminPage';
 import { LoginModal } from './components/auth/LoginModal';
 import { Command3DLoading } from './components/command3d/Command3DLoading';
 import { AccessDeniedView } from './components/command3d/AccessDeniedView';
@@ -393,6 +394,10 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
             riskAssessment={riskAssessment}
             alertFeed={alertFeed}
           />
+        )}
+
+        {activeTab === 'admin' && (
+          <AdminPage onOpenLogin={() => setIsLoginModalOpen(true)} />
         )}
 
         {activeTab === 'command3d' && (

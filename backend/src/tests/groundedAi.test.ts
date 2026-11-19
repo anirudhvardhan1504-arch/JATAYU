@@ -60,14 +60,15 @@ describe('JATAYU Phase 3H: Grounded AI Emergency Assistant', () => {
   };
 
   describe('1. Fixed 8-Query Evaluation Dataset & Grounding Contract', () => {
-    it('Q1 (Citizen Status): Answers "What is happening near me?" with 5-part contract', () => {
+    it('Q1 (Citizen Status): Answers "What is happening near me?" with 6-part contract', () => {
       const res = groundedAiService.generateGroundedResponse('What is happening near me?', 'en', mockContext);
 
-      expect(res.fullMarkdown).toContain('### 1. What We Know');
-      expect(res.fullMarkdown).toContain('### 2. Source and Time');
-      expect(res.fullMarkdown).toContain('### 3. What is Uncertain');
-      expect(res.fullMarkdown).toContain('### 4. What to Do Next');
-      expect(res.fullMarkdown).toContain('### 5. Where to Get Help');
+      expect(res.fullMarkdown).toContain('### 1. Situation Overview');
+      expect(res.fullMarkdown).toContain('### 2. What We Know');
+      expect(res.fullMarkdown).toContain('### 3. Data Sources and Time');
+      expect(res.fullMarkdown).toContain('### 4. What Is Uncertain');
+      expect(res.fullMarkdown).toContain('### 5. Recommended Precautions');
+      expect(res.fullMarkdown).toContain('### 6. Where to Get Help');
 
       // Factual grounding
       expect(res.whatWeKnow).toContain('Chennai Central');
@@ -130,31 +131,33 @@ describe('JATAYU Phase 3H: Grounded AI Emergency Assistant', () => {
       expect(civilianRes.whatIsUncertain).toContain('quarantined research simulations and are NOT official civil defense directives');
     });
 
-    it('Q6 (Multilingual Tamil): Generates complete 5-part response in Tamil script', () => {
+    it('Q6 (Multilingual Tamil): Generates complete 6-part response in Tamil script', () => {
       const res = groundedAiService.generateGroundedResponse('என் பகுதிக்கு அருகில் என்ன நடக்கிறது?', 'ta', mockContext);
 
+      expect(res.fullMarkdown).toContain('நிலைமை மேலோட்டம்');
       expect(res.fullMarkdown).toContain('நாம் அறிந்தது என்ன');
-      expect(res.fullMarkdown).toContain('தரவு ஆதாரம் மற்றும் நேரம்');
+      expect(res.fullMarkdown).toContain('தரவு ஆதாரங்கள் மற்றும் நேரம்');
       expect(res.fullMarkdown).toContain('நிச்சயமற்ற நிலைகள்');
-      expect(res.fullMarkdown).toContain('அடுத்து செய்ய வேண்டிய நடவடிக்கைகள்');
+      expect(res.fullMarkdown).toContain('பரிந்துரைக்கப்பட்ட முன்னெச்சரிக்கைகள்');
       expect(res.fullMarkdown).toContain('எங்கு உதவி பெறுவது');
       expect(res.whereToGetHelp).toContain('112');
       expect(res.whereToGetHelp).toContain('1913');
     });
 
-    it('Q7 (Multilingual Hindi): Generates complete 5-part response in Hindi Devanagari script', () => {
+    it('Q7 (Multilingual Hindi): Generates complete 6-part response in Hindi Devanagari script', () => {
       const res = groundedAiService.generateGroundedResponse('क्या मेरा इलाका सुरक्षित है? आपातकालीन नंबर क्या हैं?', 'hi', mockContext);
 
+      expect(res.fullMarkdown).toContain('स्थिति अवलोकन');
       expect(res.fullMarkdown).toContain('हम क्या जानते हैं');
-      expect(res.fullMarkdown).toContain('स्रोत और समय');
+      expect(res.fullMarkdown).toContain('डेटा स्रोत और समय');
       expect(res.fullMarkdown).toContain('क्या अनिश्चित है');
-      expect(res.fullMarkdown).toContain('आगे क्या करें');
+      expect(res.fullMarkdown).toContain('अनुशंसित सावधानियां');
       expect(res.fullMarkdown).toContain('सहायता कहाँ से प्राप्त करें');
       expect(res.whereToGetHelp).toContain('112');
       expect(res.whereToGetHelp).toContain('1070');
     });
 
-    it('Q8 (Deterministic Fallback via HTTP API): Returns structured 5-part response via POST /api/ai/chat when unconfigured', async () => {
+    it('Q8 (Deterministic Fallback via HTTP API): Returns structured 6-part response via POST /api/ai/chat when unconfigured', async () => {
       const res = await request(app)
         .post('/api/ai/chat')
         .send({
@@ -165,11 +168,12 @@ describe('JATAYU Phase 3H: Grounded AI Emergency Assistant', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.configured).toBe(false);
-      expect(res.body.message.content).toContain('### 1. What We Know');
-      expect(res.body.message.content).toContain('### 2. Source and Time');
-      expect(res.body.message.content).toContain('### 3. What is Uncertain');
-      expect(res.body.message.content).toContain('### 4. What to Do Next');
-      expect(res.body.message.content).toContain('### 5. Where to Get Help');
+      expect(res.body.message.content).toContain('### 1. Situation Overview');
+      expect(res.body.message.content).toContain('### 2. What We Know');
+      expect(res.body.message.content).toContain('### 3. Data Sources and Time');
+      expect(res.body.message.content).toContain('### 4. What Is Uncertain');
+      expect(res.body.message.content).toContain('### 5. Recommended Precautions');
+      expect(res.body.message.content).toContain('### 6. Where to Get Help');
       expect(res.body.message.content).toContain('112');
     });
   });

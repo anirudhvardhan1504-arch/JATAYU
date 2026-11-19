@@ -30,6 +30,9 @@ export const JATAYU_PERMISSIONS = Object.freeze({
   VIEW_OPERATIONAL_SECTORS: 'command:view_sectors',
   TRIGGER_SIMULATION_DRILLS: 'drill:trigger_simulation',
   MANAGE_USERS_ROLES: 'admin:manage_roles',
+  MANAGE_ALERTS: 'admin:manage_alerts',
+  MANAGE_FACILITIES: 'admin:manage_facilities',
+  VIEW_AUDIT_LOGS: 'admin:view_audit_logs',
 } as const);
 
 export type JatayuPermission = (typeof JATAYU_PERMISSIONS)[keyof typeof JATAYU_PERMISSIONS];

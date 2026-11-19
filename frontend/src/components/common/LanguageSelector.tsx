@@ -12,11 +12,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ className = 
 
   return (
     <div
-      className={`flex items-center gap-1.5 bg-warm-200/80 border border-slate-300 rounded px-2 py-1 text-xs text-navy-900 ${className}`}
+      className={`flex items-center gap-1.5 bg-charcoal/80 border border-white/10 rounded-xl px-2.5 py-1 text-xs text-jatayu-primary hover:border-emerald-500/40 transition-colors shadow-xs ${className}`}
       title={t('topbar.language')}
     >
-      <Languages className="w-3.5 h-3.5 text-navy-700 flex-shrink-0" />
-      <span className="font-mono text-slate-500 font-semibold uppercase text-[10px] hidden 2xl:inline">
+      <Languages className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+      <span className="font-mono text-jatayu-secondary font-semibold uppercase text-[10px] hidden 2xl:inline">
         {t('topbar.language')}:
       </span>
       <select
@@ -24,10 +24,10 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ className = 
         aria-label={t('topbar.language')}
         value={language}
         onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
-        className="bg-transparent font-medium text-navy-900 outline-none cursor-pointer text-xs"
+        className="bg-transparent font-medium text-jatayu-primary outline-none cursor-pointer text-xs"
       >
         {supportedLanguages.map((lang) => (
-          <option key={lang.code} value={lang.code} className="bg-white text-navy-900">
+          <option key={lang.code} value={lang.code} className="bg-charcoal text-jatayu-primary">
             {lang.nativeLabel} ({lang.code.toUpperCase()})
           </option>
         ))}

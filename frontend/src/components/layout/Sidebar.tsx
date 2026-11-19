@@ -128,41 +128,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
     });
   }
 
+  if (user?.role === 'ADMIN' || hasPermission('admin:manage_roles')) {
+    operatorNavItems.push({
+      id: 'admin',
+      label: 'Admin Console',
+      icon: <Shield className="w-4 h-4 text-emerald-400" />,
+      badge: 'ADMIN',
+    });
+  }
+
   return (
     <aside
       className={`${
         isCollapsed ? 'w-16' : 'w-64'
-      } bg-navy-900 border-r border-navy-800 flex flex-col justify-between flex-shrink-0 text-slate-300 select-none overflow-y-auto overflow-x-hidden transition-all duration-200`}
+      } bg-charcoal/90 backdrop-blur-xl border-r border-white/10 flex flex-col justify-between flex-shrink-0 text-jatayu-secondary select-none overflow-y-auto overflow-x-hidden transition-all duration-300 shadow-[10px_0_30px_-10px_rgba(0,0,0,0.5)]`}
     >
       <div>
         {/* Brand Header */}
         {!isCollapsed ? (
-          <div className="p-4 border-b border-navy-800 flex items-center justify-between">
+          <div className="p-4 border-b border-white/10 flex items-center justify-between">
             <div
               onClick={() => handleSelect('home')}
-              className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity min-w-0"
+              className="flex items-center gap-3 cursor-pointer hover:opacity-95 transition-opacity min-w-0 group"
               title="JATAYU Disaster Intelligence - Return to Home"
             >
-              <div className="w-9 h-9 rounded bg-navy-800 border border-navy-700 flex items-center justify-center text-amber-400 flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-dark-emerald/70 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(0,217,154,0.3)] group-hover:scale-105 transition-transform flex-shrink-0">
                 <Compass className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="min-w-0 truncate">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-base tracking-wider text-white font-mono truncate">
+                  <span className="font-bold text-base tracking-wider text-jatayu-primary font-mono truncate">
                     {t('brand.name')}
                   </span>
-                  <span className="text-[10px] font-mono px-1 py-0.2 bg-navy-800 text-amber-400 border border-navy-700 rounded flex-shrink-0">
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 rounded-full flex-shrink-0 shadow-[0_0_6px_rgba(0,217,154,0.2)]">
                     v0.1
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 tracking-tight font-sans truncate">
+                <p className="text-[11px] text-jatayu-secondary tracking-tight font-sans truncate">
                   {t('brand.tagline')}
                 </p>
               </div>
             </div>
             <button
               onClick={handleToggleCollapse}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-navy-800 transition-colors cursor-pointer ml-2 flex-shrink-0"
+              className="p-1.5 rounded-lg text-jatayu-muted hover:text-jatayu-primary hover:bg-white/5 transition-colors cursor-pointer ml-2 flex-shrink-0"
               title="Collapse Navigation"
               aria-label="Collapse Navigation"
             >
@@ -170,17 +179,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
         ) : (
-          <div className="p-3 border-b border-navy-800 flex flex-col items-center gap-2">
+          <div className="p-3 border-b border-white/10 flex flex-col items-center gap-2">
             <div
               onClick={() => handleSelect('home')}
-              className="w-10 h-10 rounded bg-navy-800 border border-navy-700 flex items-center justify-center text-amber-400 cursor-pointer hover:bg-navy-700 transition-colors shadow-xs"
+              className="w-10 h-10 rounded-xl bg-dark-emerald/70 border border-emerald-500/40 flex items-center justify-center text-emerald-400 cursor-pointer hover:scale-105 transition-transform shadow-[0_0_12px_rgba(0,217,154,0.3)]"
               title="JATAYU Disaster Intelligence - Return to Home"
             >
               <Compass className="w-5 h-5 stroke-[2.2]" />
             </div>
             <button
               onClick={handleToggleCollapse}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-navy-800 transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-jatayu-muted hover:text-jatayu-primary hover:bg-white/5 transition-colors cursor-pointer"
               title="Expand Navigation"
               aria-label="Expand Navigation"
             >
@@ -192,7 +201,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 1. Public Portal Section */}
         {!isCollapsed ? (
           <div className="p-3">
-            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-blue-400/90 flex items-center gap-1.5">
+            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-emerald-400/80 flex items-center gap-1.5">
               <span>PUBLIC PORTAL</span>
             </div>
             <nav className="space-y-1 mt-1">
@@ -202,25 +211,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => handleSelect(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded text-xs transition-colors text-left cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer ${
                       isActive
-                        ? 'bg-blue-600 text-white font-semibold shadow-sm'
-                        : 'text-slate-300 hover:text-white hover:bg-navy-800'
+                        ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/40 shadow-[0_0_15px_rgba(0,217,154,0.2)]'
+                        : 'text-jatayu-secondary hover:text-jatayu-primary hover:bg-white/5'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className={isActive ? 'text-white' : 'text-slate-400'}>
+                      <span className={isActive ? 'text-emerald-300' : 'text-jatayu-secondary'}>
                         {item.icon}
                       </span>
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate font-medium">{item.label}</span>
                     </div>
 
                     {item.badge && (
                       <span
-                        className={`text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${
+                        className={`text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${
                           item.badge === 'LIVE'
-                            ? 'bg-teal-950/60 text-teal-400 border-teal-800'
-                            : 'bg-amber-950/60 text-amber-400 border-amber-800'
+                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40 shadow-[0_0_8px_rgba(0,217,154,0.2)]'
+                            : 'bg-amber-950/80 text-amber-300 border-amber-500/40'
                         }`}
                       >
                         {item.badge}
@@ -233,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : (
           <div className="p-2">
-            <div className="h-px bg-navy-800 my-1 mx-2" title="PUBLIC PORTAL" />
+            <div className="h-px bg-white/10 my-1 mx-2" title="PUBLIC PORTAL" />
             <nav className="space-y-1.5 mt-2 flex flex-col items-center">
               {publicNavItems.map((item) => {
                 const isActive = activeTab === item.id;
@@ -243,17 +252,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => handleSelect(item.id)}
                     title={`${item.label}${item.badge ? ` (${item.badge})` : ''}`}
                     aria-label={item.label}
-                    className={`relative w-10 h-10 flex items-center justify-center rounded transition-colors cursor-pointer ${
+                    className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-navy-800'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_15px_rgba(0,217,154,0.2)]'
+                        : 'text-slate-400 hover:text-jatayu-primary hover:bg-white/5'
                     }`}
                   >
                     {item.icon}
                     {item.badge && (
                       <span
                         className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
-                          item.badge === 'LIVE' ? 'bg-teal-400' : 'bg-amber-400'
+                          item.badge === 'LIVE' ? 'bg-emerald-400 shadow-[0_0_4px_#00D99A]' : 'bg-amber-400'
                         }`}
                       />
                     )}
@@ -268,8 +277,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 2. Operational Console Section */}
         {!isCollapsed ? (
           <div className="p-3 pt-0">
-            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-amber-400/90 flex items-center gap-1.5 border-t border-navy-800/80 pt-3">
-              <Shield className="w-3 h-3 text-amber-400" />
+            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-emerald-400/80 flex items-center gap-1.5 border-t border-white/10 pt-3">
+              <Shield className="w-3 h-3 text-emerald-400" />
               <span>RESPONSE CONSOLE</span>
             </div>
             <nav className="space-y-1 mt-1">
@@ -279,25 +288,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => handleSelect(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded text-xs transition-colors text-left cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer ${
                       isActive
-                        ? 'bg-navy-800 text-amber-300 font-semibold border-l-2 border-amber-400 shadow-sm'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-navy-850'
+                        ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/40 shadow-[0_0_15px_rgba(0,217,154,0.2)]'
+                        : 'text-jatayu-secondary hover:text-jatayu-primary hover:bg-white/5'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className={isActive ? 'text-amber-400' : 'text-slate-400'}>
+                      <span className={isActive ? 'text-emerald-300' : 'text-jatayu-secondary'}>
                         {item.icon}
                       </span>
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate font-medium">{item.label}</span>
                     </div>
 
                     {item.badge && (
                       <span
-                        className={`text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${
+                        className={`text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${
                           item.badge === 'LIVE'
-                            ? 'bg-teal-950/60 text-teal-400 border-teal-800'
-                            : 'bg-amber-950/60 text-amber-400 border-amber-800'
+                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40 shadow-[0_0_8px_rgba(0,217,154,0.2)]'
+                            : 'bg-amber-950/80 text-amber-300 border-amber-500/40'
                         }`}
                       >
                         {item.badge}
@@ -310,7 +319,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : (
           <div className="p-2 pt-0">
-            <div className="h-px bg-navy-800 my-1 mx-2" title="RESPONSE CONSOLE" />
+            <div className="h-px bg-white/10 my-1 mx-2" title="RESPONSE CONSOLE" />
             <nav className="space-y-1.5 mt-2 flex flex-col items-center">
               {operatorNavItems.map((item) => {
                 const isActive = activeTab === item.id;
@@ -320,17 +329,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => handleSelect(item.id)}
                     title={`${item.label}${item.badge ? ` (${item.badge})` : ''}`}
                     aria-label={item.label}
-                    className={`relative w-10 h-10 flex items-center justify-center rounded transition-colors cursor-pointer ${
+                    className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-navy-800 text-amber-300 border-l-2 border-amber-400 shadow-sm'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-navy-850'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_15px_rgba(0,217,154,0.2)]'
+                        : 'text-slate-400 hover:text-jatayu-primary hover:bg-white/5'
                     }`}
                   >
                     {item.icon}
                     {item.badge && (
                       <span
                         className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
-                          item.badge === 'LIVE' ? 'bg-teal-400' : 'bg-amber-400'
+                          item.badge === 'LIVE' ? 'bg-emerald-400 shadow-[0_0_4px_#00D99A]' : 'bg-amber-400'
                         }`}
                       />
                     )}
@@ -345,23 +354,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer Info Box */}
       {!isCollapsed ? (
-        <div className="p-3 border-t border-navy-800 text-[11px] bg-navy-950/60">
-          <div className="flex items-center justify-between text-slate-400 font-mono mb-1">
+        <div className="p-3 border-t border-white/10 text-[11px] bg-obsidian/60">
+          <div className="flex items-center justify-between text-jatayu-secondary font-mono mb-1">
             <span>ACCESS TIER</span>
-            <span className="text-amber-400 font-bold uppercase text-[10px]">
+            <span className="text-emerald-400 font-bold uppercase text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/80 border border-emerald-500/30">
               {isAuthenticated && user ? user.role : 'PUBLIC ACCESS'}
             </span>
           </div>
-          <p className="text-slate-500 text-[10px] leading-relaxed font-sans">
+          <p className="text-jatayu-muted text-[10px] leading-relaxed font-sans">
             Civilian situational triage & verified emergency facility navigation.
           </p>
         </div>
       ) : (
         <div
-          className="p-2 border-t border-navy-800 text-center bg-navy-950/60"
+          className="p-2 border-t border-white/10 text-center bg-obsidian/60"
           title={`ACCESS TIER: ${isAuthenticated && user ? user.role : 'PUBLIC ACCESS'}`}
         >
-          <span className="text-[9px] font-mono px-1 py-0.5 bg-navy-800 text-amber-400 border border-navy-700 rounded font-bold uppercase block truncate">
+          <span className="text-[9px] font-mono px-1 py-0.5 bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 rounded font-bold uppercase block truncate">
             {isAuthenticated && user ? user.role.slice(0, 3) : 'PUB'}
           </span>
         </div>

@@ -20,6 +20,7 @@ import { commandRouter } from './routes/command.route.js';
 import { researchRouter } from './routes/research.route.js';
 import { routeRouter } from './routes/route.route.js';
 import { demoRouter } from './routes/demo.route.js';
+import { adminRouter } from './routes/admin.route.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { generalApiLimiter, authApiLimiter, heavyComputeLimiter } from './middleware/rateLimiter.js';
 
@@ -75,6 +76,7 @@ export function createApp(appConfig: AppConfig = config): Express {
   app.use('/api/research', researchRouter);
   app.use('/api/route', routeRouter);
   app.use('/api/demo', demoRouter);
+  app.use('/api/admin', adminRouter);
 
   // 404 handler for unrecognized endpoints
   app.use((_req, res) => {

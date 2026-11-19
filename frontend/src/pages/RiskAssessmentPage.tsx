@@ -15,38 +15,73 @@ interface RiskAssessmentPageProps {
   assessment: IndicativeFloodRiskAssessment | null;
 }
 
-const RISK_TIER_COLORS: Record<RiskLevel, { text: string; bg: string; border: string; description: string }> = {
-  LOW: {
-    text: 'text-emerald-700',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-300',
-    description: 'Baseline precipitation screening. Meteorological inputs indicate precipitation is within typical municipal absorption capacity.',
-  },
-  GUARDED: {
-    text: 'text-blue-700',
-    bg: 'bg-blue-50',
-    border: 'border-blue-300',
-    description: 'Minor screening alert. Localized surface ponding possible in low-lying depressions or obstructed stormwater inlets.',
-  },
-  ELEVATED: {
-    text: 'text-amber-800',
-    bg: 'bg-amber-50',
-    border: 'border-amber-300',
-    description: 'Elevated screening indicator. Increased potential for urban waterlogging in low-lying corridors as soil infiltration headroom decreases.',
-  },
-  HIGH: {
-    text: 'text-orange-800',
-    bg: 'bg-orange-50',
-    border: 'border-orange-300',
-    description: 'High screening alert. Strong multi-factor precipitation signal indicating substantial surface runoff accumulation potential.',
-  },
-  CRITICAL: {
-    text: 'text-red-800',
-    bg: 'bg-red-50',
-    border: 'border-red-300',
-    description: 'Severe multi-factor screening threshold reached. Concurrently intense rainfall and saturated soil indicate extreme runoff accumulation potential.',
-  },
-};
+export type StandardRiskClassification = 'LOW' | 'MODERATE' | 'HIGH' | 'SEVERE' | 'UNKNOWN';
+
+export function resolveStandardRisk(
+  overallLevel: RiskLevel,
+  dataCompleteness: string,
+  riskScore: number
+): {
+  standardTier: StandardRiskClassification;
+  label: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  guidance: string;
+} {
+  if (dataCompleteness === 'MINIMAL') {
+    return {
+      standardTier: 'UNKNOWN',
+      label: 'UNKNOWN (DATA INCOMPLETE)',
+      badgeBg: 'bg-slate-100',
+      badgeText: 'text-slate-800',
+      badgeBorder: 'border-slate-400',
+      guidance: 'Insufficient environmental data coverage. An area is never assumed safe simply because telemetry is missing.',
+    };
+  }
+
+  if (overallLevel === 'CRITICAL' || riskScore >= 80) {
+    return {
+      standardTier: 'SEVERE',
+      label: 'SEVERE RISK',
+      badgeBg: 'bg-red-100',
+      badgeText: 'text-red-900',
+      badgeBorder: 'border-red-400',
+      guidance: 'Extreme multi-factor hazard signal. High probability of surface inundation and stormwater stagnation.',
+    };
+  }
+
+  if (overallLevel === 'HIGH' || riskScore >= 60) {
+    return {
+      standardTier: 'HIGH',
+      label: 'HIGH RISK',
+      badgeBg: 'bg-orange-100',
+      badgeText: 'text-orange-900',
+      badgeBorder: 'border-orange-400',
+      guidance: 'Substantial runoff accumulation potential. Drainage headroom compromised across depressed corridors.',
+    };
+  }
+
+  if (overallLevel === 'GUARDED' || overallLevel === 'ELEVATED' || riskScore >= 30) {
+    return {
+      standardTier: 'MODERATE',
+      label: 'MODERATE RISK',
+      badgeBg: 'bg-amber-100',
+      badgeText: 'text-amber-900',
+      badgeBorder: 'border-amber-400',
+      guidance: 'Localized ponding possible in low-lying depressions or obstructed stormwater inlets.',
+    };
+  }
+
+  return {
+    standardTier: 'LOW',
+    label: 'LOW RISK',
+    badgeBg: 'bg-emerald-100',
+    badgeText: 'text-emerald-900',
+    badgeBorder: 'border-emerald-400',
+    guidance: 'Precipitation within baseline municipal absorption capacity under current observation window.',
+  };
+}
 
 export const RiskAssessmentPage: React.FC<RiskAssessmentPageProps> = ({
   location,
@@ -67,7 +102,11 @@ export const RiskAssessmentPage: React.FC<RiskAssessmentPageProps> = ({
     );
   }
 
-  const tierInfo = RISK_TIER_COLORS[assessment.overallRiskLevel];
+  const standardRisk = resolveStandardRisk(
+    assessment.overallRiskLevel,
+    assessment.dataCompleteness,
+    assessment.riskScore
+  );
   const factors = Object.values(assessment.factors);
 
   return (
@@ -144,22 +183,25 @@ export const RiskAssessmentPage: React.FC<RiskAssessmentPageProps> = ({
           <div>
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
               <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-500">
-                Composite Hazard Index
+                Standard Risk Classification
               </span>
               <span
-                className={`text-xs font-mono font-bold px-2.5 py-1 rounded border uppercase ${tierInfo.bg} ${tierInfo.text} ${tierInfo.border}`}
+                className={`text-xs font-mono font-bold px-2.5 py-1 rounded border uppercase ${standardRisk.badgeBg} ${standardRisk.badgeText} ${standardRisk.badgeBorder}`}
               >
-                {assessment.overallRiskLevel} TIER
+                {standardRisk.label}
               </span>
             </div>
 
-            <div className="text-center py-5">
+            <div className="text-center py-4">
               <div className="text-5xl font-extrabold font-mono text-navy-900 tracking-tight">
                 {assessment.riskScore}
                 <span className="text-xl text-slate-400 font-normal"> / 100</span>
               </div>
+              <div className="text-[11px] font-mono text-slate-500 mt-1 uppercase">
+                Heuristic Multi-Factor Index
+              </div>
               <p className="text-xs text-slate-600 font-sans mt-3 px-2 leading-relaxed">
-                {tierInfo.description}
+                {standardRisk.guidance}
               </p>
             </div>
           </div>

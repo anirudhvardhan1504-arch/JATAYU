@@ -39,7 +39,7 @@ export class RoutingServiceError extends Error {
   }
 }
 
-interface FloodVulnerabilityPoint {
+export interface FloodVulnerabilityPoint {
   id: string;
   name: string;
   coordinate: [number, number]; // [lon, lat]
@@ -143,6 +143,10 @@ export class RouteService {
 
   constructor() {
     this.loadData();
+  }
+
+  public getVulnerabilityPoints(): FloodVulnerabilityPoint[] {
+    return [...this.vulnerabilityPoints];
   }
 
   private loadData(): void {

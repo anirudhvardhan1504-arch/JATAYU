@@ -26,38 +26,42 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   icon,
 }) => {
   return (
-    <div className="bg-white border border-slate-200 rounded p-4 shadow-subtle flex flex-col justify-between">
+    <div className="bento-card p-4 flex flex-col justify-between group hover:border-emerald-500/30 transition-all duration-300">
       <div className="flex items-start justify-between mb-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-mono">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-jatayu-secondary font-mono">
           {label}
         </span>
-        {icon && <div className="text-slate-400">{icon}</div>}
+        {icon && (
+          <div className="text-emerald-400/80 group-hover:text-emerald-300 transition-colors">
+            {icon}
+          </div>
+        )}
       </div>
 
-      <div className="flex items-baseline gap-1 my-1">
-        <span className="text-2xl font-bold font-mono tracking-tight text-navy-900">
+      <div className="flex items-baseline gap-1.5 my-1.5">
+        <span className="text-2xl font-bold font-mono tracking-tight text-jatayu-primary group-hover:text-white transition-colors">
           {value}
         </span>
-        {unit && <span className="text-xs font-mono text-slate-500 font-medium">{unit}</span>}
+        {unit && <span className="text-xs font-mono text-emerald-400 font-medium">{unit}</span>}
       </div>
 
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+      <div className="flex items-center justify-between mt-2 pt-2.5 border-t border-white/5 text-xs">
         {subtext ? (
-          <span className="text-slate-500 truncate max-w-[180px]">{subtext}</span>
+          <span className="text-jatayu-muted truncate max-w-[180px] font-mono text-[11px]">{subtext}</span>
         ) : trend ? (
           <span
             className={`font-mono text-xs ${
               trend.isNeutral
-                ? 'text-slate-600'
+                ? 'text-slate-400'
                 : trend.isPositive
-                ? 'text-emerald-700'
-                : 'text-amber-700'
+                ? 'text-emerald-400'
+                : 'text-amber-400'
             }`}
           >
             {trend.value}
           </span>
         ) : (
-          <span className="text-slate-400 font-mono text-[11px]">METRIC IDLE</span>
+          <span className="text-slate-500 font-mono text-[11px]">METRIC IDLE</span>
         )}
 
         {sourceType && <Badge sourceType={sourceType} size="sm" />}
