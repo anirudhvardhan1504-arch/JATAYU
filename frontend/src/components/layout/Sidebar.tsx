@@ -354,14 +354,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer Info Box */}
       {!isCollapsed ? (
-        <div className="p-3 border-t border-white/10 text-[11px] bg-obsidian/60">
-          <div className="flex items-center justify-between text-jatayu-secondary font-mono mb-1">
-            <span>ACCESS TIER</span>
-            <span className="text-emerald-400 font-bold uppercase text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/80 border border-emerald-500/30">
+        <div className="p-3 border-t border-white/10 text-xs bg-obsidian/70">
+          <div className="flex items-center justify-between text-jatayu-primary font-medium mb-1.5">
+            <span className="text-[11px] font-mono text-jatayu-secondary">ACCESS TIER</span>
+            <span className="text-emerald-300 font-bold uppercase text-[10px] px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/40">
               {isAuthenticated && user ? user.role : 'PUBLIC ACCESS'}
             </span>
           </div>
-          <p className="text-jatayu-muted text-[10px] leading-relaxed font-sans">
+          <p className="text-jatayu-secondary text-[11px] leading-relaxed font-sans">
             Civilian situational triage & verified emergency facility navigation.
           </p>
         </div>

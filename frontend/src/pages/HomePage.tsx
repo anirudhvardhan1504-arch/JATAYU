@@ -2,9 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Compass,
   CloudRain,
-  Navigation2,
-  Building2,
-  Globe2,
   AlertTriangle,
   ShieldCheck,
   Clock,
@@ -62,6 +59,7 @@ interface HomePageProps {
 }
 
 const PRESET_LOCATIONS = [
+  { name: 'Hyderabad Metropolitan Region', lat: 17.385, lon: 78.4867, label: 'Hyderabad' },
   { name: 'Mumbai Metropolitan Region', lat: 19.076, lon: 72.8777, label: 'Mumbai' },
   { name: 'Chennai Coastal Basin', lat: 13.0827, lon: 80.2707, label: 'Chennai' },
   { name: 'Brahmaputra Valley (Guwahati)', lat: 26.1445, lon: 91.7362, label: 'Guwahati' },
@@ -421,9 +419,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
         {/* Prominent Locality Search Bar */}
         <div ref={searchContainerRef} className="relative">
-          <label htmlFor="home-locality-search" className="block text-xs font-semibold text-jatayu-secondary mb-1.5 flex items-center gap-1.5">
+          <label htmlFor="home-locality-search" className="block text-xs font-semibold text-jatayu-primary mb-1.5 flex items-center gap-1.5">
             <Search className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{t('home.searchLabel')}</span>
+            <span>{t('home.searchLabel')} ({location.name}):</span>
           </label>
           <div className="relative">
             <input
@@ -438,7 +436,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               }}
               onKeyDown={handleSearchKeyDown}
               placeholder={t('home.searchPlaceholder')}
-              className="w-full px-4 py-3 pl-10 pr-10 text-sm bg-obsidian/80 border border-white/10 rounded-xl focus:outline-none focus:border-emerald-500 text-jatayu-primary placeholder:text-jatayu-muted font-sans shadow-xs transition-all"
+              className="w-full px-4 py-3 pl-10 pr-10 text-sm bg-obsidian border border-white/15 rounded-xl focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40 text-jatayu-primary placeholder:text-jatayu-secondary font-sans shadow-inner transition-all"
             />
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-jatayu-muted">
               {isSearching ? <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" /> : <Search className="w-4 h-4" />}
@@ -868,9 +866,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             className="bento-card p-5 hover:border-emerald-500/50 hover:shadow-glow-emerald transition-all cursor-pointer group flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-3 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-colors shadow-[0_0_10px_rgba(0,217,154,0.15)]">
-                <CloudRain className="w-5 h-5" />
-              </div>
+              <Luxury3DIcon type="weather-sun-cloud" size={48} className="mb-3" />
               <h3 className="font-bold text-white text-sm">{t('home.card1Title')}</h3>
               <p className="text-xs text-jatayu-secondary mt-1 leading-relaxed font-sans">
                 {t('home.card1Desc')}
@@ -888,9 +884,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             className="bento-card p-5 hover:border-emerald-500/50 hover:shadow-glow-emerald transition-all cursor-pointer group flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-3 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-colors shadow-[0_0_10px_rgba(0,217,154,0.15)]">
-                <Navigation2 className="w-5 h-5" />
-              </div>
+              <Luxury3DIcon type="route-compass" size={48} className="mb-3" />
               <h3 className="font-bold text-white text-sm">{t('home.card2Title')}</h3>
               <p className="text-xs text-jatayu-secondary mt-1 leading-relaxed font-sans">
                 {t('home.card2Desc')}
@@ -908,9 +902,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             className="bento-card p-5 hover:border-emerald-500/50 hover:shadow-glow-emerald transition-all cursor-pointer group flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-3 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-colors shadow-[0_0_10px_rgba(0,217,154,0.15)]">
-                <Building2 className="w-5 h-5" />
-              </div>
+              <Luxury3DIcon type="facility-hospital" size={48} className="mb-3" />
               <h3 className="font-bold text-white text-sm">{t('home.card3Title')}</h3>
               <p className="text-xs text-jatayu-secondary mt-1 leading-relaxed font-sans">
                 {t('home.card3Desc')}
@@ -928,9 +920,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             className="bento-card p-5 hover:border-emerald-500/50 hover:shadow-glow-emerald transition-all cursor-pointer group flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-3 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors shadow-[0_0_10px_rgba(245,158,11,0.15)]">
-                <Globe2 className="w-5 h-5" />
-              </div>
+              <Luxury3DIcon type="radar-globe" size={48} className="mb-3" />
               <h3 className="font-bold text-white text-sm">{t('home.card4Title')}</h3>
               <p className="text-xs text-jatayu-secondary mt-1 leading-relaxed font-sans">
                 {t('home.card4Desc')}

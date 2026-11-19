@@ -298,12 +298,13 @@ export const SafeRouteMap: React.FC<SafeRouteMapProps> = ({
       popupNode.style.padding = '4px';
       popupNode.style.maxWidth = '240px';
 
+      popupNode.className = 'p-3 bg-[#101A17] text-[#F0F7F4] rounded-xl border border-white/20 shadow-xl font-sans';
       popupNode.innerHTML = `
-        <div style="font-weight:bold;color:#0f172a;margin-bottom:2px;">${fac.name}</div>
-        <div style="font-size:10px;color:#334155;margin-bottom:2px;">${fac.address}</div>
-        <div style="font-size:10px;color:#64748b;margin-bottom:4px;">Tel: ${fac.phone || 'N/A'}</div>
-        <div style="font-size:9px;color:#d97706;margin-bottom:6px;">Status: Verification required on arrival</div>
-        <button id="btn-dest-${fac.id}" style="width:100%;padding:4px 6px;background:#0284c7;color:white;border:none;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer;">
+        <div style="font-weight:bold;color:#F0F7F4;font-size:12px;margin-bottom:3px;">${fac.name}</div>
+        <div style="font-size:11px;color:#B5C5BF;margin-bottom:3px;">${fac.address}</div>
+        <div style="font-size:11px;color:#8A9C95;margin-bottom:4px;font-family:monospace;">Tel: ${fac.phone || 'N/A'}</div>
+        <div style="font-size:10px;color:#FBBF24;margin-bottom:8px;font-family:monospace;">Status: Verification required on arrival</div>
+        <button id="btn-dest-${fac.id}" style="width:100%;padding:6px 10px;background:#00D99A;color:#080D0D;border:none;border-radius:8px;font-size:11px;font-weight:bold;cursor:pointer;">
           Route to this Facility
         </button>
       `;
@@ -360,26 +361,26 @@ export const SafeRouteMap: React.FC<SafeRouteMapProps> = ({
       )}
 
       {/* Map Legend HUD */}
-      <div className="absolute top-3 left-3 bg-navy-950/90 backdrop-blur border border-navy-700/80 rounded px-3 py-2 text-[10px] font-mono text-slate-300 shadow-lg pointer-events-none space-y-1.5">
-        <div className="text-amber-400 font-bold uppercase tracking-wider text-[9px]">ROUTE & HAZARD LEGEND</div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-1 bg-[#0284C7] rounded" />
+      <div className="absolute top-3 left-3 bg-obsidian/90 backdrop-blur-md border border-white/15 rounded-2xl px-3.5 py-3 text-xs font-sans text-jatayu-primary shadow-2xl pointer-events-none space-y-2">
+        <div className="text-emerald-400 font-bold uppercase tracking-wider text-[10px]">ROUTE & HAZARD LEGEND</div>
+        <div className="flex items-center gap-2.5 text-jatayu-secondary font-medium">
+          <span className="w-3.5 h-1.5 bg-[#00D99A] rounded-full shadow-[0_0_8px_#00D99A]" />
           <span>Selected Route</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-1 bg-[#64748B] border-t border-dashed border-slate-400" />
+        <div className="flex items-center gap-2.5 text-jatayu-secondary font-medium">
+          <span className="w-3.5 h-1.5 bg-[#71827B] border-t border-dashed border-white/40" />
           <span>Alternative Corridor</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-white text-white flex items-center justify-center text-[7px] font-bold">!</span>
+        <div className="flex items-center gap-2.5 text-jatayu-secondary font-medium">
+          <span className="w-3 h-3 rounded-full bg-red-600 border border-white text-white flex items-center justify-center text-[8px] font-bold">!</span>
           <span>Flood / Alert Hazard</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded bg-blue-600 text-white flex items-center justify-center text-[7px]">⌂</span>
+        <div className="flex items-center gap-2.5 text-jatayu-secondary font-medium">
+          <span className="w-3 h-3 rounded bg-blue-600 text-white flex items-center justify-center text-[8px]">⌂</span>
           <span>Evacuation Shelter</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded bg-red-600 text-white flex items-center justify-center text-[7px]">+</span>
+        <div className="flex items-center gap-2.5 text-jatayu-secondary font-medium">
+          <span className="w-3 h-3 rounded bg-red-600 text-white flex items-center justify-center text-[8px]">+</span>
           <span>Emergency Hospital</span>
         </div>
       </div>

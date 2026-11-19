@@ -87,7 +87,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({
       <div className="bento-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="text-xs font-mono uppercase text-jatayu-muted font-semibold">
+            <span className="text-xs font-mono uppercase text-jatayu-secondary font-semibold">
               {t('alerts.resolvedRegion')}
             </span>
             {geoRes?.matchStatus === 'RESOLVED_DISTRICT' ? (
@@ -103,7 +103,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({
             ) : (
               <span className="text-sm font-bold text-white">{location.name}</span>
             )}
-            <span className="text-xs font-mono text-jatayu-muted">
+            <span className="text-xs font-mono text-jatayu-secondary">
               ({location.lat.toFixed(4)}°N, {location.lon.toFixed(4)}°E)
             </span>
           </div>
@@ -167,15 +167,15 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({
         {/* Tier Count Pills */}
         <div className="flex items-center gap-2">
           <div className="px-3 py-1.5 bg-obsidian/70 border border-white/10 rounded-xl text-center">
-            <div className="text-[10px] font-mono uppercase text-jatayu-muted">DISTRICT MATCH</div>
+            <div className="text-[10px] font-mono uppercase text-jatayu-secondary">DISTRICT MATCH</div>
             <div className="text-sm font-mono font-bold text-white">{officialAlerts.length}</div>
           </div>
           <div className="px-3 py-1.5 bg-obsidian/70 border border-white/10 rounded-xl text-center">
-            <div className="text-[10px] font-mono uppercase text-jatayu-muted">NATIONWIDE</div>
+            <div className="text-[10px] font-mono uppercase text-jatayu-secondary">NATIONWIDE</div>
             <div className="text-sm font-mono font-bold text-blue-400">{nationwideAlerts.length}</div>
           </div>
           <div className="px-3 py-1.5 bg-obsidian/70 border border-white/10 rounded-xl text-center">
-            <div className="text-[10px] font-mono uppercase text-jatayu-muted">INDICATIVE</div>
+            <div className="text-[10px] font-mono uppercase text-jatayu-secondary">INDICATIVE</div>
             <div className="text-sm font-mono font-bold text-amber-400">{indicativeAlerts.length}</div>
           </div>
         </div>
@@ -383,7 +383,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({
                 : 'No synthetic training exercises are currently scheduled.'}
             </p>
             {activeTab === 'OFFICIAL' && (
-              <p className="text-[11px] font-mono text-jatayu-muted max-w-md mx-auto pt-1">
+              <p className="text-[11px] font-mono text-jatayu-secondary max-w-md mx-auto pt-1">
                 Notice: The absence of an active IMD bulletin indicates no current nowcast warning has been issued, but is not a conclusive guarantee of safety against unmonitored localized hazards. Always monitor local ground conditions.
               </p>
             )}
@@ -416,12 +416,12 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({
                     <span className="font-mono text-xs font-semibold text-emerald-300">
                       {alert.category}
                     </span>
-                    <span className="font-mono text-[11px] text-jatayu-muted">ID: {alert.id}</span>
+                    <span className="font-mono text-[11px] text-jatayu-secondary">ID: {alert.id}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {alert.affectedArea.matchMethod === 'NOT_LOCATION_MATCHED' && (
-                      <span className="px-2 py-0.5 bg-obsidian/80 text-jatayu-muted border border-white/10 rounded-full text-[10px] font-mono font-bold uppercase">
+                      <span className="px-2 py-0.5 bg-obsidian/80 text-jatayu-secondary border border-white/10 rounded-full text-[10px] font-mono font-bold uppercase">
                         NOT LOCATION MATCHED
                       </span>
                     )}
@@ -486,7 +486,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({
               </div>
 
               {/* Card Footer */}
-              <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-jatayu-muted">
+              <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-jatayu-secondary">
                 <div className="flex items-center gap-2">
                   <span>AGENCY: </span>
                   <strong className="text-white">{alert.sourceAgency}</strong>

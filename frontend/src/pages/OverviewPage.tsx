@@ -263,25 +263,25 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           {/* Quick Metrics Bar at bottom of Hero */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-white/5">
             <div className="bg-obsidian/50 rounded-xl p-2.5 border border-white/5">
-              <span className="text-[10px] font-mono uppercase text-jatayu-muted block">Feels Like</span>
+              <span className="text-[10px] font-mono uppercase text-jatayu-secondary block">Feels Like</span>
               <span className="text-sm font-mono font-bold text-jatayu-primary">
                 {weather ? `${weather.apparentTemperatureC}°C` : '--'}
               </span>
             </div>
             <div className="bg-obsidian/50 rounded-xl p-2.5 border border-white/5">
-              <span className="text-[10px] font-mono uppercase text-jatayu-muted block">Humidity</span>
+              <span className="text-[10px] font-mono uppercase text-jatayu-secondary block">Humidity</span>
               <span className="text-sm font-mono font-bold text-jatayu-primary">
                 {weather ? `${weather.relativeHumidityPercent}%` : '--'}
               </span>
             </div>
             <div className="bg-obsidian/50 rounded-xl p-2.5 border border-white/5">
-              <span className="text-[10px] font-mono uppercase text-jatayu-muted block">Barometer</span>
+              <span className="text-[10px] font-mono uppercase text-jatayu-secondary block">Barometer</span>
               <span className="text-sm font-mono font-bold text-jatayu-primary">
                 {weather ? `${weather.surfacePressureHpa} hPa` : '--'}
               </span>
             </div>
             <div className="bg-obsidian/50 rounded-xl p-2.5 border border-white/5">
-              <span className="text-[10px] font-mono uppercase text-jatayu-muted block">Wind Gusts</span>
+              <span className="text-[10px] font-mono uppercase text-jatayu-secondary block">Wind Gusts</span>
               <span className="text-sm font-mono font-bold text-emerald-400">
                 {weather ? `${weather.windGustsKmh} km/h` : '--'}
               </span>
@@ -316,9 +316,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                         <stop offset="95%" stopColor="#00D99A" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#637B74' }} interval={4} />
-                    <YAxis tick={{ fontSize: 9, fill: '#637B74' }} unit="mm" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#B5C5BF' }} interval={4} />
+                    <YAxis tick={{ fontSize: 10, fill: '#B5C5BF' }} unit="mm" />
                     <Tooltip
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {

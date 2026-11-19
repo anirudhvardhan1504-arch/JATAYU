@@ -239,33 +239,33 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({
 
       {/* Gateway Information Callout */}
       {!aiStatus?.configured && (
-        <div className="p-4 bg-obsidian/70 border border-white/10 rounded-2xl shadow-panel flex items-start gap-3 backdrop-blur-md">
+        <div className="p-4 bg-surface-secondary/80 border border-white/12 rounded-2xl shadow-panel flex items-start gap-3.5 backdrop-blur-md">
           <Server className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
           <div className="text-xs text-jatayu-secondary leading-relaxed">
-            <p className="font-bold uppercase tracking-wider font-mono text-[11px] text-jatayu-primary">
+            <p className="font-bold uppercase tracking-wider text-[11px] text-jatayu-primary">
               OpenRouter Operational Scaffolding Mode
             </p>
-            <p className="mt-0.5">
+            <p className="mt-1">
               The AI service is operating in deterministic scaffolding mode without fabricating hallucinated responses.
               Queries are synthesized using live Open-Meteo observations, IMD nowcast feeds, and indicative flood risk heuristics.
-              To activate external LLM inference, configure <code className="bg-charcoal px-1.5 py-0.5 rounded font-mono text-emerald-300 border border-white/10">OPENROUTER_API_KEY</code> on the backend.
+              To activate external LLM inference, configure <code className="bg-charcoal px-2 py-0.5 rounded font-mono text-emerald-300 border border-white/15">OPENROUTER_API_KEY</code> on the backend.
             </p>
           </div>
         </div>
       )}
 
       {/* Preset Operational Prompts */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-mono text-emerald-400 mr-1 flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <span className="text-xs font-medium text-jatayu-accent mr-1 flex items-center gap-1.5 uppercase tracking-wider">
           <Terminal className="w-3.5 h-3.5" />
-          QUICK QUESTIONS:
+          Quick Queries:
         </span>
         {presetQueries.map((q, idx) => (
           <button
             key={idx}
             onClick={() => handleSend(q)}
             disabled={isLoading}
-            className="px-3 py-1.5 text-xs font-sans rounded-xl bg-charcoal/80 border border-white/10 hover:border-emerald-500/40 text-jatayu-secondary hover:text-jatayu-primary shadow-subtle transition-all cursor-pointer disabled:opacity-50"
+            className="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-surface-secondary border border-white/15 hover:border-emerald-400/50 hover:bg-emerald-950/40 text-jatayu-primary shadow-subtle transition-all cursor-pointer disabled:opacity-50"
           >
             {q}
           </button>
@@ -284,20 +284,20 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({
                 className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
               >
                 <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-mono ${
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-mono ${
                     isUser
-                      ? 'bg-emerald-600 text-white shadow-[0_0_10px_rgba(0,217,154,0.3)]'
-                      : 'bg-dark-emerald/70 border border-emerald-500/40 text-emerald-400 shadow-[0_0_10px_rgba(0,217,154,0.2)]'
+                      ? 'bg-gradient-to-r from-emerald-500 to-mint text-obsidian font-bold shadow-glow-emerald'
+                      : 'bg-dark-emerald/90 border border-emerald-400/50 text-emerald-300 shadow-glow-emerald'
                   }`}
                 >
-                  {isUser ? <User className="w-4 h-4" /> : <BotMessageSquare className="w-4 h-4" />}
+                  {isUser ? <User className="w-4 h-4 text-obsidian" /> : <BotMessageSquare className="w-4 h-4 text-emerald-300" />}
                 </div>
 
                 <div
                   className={`p-4 rounded-2xl text-xs max-w-2xl leading-relaxed whitespace-pre-wrap font-sans ${
                     isUser
-                      ? 'bg-emerald-950/70 border border-emerald-500/30 text-white shadow-subtle'
-                      : 'bg-obsidian/70 border border-white/10 text-jatayu-primary shadow-subtle'
+                      ? 'bg-emerald-950/80 border border-emerald-500/40 text-white shadow-subtle'
+                      : 'bg-surface-secondary/90 border border-white/15 text-jatayu-primary shadow-panel'
                   }`}
                 >
                   {msg.content}
@@ -315,7 +315,7 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({
         </div>
 
         {/* Chat Input Bar */}
-        <div className="p-3.5 border-t border-white/10 bg-obsidian/60 flex items-center gap-2.5">
+        <div className="p-3.5 border-t border-white/12 bg-surface-secondary/90 flex items-center gap-3 backdrop-blur-md">
           <input
             type="text"
             value={input}
@@ -325,14 +325,14 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({
             }}
             placeholder={t('ai.inputPlaceholder')}
             disabled={isLoading}
-            className="flex-1 bg-charcoal/80 border border-white/10 rounded-xl px-4 py-2 text-xs text-jatayu-primary placeholder:text-jatayu-muted outline-none focus:border-emerald-500/60 font-sans transition-colors"
+            className="flex-1 bg-obsidian border border-white/20 focus:border-emerald-400 rounded-xl px-4 py-2.5 text-xs text-jatayu-primary placeholder:text-jatayu-secondary outline-none font-sans transition-all shadow-inner"
           />
           <button
             onClick={() => handleSend()}
             disabled={isLoading || !input.trim()}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 disabled:opacity-40 transition-all shadow-[0_0_15px_rgba(0,217,154,0.3)] cursor-pointer"
+            className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-mint hover:from-emerald-400 hover:to-emerald-300 text-obsidian text-xs font-semibold rounded-xl flex items-center gap-2 disabled:opacity-40 transition-all shadow-glow-emerald cursor-pointer font-sans"
           >
-            <Send className="w-3.5 h-3.5" />
+            <Send className="w-4 h-4 text-obsidian" />
             <span>{t('ai.send')}</span>
           </button>
         </div>

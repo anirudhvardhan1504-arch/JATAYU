@@ -208,16 +208,16 @@ ${historicalData.daily.time
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-slate-500">
-            <Globe className="w-4 h-4 text-indigo-600" />
+          <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400">
+            <Globe className="w-4 h-4 text-emerald-400" />
             <span>Atmospheric Reanalysis & Hydrological Modeling</span>
           </div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight mt-1">
+          <h1 className="text-2xl font-bold text-jatayu-primary tracking-tight mt-1 font-sans">
             {t('research.pageTitle')}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5 font-sans">
+          <p className="text-xs text-jatayu-secondary mt-0.5 font-sans">
             {t('research.pageSubtitle')} • Current Target: {location.name}
           </p>
         </div>
@@ -226,9 +226,9 @@ ${historicalData.daily.time
           {onLaunch3DGlobe && (
             <button
               onClick={onLaunch3DGlobe}
-              className="px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-medium flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium flex items-center gap-2 shadow-[0_0_12px_rgba(0,217,154,0.3)] transition-colors cursor-pointer"
             >
-              <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+              <Maximize2 className="w-3.5 h-3.5 text-amber-300" />
               <span>Launch 3D Earth Globe</span>
             </button>
           )}
@@ -236,18 +236,18 @@ ${historicalData.daily.time
           <button
             onClick={exportResearchBrief}
             disabled={!historicalData}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+            className="px-3.5 py-2 bg-surface-secondary hover:bg-white/10 text-jatayu-primary border border-white/10 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-blue-600" />
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
             <span>{t('research.exportBrief')}</span>
           </button>
         </div>
       </div>
 
       {/* Preset Storm Event Selector */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <div className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+      <div className="bento-card p-5 space-y-3">
+        <div className="text-xs font-medium uppercase tracking-wider text-jatayu-secondary flex items-center gap-1.5">
+          <Calendar className="w-4 h-4 text-emerald-400" />
           <span>Historical Severe Weather Events (Copernicus ERA5)</span>
         </div>
 
@@ -256,21 +256,21 @@ ${historicalData.daily.time
             <button
               key={preset.id}
               onClick={() => setSelectedPreset(preset)}
-              className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer ${
+              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                 selectedPreset.id === preset.id
-                  ? 'bg-indigo-50/70 border-indigo-500 shadow-sm'
-                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
+                  ? 'bg-emerald-950/50 border-emerald-400 shadow-glow-emerald'
+                  : 'bg-surface-secondary/80 hover:bg-surface-secondary border-white/10'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-navy-900 font-mono">
+                <span className="text-xs font-bold text-jatayu-primary">
                   {preset.name}
                 </span>
-                <span className="text-[10px] font-mono text-indigo-600 bg-white px-1.5 py-0.5 rounded border border-indigo-200">
+                <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-500/40">
                   {preset.date}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 mt-1 line-clamp-2 font-sans">
+              <p className="text-xs text-jatayu-secondary mt-1.5 line-clamp-2 font-sans">
                 {preset.description}
               </p>
             </button>
@@ -279,13 +279,13 @@ ${historicalData.daily.time
       </div>
 
       {/* View Tabs */}
-      <div className="flex border-b border-slate-200 gap-4 text-xs font-medium">
+      <div className="flex border-b border-white/10 gap-6 text-xs font-medium">
         <button
           onClick={() => setActiveTab('historical')}
-          className={`pb-2 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+          className={`pb-2.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'historical'
-              ? 'border-indigo-600 text-indigo-600 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-emerald-400 text-jatayu-accent font-bold'
+              : 'border-transparent text-jatayu-muted hover:text-jatayu-primary'
           }`}
         >
           <CloudRain className="w-4 h-4" />
@@ -294,10 +294,10 @@ ${historicalData.daily.time
 
         <button
           onClick={() => setActiveTab('satellite')}
-          className={`pb-2 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+          className={`pb-2.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'satellite'
-              ? 'border-indigo-600 text-indigo-600 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-emerald-400 text-jatayu-accent font-bold'
+              : 'border-transparent text-jatayu-muted hover:text-jatayu-primary'
           }`}
         >
           <Globe className="w-4 h-4" />
@@ -306,10 +306,10 @@ ${historicalData.daily.time
 
         <button
           onClick={() => setActiveTab('radar')}
-          className={`pb-2 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+          className={`pb-2.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'radar'
-              ? 'border-indigo-600 text-indigo-600 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-emerald-400 text-jatayu-accent font-bold'
+              : 'border-transparent text-jatayu-muted hover:text-jatayu-primary'
           }`}
         >
           <Radio className="w-4 h-4" />
@@ -322,57 +322,57 @@ ${historicalData.daily.time
         <div className="space-y-6">
           {/* KPI Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <span className="text-[11px] font-mono font-medium text-slate-500 uppercase">
+            <div className="bento-card p-5">
+              <span className="text-[11px] font-medium text-jatayu-muted uppercase tracking-wider">
                 Event Rainfall Total
               </span>
-              <div className="text-2xl font-extrabold text-navy-900 mt-1">
+              <div className="text-2xl font-extrabold text-jatayu-primary mt-1 font-mono">
                 {historicalData ? `${historicalData.eventAccumulationMm} mm` : '--'}
               </div>
-              <div className="text-xs text-slate-500 mt-0.5">
+              <div className="text-xs text-jatayu-secondary mt-0.5">
                 {selectedPreset.startDate} to {selectedPreset.endDate}
               </div>
             </div>
 
-            <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <span className="text-[11px] font-mono font-medium text-slate-500 uppercase">
+            <div className="bento-card p-5">
+              <span className="text-[11px] font-medium text-jatayu-muted uppercase tracking-wider">
                 Peak Daily Rainfall
               </span>
-              <div className="text-2xl font-extrabold text-blue-600 mt-1">
+              <div className="text-2xl font-extrabold text-jatayu-accent mt-1 font-mono">
                 {historicalData ? `${historicalData.peakDailyRainMm} mm` : '--'}
               </div>
-              <div className="text-xs text-slate-500 mt-0.5">
+              <div className="text-xs text-jatayu-secondary mt-0.5">
                 Single-day maximum reanalysis value
               </div>
             </div>
 
-            <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <span className="text-[11px] font-mono font-medium text-slate-500 uppercase">
+            <div className="bento-card p-5">
+              <span className="text-[11px] font-medium text-jatayu-muted uppercase tracking-wider">
                 Dataset Provenance
               </span>
-              <div className="text-xs font-bold text-navy-900 mt-1">
+              <div className="text-sm font-bold text-jatayu-primary mt-1">
                 Copernicus ERA5 Reanalysis
               </div>
-              <div className="text-xs text-slate-500 mt-0.5 font-sans">
+              <div className="text-xs text-jatayu-secondary mt-0.5 font-sans">
                 ECMWF Global Climate Model ~30km resolution
               </div>
             </div>
           </div>
 
           {/* Chart Card */}
-          <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div className="bento-card p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-navy-900">
+                <h3 className="text-sm font-bold text-jatayu-primary">
                   Daily Precipitation & Temperature Accumulation Series
                 </h3>
-                <p className="text-xs text-slate-500 font-sans">
+                <p className="text-xs text-jatayu-secondary font-sans">
                   {selectedPreset.center.name} ({selectedPreset.center.lat}°N, {selectedPreset.center.lon}°E)
                 </p>
               </div>
 
               {isLoadingHistory && (
-                <div className="text-xs font-mono text-indigo-600 flex items-center gap-1.5">
+                <div className="text-xs font-mono text-emerald-400 flex items-center gap-1.5">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Loading ERA5 reanalysis...</span>
                 </div>
@@ -380,11 +380,11 @@ ${historicalData.daily.time
             </div>
 
             {historyError ? (
-              <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-900 text-xs flex items-center justify-between">
+              <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs flex items-center justify-between">
                 <span>{historyError}</span>
                 <button
                   onClick={() => loadHistoricalSeries(selectedPreset)}
-                  className="px-2.5 py-1 bg-red-600 text-white rounded text-[11px] hover:bg-red-700"
+                  className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs hover:bg-red-500 cursor-pointer"
                 >
                   Retry
                 </button>
@@ -393,14 +393,14 @@ ${historicalData.daily.time
               <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} unit="mm" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#B5C5BF' }} stroke="rgba(255,255,255,0.15)" />
+                    <YAxis tick={{ fontSize: 11, fill: '#B5C5BF' }} unit="mm" stroke="rgba(255,255,255,0.15)" />
                     <Tooltip
                       formatter={(val: any) => [`${val} mm`, 'Rainfall']}
-                      contentStyle={{ backgroundColor: '#0F172A', color: '#fff', borderRadius: '8px', fontSize: '11px' }}
+                      contentStyle={{ backgroundColor: '#101A17', borderColor: 'rgba(255,255,255,0.15)', color: '#F0F7F4', borderRadius: '12px', fontSize: '11px' }}
                     />
-                    <Bar dataKey="precipitation" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Precipitation (mm)" />
+                    <Bar dataKey="precipitation" fill="#42F5B0" radius={[4, 4, 0, 0]} name="Precipitation (mm)" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -411,22 +411,22 @@ ${historicalData.daily.time
 
       {/* Tab 2: NASA Satellite Cloud True-Color Composite */}
       {activeTab === 'satellite' && (
-        <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div className="bento-card p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-bold text-navy-900">
+              <h3 className="text-sm font-bold text-jatayu-primary">
                 NASA GIBS MODIS Terra Daily True-Color Cloud Imagery
               </h3>
-              <p className="text-xs text-slate-500 font-sans">
+              <p className="text-xs text-jatayu-secondary font-sans">
                 Optical cloud composite for {selectedPreset.date} • Imagery © NASA GIBS / EOSDIS
               </p>
             </div>
-            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded text-[11px] font-mono">
+            <span className="px-2.5 py-1 bg-surface-secondary text-jatayu-secondary border border-white/10 rounded-lg text-xs font-mono">
               Sensor: MODIS Terra (Corrected Reflectance)
             </span>
           </div>
 
-          <div className="relative rounded-lg overflow-hidden border border-slate-300 bg-slate-900 flex items-center justify-center min-h-[350px]">
+          <div className="relative rounded-xl overflow-hidden border border-white/10 bg-obsidian flex items-center justify-center min-h-[350px]">
             <img
               src={nasaGibsUrl}
               alt={`NASA MODIS satellite imagery for ${selectedPreset.name}`}
@@ -435,44 +435,44 @@ ${historicalData.daily.time
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
-            <div className="absolute bottom-3 left-3 bg-navy-950/80 backdrop-blur-sm text-white px-3 py-1.5 rounded text-[11px] font-mono">
+            <div className="absolute bottom-3 left-3 bg-obsidian/85 backdrop-blur-md text-jatayu-primary border border-white/10 px-3 py-1.5 rounded-lg text-xs font-mono">
               Center: {selectedPreset.center.lat}°N, {selectedPreset.center.lon}°E • {selectedPreset.date}
             </div>
           </div>
 
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-600 font-sans">
-            <strong>Scientific Note: </strong> True-color corrected reflectance reflects optical cloud structures and cyclonic vortices. It represents cloud top geometry, not calibrated ground precipitation depth.
+          <div className="p-3.5 bg-surface-secondary border border-white/10 rounded-xl text-xs text-jatayu-secondary font-sans">
+            <strong className="text-jatayu-primary">Scientific Note: </strong> True-color corrected reflectance reflects optical cloud structures and cyclonic vortices. It represents cloud top geometry, not calibrated ground precipitation depth.
           </div>
         </div>
       )}
 
       {/* Tab 3: RainViewer Doppler Radar */}
       {activeTab === 'radar' && (
-        <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+        <div className="bento-card p-6 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
             <div>
-              <h3 className="text-sm font-bold text-navy-900 flex items-center gap-2">
-                <Radio className="w-4 h-4 text-blue-600" />
+              <h3 className="text-sm font-bold text-jatayu-primary flex items-center gap-2">
+                <Radio className="w-4 h-4 text-emerald-400" />
                 <span>RainViewer Doppler Radar Mosaic</span>
               </h3>
-              <p className="text-xs text-slate-500 font-sans">
+              <p className="text-xs text-jatayu-secondary font-sans">
                 Ground meteorological radar composite calibrated in dBZ reflectivity
               </p>
             </div>
 
             {/* Persistent Temporal Status Badge */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-300 rounded text-xs font-mono font-bold flex items-center gap-1.5 shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="px-2.5 py-1 bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>{t('research.radarLiveBadge')}</span>
               </span>
 
               {radarInfo?.timestamp ? (
-                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded text-xs font-mono border border-slate-200">
-                  {t('research.radarFrameTime')} <strong className="text-navy-900">{new Date(radarInfo.timestamp * 1000).toUTCString().replace('GMT', 'UTC')}</strong>
+                <span className="px-2.5 py-1 bg-surface-secondary text-jatayu-secondary rounded-lg text-xs font-mono border border-white/10">
+                  {t('research.radarFrameTime')} <strong className="text-jatayu-primary">{new Date(radarInfo.timestamp * 1000).toUTCString().replace('GMT', 'UTC')}</strong>
                 </span>
               ) : (
-                <span className="px-2.5 py-1 bg-amber-50 text-amber-800 rounded text-xs font-mono border border-amber-200">
+                <span className="px-2.5 py-1 bg-amber-950/60 text-amber-300 rounded-lg text-xs font-mono border border-amber-500/40">
                   {radarLoading ? t('header.sync') : t('research.radarTimeUnavailable')}
                 </span>
               )}
@@ -480,46 +480,46 @@ ${historicalData.daily.time
           </div>
 
           {/* Temporal Notice Warning Banner for Historical Presets */}
-          <div className="p-4 bg-amber-50/90 border-l-4 border-amber-500 rounded-r-lg text-xs space-y-1.5 shadow-2xs">
-            <div className="flex items-center gap-2 font-mono font-bold text-amber-900 uppercase tracking-wide">
-              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          <div className="p-4 bg-amber-950/30 border-l-4 border-amber-400 rounded-r-xl text-xs space-y-1.5">
+            <div className="flex items-center gap-2 font-mono font-bold text-amber-300 uppercase tracking-wide">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <span>{t('research.radarHistoricalNotice')}</span>
             </div>
-            <p className="text-amber-900 leading-relaxed font-sans text-xs">
+            <p className="text-amber-200/90 leading-relaxed font-sans text-xs">
               {t('research.radarHistoricalDesc')}{' '}
-              <strong className="underline decoration-amber-400 font-bold text-navy-900">
+              <strong className="underline decoration-amber-400 font-bold text-white">
                 {selectedPreset.name} ({selectedPreset.date})
               </strong>.
             </p>
-            <p className="text-amber-800 font-sans text-[11px] leading-relaxed">
+            <p className="text-amber-300/80 font-sans text-[11px] leading-relaxed">
               {t('research.radarArchiveUnavailable')}
             </p>
           </div>
 
           {/* Upstream Radar Service Error if Unreachable */}
           {radarError && (
-            <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-900 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <div className="p-4 rounded-xl bg-red-950/60 border border-red-500/40 text-red-200 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
               <span>{radarError}</span>
             </div>
           )}
 
           {/* Main Radar Card */}
-          <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200 space-y-3">
-            <Radio className="w-10 h-10 text-blue-600 mx-auto" />
-            <h4 className="text-sm font-bold text-slate-800">
+          <div className="p-8 text-center bg-surface-secondary rounded-2xl border border-white/10 space-y-3">
+            <Radio className="w-10 h-10 text-emerald-400 mx-auto" />
+            <h4 className="text-sm font-bold text-jatayu-primary">
               Interactive Doppler Radar Mosaic Active
             </h4>
-            <p className="text-xs text-slate-600 max-w-lg mx-auto font-sans leading-relaxed">
+            <p className="text-xs text-jatayu-secondary max-w-lg mx-auto font-sans leading-relaxed">
               Real-time Doppler radar frames with interactive playback scrubber are rendered in the Tactical Map and 3D Earth Globe. Attribution: {radarInfo?.sourceAttribution || 'RainViewer Weather Radar Composite'}.
             </p>
             <div className="flex justify-center gap-3 pt-2">
               {onLaunch3DGlobe && (
                 <button
                   onClick={onLaunch3DGlobe}
-                  className="px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white rounded text-xs font-medium cursor-pointer shadow-sm transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-obsidian font-semibold rounded-xl text-xs cursor-pointer shadow-glow-emerald transition-colors flex items-center gap-1.5"
                 >
-                  <Globe className="w-3.5 h-3.5 text-blue-400" />
+                  <Globe className="w-4 h-4 text-obsidian" />
                   <span>{t('research.tab3dGlobe')}</span>
                 </button>
               )}
@@ -529,13 +529,13 @@ ${historicalData.daily.time
       )}
 
       {/* 4. SFINCS HYDRODYNAMIC SIMULATION QUARANTINED SECTION */}
-      <div className="p-6 bg-slate-900 text-slate-200 rounded-xl border border-slate-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+      <div className="bento-card p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+            <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
               TIER 3 RESEARCH
             </span>
-            <span className="text-xs font-mono font-bold uppercase text-white">
+            <span className="text-xs font-mono font-bold uppercase text-jatayu-primary">
               Deltares SFINCS Adyar Hydrodynamic Model
             </span>
           </div>
@@ -564,31 +564,31 @@ ${historicalData.daily.time
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-              <div className="p-3 rounded bg-navy-950 border border-navy-800">
-                <span className="text-slate-500 text-[10px] block">Reach Length</span>
+              <div className="p-3 rounded-xl bg-obsidian/70 border border-white/10">
+                <span className="text-jatayu-secondary text-[10px] block">Reach Length</span>
                 <span className="text-white font-bold">28.0 km</span>
               </div>
-              <div className="p-3 rounded bg-navy-950 border border-navy-800">
-                <span className="text-slate-500 text-[10px] block">Grid Resolution</span>
+              <div className="p-3 rounded-xl bg-obsidian/70 border border-white/10">
+                <span className="text-jatayu-secondary text-[10px] block">Grid Resolution</span>
                 <span className="text-white font-bold">30.0 meters</span>
               </div>
-              <div className="p-3 rounded bg-navy-950 border border-navy-800">
-                <span className="text-slate-500 text-[10px] block">Subgrid Cells</span>
+              <div className="p-3 rounded-xl bg-obsidian/70 border border-white/10">
+                <span className="text-jatayu-secondary text-[10px] block">Subgrid Cells</span>
                 <span className="text-white font-bold">199,287 cells</span>
               </div>
-              <div className="p-3 rounded bg-navy-950 border border-navy-800">
-                <span className="text-slate-500 text-[10px] block">Depth Tiers</span>
+              <div className="p-3 rounded-xl bg-obsidian/70 border border-white/10">
+                <span className="text-jatayu-secondary text-[10px] block">Depth Tiers</span>
                 <span className="text-amber-400 font-bold">3 Classified</span>
               </div>
             </div>
 
-            <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded text-xs text-amber-300 font-sans">
+            <div className="p-3 bg-amber-950/40 border border-amber-500/40 rounded-xl text-xs text-amber-200 font-sans">
               <strong>Mandatory Safety Boundary: </strong> SFINCS inundation contours are uncalibrated computational research outputs. They are strictly quarantined from operational rescue dispatch and civilian advisory feeds.
             </div>
           </div>
         ) : (
-          <div className="p-4 rounded-lg bg-navy-950 border border-navy-800 text-xs space-y-3">
-            <div className="flex items-center gap-2 text-slate-300 font-sans">
+          <div className="p-4 rounded-xl bg-obsidian/70 border border-white/10 text-xs space-y-3">
+            <div className="flex items-center gap-2 text-jatayu-secondary font-sans">
               <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <span>
                 Detailed 2D hydrodynamic simulation layers and solver parameters require authorized researcher evaluation credentials.

@@ -34,11 +34,14 @@ interface TopbarProps {
 }
 
 const PRESET_LOCATIONS = [
+  { name: 'Hyderabad Metropolitan Region', lat: 17.385, lon: 78.4867 },
   { name: 'Mumbai Metropolitan Region', lat: 19.076, lon: 72.8777 },
   { name: 'Chennai Coastal Basin', lat: 13.0827, lon: 80.2707 },
   { name: 'Brahmaputra Valley (Guwahati)', lat: 26.1445, lon: 91.7362 },
   { name: 'Kolkata Deltaic Zone', lat: 22.5726, lon: 88.3639 },
   { name: 'Dehradun Hill Catchment', lat: 30.3165, lon: 78.0322 },
+  { name: 'Delhi NCR', lat: 28.6139, lon: 77.209 },
+  { name: 'Bengaluru Urban', lat: 12.9716, lon: 77.5946 },
 ];
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -225,8 +228,8 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
 
         {/* Center: Universal Location Search & Sector Preset */}
-        <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 flex-1 max-w-xs sm:max-w-sm md:max-w-md min-w-0 mx-1 sm:mx-2" ref={searchRef}>
-          <div className="relative flex-1 min-w-[90px] sm:min-w-[120px]">
+        <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 flex-1 max-w-xs sm:max-w-sm lg:max-w-md min-w-0 mx-1 sm:mx-2" ref={searchRef}>
+          <div className="relative flex-1 min-w-[80px] sm:min-w-[100px]">
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
               <input
@@ -237,7 +240,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                   if (searchResults.length > 0) setIsDropdownOpen(true);
                 }}
                 placeholder={t('home.searchPlaceholder')}
-                className="w-full pl-9 pr-7 py-1.5 text-xs bg-obsidian/70 border border-white/10 rounded-xl text-jatayu-primary focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 font-sans placeholder:text-jatayu-muted truncate transition-all"
+                className="w-full pl-9 pr-7 py-1.5 text-xs bg-obsidian/90 border border-white/15 rounded-xl text-jatayu-primary focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40 font-sans placeholder:text-jatayu-secondary truncate transition-all shadow-inner"
               />
               {isSearching && (
                 <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin absolute right-2.5 top-2.5" />
@@ -289,9 +292,14 @@ export const Topbar: React.FC<TopbarProps> = ({
               const match = PRESET_LOCATIONS.find((loc) => loc.name === e.target.value);
               if (match) onSelectLocation(match);
             }}
-            className="bg-dark-emerald/40 hover:bg-dark-emerald/60 border border-emerald-500/30 rounded-xl px-2.5 py-1.5 text-xs text-emerald-200 font-medium cursor-pointer outline-none w-[120px] sm:w-[135px] lg:w-[150px] truncate flex-shrink-0 transition-colors"
+            className="bg-surface-secondary/90 hover:bg-surface-secondary border border-emerald-500/30 rounded-xl px-2.5 py-1.5 text-xs text-jatayu-primary font-medium cursor-pointer outline-none w-[110px] sm:w-[130px] lg:w-[155px] truncate flex-shrink-0 transition-colors"
             title="Select Target Disaster Sector"
           >
+            {!PRESET_LOCATIONS.some((loc) => loc.name === selectedLocation.name) && (
+              <option value={selectedLocation.name} className="bg-charcoal text-jatayu-primary">
+                {selectedLocation.name}
+              </option>
+            )}
             {PRESET_LOCATIONS.map((loc) => (
               <option key={loc.name} value={loc.name} className="bg-charcoal text-jatayu-primary">
                 {loc.name}

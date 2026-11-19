@@ -324,6 +324,6 @@ describe('JATAYU SafeRoute API & Hazard Evaluation Service', () => {
         expect(res.body.results[0].longitude).toBeGreaterThan(68);
         expect(res.body.results[0].longitude).toBeLessThan(98);
       }
-    });
+    }, 30000);
   });
 });

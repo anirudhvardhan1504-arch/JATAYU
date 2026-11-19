@@ -39,6 +39,8 @@ export default {
           base: '#080D0D',
           secondary: '#101A17',
           elevated: '#14221E',
+          glass: 'rgba(255, 255, 255, 0.055)',
+          border: 'rgba(255, 255, 255, 0.12)',
         },
         'dark-emerald': {
           DEFAULT: '#10251F',
@@ -109,7 +111,7 @@ export default {
         'navy-950': '#F0F7F4',
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Manrope', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       boxShadow: {

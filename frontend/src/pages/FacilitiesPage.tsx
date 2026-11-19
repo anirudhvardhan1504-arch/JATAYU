@@ -223,7 +223,7 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
             placeholder="Search facility name or address..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-obsidian/70 border border-white/10 rounded-xl text-jatayu-primary focus:outline-none focus:border-emerald-500 font-sans placeholder:text-jatayu-muted transition-colors"
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-obsidian/70 border border-white/10 rounded-xl text-jatayu-primary focus:outline-none focus:border-emerald-500 font-sans placeholder:text-jatayu-secondary transition-colors"
           />
         </div>
 
@@ -361,7 +361,7 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
 
                 {/* Authority & Last Verified if present */}
                 {(f.responsibleAuthority || f.lastVerified) && (
-                  <div className="text-[10px] font-mono text-jatayu-muted flex flex-wrap gap-x-2 pt-0.5">
+                  <div className="text-[10px] font-mono text-jatayu-secondary flex flex-wrap gap-x-2 pt-0.5">
                     {f.responsibleAuthority && <span>Auth: {f.responsibleAuthority}</span>}
                     {f.lastVerified && <span>Verified: {f.lastVerified}</span>}
                   </div>
@@ -374,7 +374,7 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
                       ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40 shadow-[0_0_8px_rgba(0,217,154,0.2)]'
                       : f.verificationStatus === 'PENDING_VERIFICATION'
                       ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
-                      : 'bg-charcoal text-slate-400 border-white/10'
+                      : 'bg-charcoal text-jatayu-secondary border-white/10'
                   }`}>
                     {f.verificationStatus === 'OFFICIALLY_VERIFIED' || f.verificationStatus === 'VERIFIED'
                       ? 'OFFICIALLY VERIFIED'

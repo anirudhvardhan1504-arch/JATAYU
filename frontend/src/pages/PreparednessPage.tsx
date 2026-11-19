@@ -382,7 +382,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
 
           {/* Card 2: Flood Risk Index */}
           <div className="p-3 bg-obsidian/60 border border-white/10 rounded-xl">
-            <span className="text-[10px] text-jatayu-muted block uppercase">FLOOD RISK INDEX</span>
+            <span className="text-[10px] text-jatayu-secondary block uppercase">FLOOD RISK INDEX</span>
             {riskAssessment ? (
               <div>
                 <span className="font-bold text-jatayu-primary text-sm">
@@ -392,15 +392,15 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
               </div>
             ) : (
               <div>
-                <span className="font-bold text-slate-500 text-sm">UNAVAILABLE</span>
-                <span className="block text-[9px] text-jatayu-muted mt-0.5">SCREENING PENDING</span>
+                <span className="font-bold text-jatayu-secondary text-sm">UNAVAILABLE</span>
+                <span className="block text-[9px] text-jatayu-secondary mt-0.5">SCREENING PENDING</span>
               </div>
             )}
           </div>
 
           {/* Card 3: Official IMD Warnings */}
           <div className="p-3 bg-obsidian/60 border border-white/10 rounded-xl">
-            <span className="text-[10px] text-jatayu-muted block uppercase">OFFICIAL IMD NOTICES</span>
+            <span className="text-[10px] text-jatayu-secondary block uppercase">OFFICIAL IMD NOTICES</span>
             {alertFeed && alertFeed.feedStatus !== 'UPSTREAM_FALLBACK' ? (
               <div>
                 <span className="font-bold text-jatayu-primary text-sm">
@@ -418,22 +418,22 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
             ) : (
               <div>
                 <span className="font-bold text-red-400 text-sm">FEED UNAVAILABLE</span>
-                <span className="block text-[9px] text-jatayu-muted mt-0.5">NOT VERIFIED / OFFLINE</span>
+                <span className="block text-[9px] text-jatayu-secondary mt-0.5">NOT VERIFIED / OFFLINE</span>
               </div>
             )}
           </div>
 
           {/* Card 4: Evidence Health */}
           <div className="p-3 bg-obsidian/60 border border-white/10 rounded-xl">
-            <span className="text-[10px] text-jatayu-muted block uppercase">EVIDENTIARY STATUS</span>
+            <span className="text-[10px] text-jatayu-secondary block uppercase">EVIDENTIARY STATUS</span>
             <span
               className={`font-bold text-sm block ${
-                threatEvaluation.hasSufficientData ? 'text-emerald-400' : 'text-slate-400'
+                threatEvaluation.hasSufficientData ? 'text-emerald-400' : 'text-amber-400'
               }`}
             >
               {threatEvaluation.hasSufficientData ? 'VERIFIED COMPLETE' : 'INADEQUATE EVIDENCE'}
             </span>
-            <span className="block text-[9px] text-jatayu-muted mt-0.5 truncate" title={threatEvaluation.primaryTrigger}>
+            <span className="block text-[9px] text-jatayu-secondary mt-0.5 truncate" title={threatEvaluation.primaryTrigger}>
               {threatEvaluation.hasSufficientData ? 'ALL SOURCES FRESH' : 'STANDBY PROTOCOL'}
             </span>
           </div>
@@ -544,7 +544,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
                   {item.completed ? (
                     <CheckSquare className="w-4 h-4 text-emerald-400" />
                   ) : (
-                    <Square className={`w-4 h-4 ${isTargetPhase ? 'text-amber-400' : 'text-slate-500'}`} />
+                    <Square className={`w-4 h-4 ${isTargetPhase ? 'text-amber-400' : 'text-jatayu-secondary'}`} />
                   )}
                 </div>
 
@@ -636,7 +636,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
                   {isPacked ? (
                     <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   ) : (
-                    <Square className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                    <Square className="w-4 h-4 text-jatayu-secondary flex-shrink-0" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -747,7 +747,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
                     {completedFloodTasks.includes('FL-B1') ? (
                       <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                      <Square className="w-4 h-4 text-jatayu-secondary flex-shrink-0" />
                     )}
                   </div>
                   <p className="text-jatayu-secondary leading-relaxed">
@@ -770,7 +770,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
                     {completedFloodTasks.includes('FL-B2') ? (
                       <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                      <Square className="w-4 h-4 text-jatayu-secondary flex-shrink-0" />
                     )}
                   </div>
                   <p className="text-jatayu-secondary leading-relaxed">
@@ -793,7 +793,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
                     {completedFloodTasks.includes('FL-B3') ? (
                       <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                      <Square className="w-4 h-4 text-jatayu-secondary flex-shrink-0" />
                     )}
                   </div>
                   <p className="text-jatayu-secondary leading-relaxed">

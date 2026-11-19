@@ -38,6 +38,7 @@ import {
   AlertFeedResponse,
 } from '../types';
 import { Badge } from '../components/common/Badge';
+import { Luxury3DIcon } from '../components/common/Luxury3DIcon';
 
 interface ForecastPageProps {
   location: { name: string; lat: number; lon: number };
@@ -277,8 +278,8 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
                   Feels like {weather ? `${weather.apparentTemperatureC}°C` : '--'}
                 </div>
               </div>
-              <div className="p-3.5 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 shadow-[0_0_15px_rgba(0,217,154,0.15)]">
-                {getWeatherIcon(weather?.weatherCode || 0, weather?.precipitationMm || 0)}
+              <div className="filter drop-shadow-[0_8px_20px_rgba(0,217,154,0.3)]">
+                <Luxury3DIcon type={(weather?.precipitationMm || 0) > 2 ? 'weather-storm' : 'weather-sun-cloud'} size={68} />
               </div>
             </div>
 
@@ -286,7 +287,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
               <div className="text-base font-bold text-mint capitalize">
                 {weather?.weatherDescription || 'Atmospheric observation active'}
               </div>
-              <div className="text-xs text-jatayu-muted mt-0.5 font-mono">
+              <div className="text-xs text-jatayu-secondary mt-1 font-sans">
                 Attribution: {weather?.sourceAttribution || 'Open-Meteo High-Res IFS'}
               </div>
             </div>
