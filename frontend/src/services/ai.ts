@@ -8,7 +8,7 @@ export async function getAIStatus(): Promise<AIStatusResponse> {
 export async function sendAIChat(
   messages: AIChatMessage[],
   context?: Record<string, any>,
-  language?: 'en' | 'ta' | 'hi'
+  language?: 'en' | 'ta' | 'hi' | 'te'
 ): Promise<AIChatResponse> {
   return fetchJson<AIChatResponse>('/ai/chat', {
     method: 'POST',

@@ -227,7 +227,7 @@ describe('Phase 3F: Task 1 — Locality Search on Public Home Page', () => {
 
     const input = screen.getByPlaceholderText(/Search city, district, or landmark across India/i);
     expect(input).toBeInTheDocument();
-    expect(screen.getByText(/Search Locality, District, or Coordinates/i)).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Search a place or coordinates/i })).toBeInTheDocument();
   });
 
   it('debounces place search and updates location when a suggestion is clicked', async () => {

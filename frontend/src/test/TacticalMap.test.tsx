@@ -269,8 +269,11 @@ describe('LiveMapPage Integration Tests', () => {
         }}
       />
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Geospatial Layers Sidebar' }));
 
-    expect(screen.getByText('Tactical Geospatial Command Center')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Sector Telemetry Drawer')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle contextual telemetry panel' }));
+    expect(screen.getAllByText('Weather map').length).toBeGreaterThan(0);
     expect(screen.getByText('Active Sector Fix')).toBeInTheDocument();
     expect(screen.getByText('HIGH (72/100)')).toBeInTheDocument();
     expect(screen.getAllByText(/16\.5 mm\/h/i).length).toBeGreaterThan(0);
@@ -353,6 +356,7 @@ describe('LiveMapPage Integration Tests', () => {
         />
       </AuthContext.Provider>
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Geospatial Layers Sidebar' }));
 
     // Initial state: toggle button shows MUTED
     const toggleButton = screen.getByRole('button', { name: 'MUTED' });
@@ -420,6 +424,7 @@ describe('LiveMapPage Integration Tests', () => {
         />
       </AuthContext.Provider>
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Geospatial Layers Sidebar' }));
 
     // Toggle ON
     const muteBtn = screen.getByRole('button', { name: 'MUTED' });
@@ -489,6 +494,7 @@ describe('LiveMapPage Integration Tests', () => {
         />
       </AuthContext.Provider>
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Geospatial Layers Sidebar' }));
 
     const toggleBtn = screen.getByRole('button', { name: 'MUTED' });
     fireEvent.click(toggleBtn);
@@ -533,6 +539,7 @@ describe('LiveMapPage Integration Tests', () => {
         />
       </AuthContext.Provider>
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Geospatial Layers Sidebar' }));
 
     const toggleBtn = screen.getByRole('button', { name: 'MUTED' });
     fireEvent.click(toggleBtn);
@@ -568,6 +575,7 @@ describe('LiveMapPage Integration Tests', () => {
         />
       </AuthContext.Provider>
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Geospatial Layers Sidebar' }));
 
     expect(screen.getByText(/ROLE ACCESS QUARANTINE/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'MUTED' })).not.toBeInTheDocument();
@@ -671,6 +679,7 @@ describe('LiveMapPage Integration Tests', () => {
         onSelectLocation={vi.fn()}
       />
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Geospatial Layers Sidebar' }));
 
     // By default satellite is hidden
     const satToggleBtn = screen.getAllByRole('button', { name: 'HIDDEN' })[0];

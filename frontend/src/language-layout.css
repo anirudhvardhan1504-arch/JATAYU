@@ -1,0 +1,31 @@
+/* Text must grow naturally in English, Tamil, Hindi and Telugu. */
+.app-root .sidebar-navigation nav button { min-width:0; height:auto; min-height:42px; line-height:1.55; }
+.app-root .sidebar-navigation nav button > span:not(.sidebar-active-dot) { min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.app-root .sidebar-wordmark small { white-space:normal; line-height:1.5; }
+.app-root .topbar-tools { flex-wrap:wrap; min-width:0; }
+.app-root .app-topbar { height:auto; row-gap:8px; }
+.app-root :is(.workspace-heading,.workspace-panel,.bento-card,.official-note) { min-width:0; }
+.app-root :is(.workspace-heading-actions,.workspace-chart-tabs,.forecast-chart-tabs) { flex-wrap:wrap; }
+.app-root :is(.workspace-button,.official-note strong,.official-note p,.bento-card button) { overflow-wrap:anywhere; white-space:normal; }
+.app-root .official-note > div { min-width:0; }
+.app-root .official-note > button { flex-shrink:0; }
+.app-root .weather-hero-metrics > div { min-width:0; line-height:1.5; }
+.app-root .weather-hero-top { flex-wrap:wrap; }
+.app-root .weather-hero-metrics small { white-space:normal; }
+.app-root .workspace-map-bottom > div { min-width:0; }
+html:is([lang=te],[lang=ta],[lang=hi]) .app-root { line-height:1.6; }
+html:is([lang=te],[lang=ta],[lang=hi]) .app-root :is(h1,h2,h3) { line-height:1.5; letter-spacing:normal; }
+html:is([lang=te],[lang=ta],[lang=hi]) .app-root .workspace-heading h1 { font-size:clamp(28px,3vw,42px); }
+@media(max-width:639px) {
+ .app-root .topbar-tools { gap:4px; }
+ .app-root .topbar-tools select { max-width:104px; }
+ .app-root .workspace-heading-actions { max-width:100%; }
+ .app-root .weather-hero-metrics { gap:8px; }
+ html:is([lang=te],[lang=ta],[lang=hi]) .app-root .weather-hero-metrics { grid-template-columns:1fr; }
+ html:is([lang=te],[lang=ta],[lang=hi]) .app-root .weather-hero-main { flex-wrap:wrap; }
+ .app-root .earth-toolbar { align-items:flex-start; }
+ .app-root .earth-place { min-width:0; }
+}
+
+.app-root input.flex-1 { min-width:0; }
+.app-root [role=log], .app-root .whitespace-pre-wrap { overflow-wrap:anywhere; }

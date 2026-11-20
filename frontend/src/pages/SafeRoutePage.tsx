@@ -36,10 +36,15 @@ import { EvacuationInstructionsPanel } from '../components/route/EvacuationInstr
 
 interface SafeRoutePageProps {
   currentSector: { name: string; lat: number; lon: number };
+  initialFacility?: EmergencyFacility | null;
+  onFacilityConsumed?: () => void;
 }
 
-export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) => {
+export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector, initialFacility, onFacilityConsumed }) => {
   const { t } = useLanguage();
+
+  const pendingFacility = useRef<EmergencyFacility | null>(null);
+  const handledFacility = useRef<EmergencyFacility | null>(null);
 
   // Inputs
   const [originInput, setOriginInput] = useState('Chennai Central');
@@ -165,6 +170,21 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
         setOriginCoords({ latitude, longitude, name: fallbackName });
         setOriginInput(fallbackName);
         setGeoError(null);
+        setRoutePlan(null);
+        const target = pendingFacility.current;
+        if (target) {
+          pendingFacility.current = null;
+          setIsCalculating(true);
+          setRouteError(null);
+          planSafeRoute({ latitude, longitude, name: fallbackName }, {
+            ...target.location, name: target.name, address: target.address,
+          }, travelMode).then((plan) => {
+            setRoutePlan(plan);
+            setSelectedRouteId(plan.recommendedRouteId || plan.routes[0]?.id || null);
+          }).catch((error) => {
+            setRouteError(error.message || 'Routing provider unavailable. Please retry.');
+          }).finally(() => setIsCalculating(false));
+        }
 
         reverseGeocodeLocation(latitude, longitude)
           .then((resolved) => {
@@ -236,6 +256,20 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
     setGeoError(null);
     executeGeolocation(0);
   };
+
+  // A facility action is an explicit request to route from the user's location.
+  useEffect(() => {
+    if (!initialFacility || handledFacility.current === initialFacility) return;
+    handledFacility.current = initialFacility;
+    pendingFacility.current = initialFacility;
+    setDestinationCoords({ ...initialFacility.location, name: initialFacility.name, address: initialFacility.address });
+    setDestinationInput(initialFacility.name);
+    setSelectedFacility(initialFacility);
+    setRoutePlan(null);
+    setRouteError(null);
+    onFacilityConsumed?.();
+    void handleUseMyLocation();
+  }, [initialFacility]);
 
   // Swap Origin and Destination
   const handleSwapLocations = () => {
@@ -331,6 +365,8 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
     setSelectedFacility(facility);
   };
 
+  useEffect(() => { setRoutePlan(null); setSelectedRouteId(null); }, [originCoords.latitude, originCoords.longitude, destinationCoords.latitude, destinationCoords.longitude, travelMode]);
+
   // Route Planning Execution
   const handleCalculateRoute = useCallback(async () => {
     setIsCalculating(true);
@@ -351,7 +387,10 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
 
   const filteredFacilities = facilities.filter((f) => {
     if (facilityFilter === 'ALL') return true;
-    return f.category === facilityFilter;
+    return f.category === facilityFilter ||
+      (facilityFilter === 'TRAUMA_CENTRE' && (f.category === 'ORR_TRAUMA_CENTRE' || !!f.capabilities?.includes('Trauma care'))) ||
+      (facilityFilter === 'AMBULANCE_SERVICE' && !!f.capabilities?.includes('Ambulance service')) ||
+      (facilityFilter === 'HOSPITAL' && ['TRAUMA_CENTRE','ORR_TRAUMA_CENTRE'].includes(f.category));
   });
 
   return (
@@ -822,6 +861,8 @@ export const SafeRoutePage: React.FC<SafeRoutePageProps> = ({ currentSector }) =
                   { id: 'ALL' as const, label: t('saferoute.filterAll') },
                   { id: 'SHELTER' as const, label: t('saferoute.filterShelters') },
                   { id: 'HOSPITAL' as const, label: t('saferoute.filterHospitals') },
+                  { id: 'TRAUMA_CENTRE' as const, label: t('facilities.filterTrauma') },
+                  { id: 'AMBULANCE_SERVICE' as const, label: t('facilities.filterAmbulance') },
                   { id: 'FIRE_STATION' as const, label: t('saferoute.filterFire') },
                   { id: 'EMERGENCY_OPS' as const, label: t('saferoute.filterOps') },
                 ].map(({ id, label }) => (

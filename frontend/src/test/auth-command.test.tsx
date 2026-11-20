@@ -215,14 +215,14 @@ describe('2. Permission-Gated Navigation & UI Surfaces', () => {
     vi.restoreAllMocks();
   });
 
-  it('hides 3D Command Globe in Sidebar for unauthenticated and citizen users', () => {
+  it('shows the public 3D globe without a login', () => {
     render(
       <AuthProvider>
         <Sidebar activeTab="overview" onSelectTab={vi.fn()} />
       </AuthProvider>
     );
 
-    expect(screen.queryByText('3D Command Globe')).toBeNull();
+    expect(screen.getByText('3D Command Globe')).toBeInTheDocument();
     expect(screen.getByText('Operational Overview')).toBeInTheDocument();
     expect(screen.getByText('Tactical Map')).toBeInTheDocument();
   });
@@ -257,7 +257,7 @@ describe('2. Permission-Gated Navigation & UI Surfaces', () => {
       </AuthProvider>
     );
 
-    expect(screen.queryByText('3D Command Globe')).toBeNull();
+    expect(screen.getByText('3D Command Globe')).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(screen.getByText('Login'));
@@ -341,7 +341,7 @@ describe('2. Permission-Gated Navigation & UI Surfaces', () => {
     await waitFor(() => {
       expect(screen.getByText('Admin Officer')).toBeInTheDocument();
       expect(screen.getByText('ADMIN')).toBeInTheDocument();
-      expect(screen.getByText('LOGOUT')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'LOGOUT' })).toBeInTheDocument();
     });
   });
 });

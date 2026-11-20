@@ -125,7 +125,7 @@ describe('4. Cesium 3D Command Module Lifecycle & WebGL Isolation', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText(/GOD’S EYE VIEW — CESIUM 3D COMMAND GLOBE/i)).toBeInTheDocument();
+    expect(screen.getByText(/3D EARTH — WEATHER EXPLORER/i)).toBeInTheDocument();
     expect(screen.getByText('ESRI SATELLITE')).toBeInTheDocument();
     expect(screen.getByText('CARTO DARK')).toBeInTheDocument();
 

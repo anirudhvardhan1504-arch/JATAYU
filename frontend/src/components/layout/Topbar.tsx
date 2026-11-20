@@ -1,20 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  MapPin,
-  RefreshCw,
-  LogOut,
-  Search,
-  Compass,
-  Shield,
-  Menu,
-  Navigation2,
-  Building2,
-  Globe,
-  CloudRain,
-  Home,
-  AlertCircle,
-  FileText,
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Menu, Search, MapPin, LocateFixed, RefreshCw, Shield, LogOut, FileText, ChevronRight, X, Pause, Play, Sun, Moon } from 'lucide-react';
 import { NavigationTab, GeocodingResult } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -22,415 +7,72 @@ import { LanguageSelector } from '../common/LanguageSelector';
 import { searchPlaces, reverseGeocodeLocation } from '../../services/route';
 
 interface TopbarProps {
-  activeTab: NavigationTab;
-  onSelectTab?: (tab: NavigationTab) => void;
-  selectedLocation: { name: string; lat: number; lon: number };
-  onSelectLocation: (loc: { name: string; lat: number; lon: number }) => void;
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
-  onOpenLogin?: () => void;
-  onExportSitrep?: () => void;
-  onToggleMobileMenu?: () => void;
+  colorTheme?: 'light' | 'dark'; onToggleColorTheme?: () => void;
+  motionEnabled?: boolean; onToggleMotion?: () => void;
+  activeTab: NavigationTab; onSelectTab?: (tab: NavigationTab) => void;
+  selectedLocation: { name:string; lat:number; lon:number };
+  onSelectLocation:(location:{ name:string; lat:number; lon:number }) => void;
+  onRefresh?:()=>void; isRefreshing?:boolean; onOpenLogin?:()=>void;
+  onExportSitrep?:()=>void; onToggleMobileMenu?:()=>void;
 }
-
-const PRESET_LOCATIONS = [
-  { name: 'Hyderabad Metropolitan Region', lat: 17.385, lon: 78.4867 },
-  { name: 'Mumbai Metropolitan Region', lat: 19.076, lon: 72.8777 },
-  { name: 'Chennai Coastal Basin', lat: 13.0827, lon: 80.2707 },
-  { name: 'Brahmaputra Valley (Guwahati)', lat: 26.1445, lon: 91.7362 },
-  { name: 'Kolkata Deltaic Zone', lat: 22.5726, lon: 88.3639 },
-  { name: 'Dehradun Hill Catchment', lat: 30.3165, lon: 78.0322 },
-  { name: 'Delhi NCR', lat: 28.6139, lon: 77.209 },
-  { name: 'Bengaluru Urban', lat: 12.9716, lon: 77.5946 },
+const places = [
+  { name:'Hyderabad Metropolitan Region',lat:17.385,lon:78.4867 }, { name:'Mumbai Metropolitan Region',lat:19.076,lon:72.8777 },
+  { name:'Chennai Coastal Basin',lat:13.0827,lon:80.2707 }, { name:'Brahmaputra Valley (Guwahati)',lat:26.1445,lon:91.7362 },
+  { name:'Kolkata Deltaic Zone',lat:22.5726,lon:88.3639 }, { name:'Dehradun Hill Catchment',lat:30.3165,lon:78.0322 },
+  { name:'Delhi NCR',lat:28.6139,lon:77.209 }, { name:'Bengaluru Urban',lat:12.9716,lon:77.5946 },
 ];
 
-export const Topbar: React.FC<TopbarProps> = ({
-  activeTab,
-  onSelectTab,
-  selectedLocation,
-  onSelectLocation,
-  onRefresh,
-  isRefreshing = false,
-  onOpenLogin,
-  onExportSitrep,
-  onToggleMobileMenu,
-}) => {
-  const { user, isAuthenticated, logout } = useAuth();
+export const Topbar: React.FC<TopbarProps> = ({ colorTheme,onToggleColorTheme,motionEnabled,onToggleMotion,activeTab,onSelectTab,selectedLocation,onSelectLocation,onRefresh,isRefreshing,onOpenLogin,onExportSitrep,onToggleMobileMenu }) => {
   const { t } = useLanguage();
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false);
-  const [geoNotice, setGeoNotice] = useState<string | null>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
-
-  // Close search dropdown when clicking outside
+  const translate = useRef(t);
+  translate.current = t;
+  const { user,isAuthenticated,logout } = useAuth();
+  const [query,setQuery] = useState('');
+  const [results,setResults] = useState<GeocodingResult[]>([]);
+  const [searching,setSearching] = useState(false);
+  const [open,setOpen] = useState(false);
+  const [notice,setNotice] = useState('');
+  const [locating,setLocating] = useState(false);
+  const geoRequest = useRef(0);
+  const showSearch = activeTab !== 'home' && activeTab !== 'overview';
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Debounced geocoding search
-  useEffect(() => {
-    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const results = await searchPlaces(searchQuery);
-        setSearchResults(results.slice(0, 6));
-        setIsDropdownOpen(true);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 280);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Handle explicit "Use My Location" GPS action
-  const handleUseMyLocation = async () => {
-    if (!navigator.geolocation) {
-      setGeoNotice('Geolocation is not supported by your browser.');
-      setTimeout(() => setGeoNotice(null), 4000);
-      return;
-    }
-
-    setGeoLoading(true);
-    setGeoNotice(null);
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        try {
-          const resolvedName = await reverseGeocodeLocation(latitude, longitude);
-          onSelectLocation({
-            name: resolvedName,
-            lat: latitude,
-            lon: longitude,
-          });
-        } catch {
-          onSelectLocation({
-            name: `My Location (${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E)`,
-            lat: latitude,
-            lon: longitude,
-          });
-        } finally {
-          setGeoLoading(false);
-        }
-      },
-      (err) => {
-        setGeoLoading(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setGeoNotice('Location permission was denied. Please select from presets or search.');
-        } else {
-          setGeoNotice('Location request timed out. Please enter an address manually.');
-        }
-        setTimeout(() => setGeoNotice(null), 5000);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
+    if(query.trim().length < 2) { setResults([]);setSearching(false);return; }
+    let current=true;
+    const timer=setTimeout(async()=>{
+      setSearching(true);setNotice('');
+      try { const response=await searchPlaces(query.trim());if(current)setResults(response.slice(0,6)); }
+      catch { if(current)setNotice(translate.current('home.searchFailed')); }
+      finally { if(current)setSearching(false); }
+    },300);
+    return()=>{ current=false;clearTimeout(timer); };
+  },[query]);
+  useEffect(()=>()=>{ geoRequest.current++; },[]);
+  const choose=(place:GeocodingResult)=>{onSelectLocation({ name:place.displayName,lat:place.latitude,lon:place.longitude });setQuery('');setOpen(false);};
+  const gps=()=>{
+    if(!navigator.geolocation){setNotice(t('home.geoUnavailableNotice'));return;}
+    const sequence=++geoRequest.current;setLocating(true);setNotice('');
+    navigator.geolocation.getCurrentPosition(async({coords})=>{
+      let name=`${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`;
+      try { name=await reverseGeocodeLocation(coords.latitude,coords.longitude); } catch { /* Coordinates remain usable. */ }
+      if(sequence!==geoRequest.current)return;
+      onSelectLocation({name,lat:coords.latitude,lon:coords.longitude});setLocating(false);
+    },()=>{if(sequence===geoRequest.current){setLocating(false);setNotice(t('home.geoUnavailableNotice'));}}, { timeout:10000 });
   };
-
-  const handleSelectPlace = (place: GeocodingResult) => {
-    onSelectLocation({
-      name: place.displayName,
-      lat: place.latitude,
-      lon: place.longitude,
-    });
-    setSearchQuery('');
-    setIsDropdownOpen(false);
-  };
-
-  const isOperatorTab = [
-    'overview',
-    'map',
-    'risk',
-    'alerts',
-    'ai',
-    'preparedness',
-    'command3d',
-  ].includes(activeTab);
-
-  return (
-    <header className="bg-charcoal/80 backdrop-blur-xl border-b border-white/10 px-2 sm:px-4 py-2 sticky top-0 z-30 select-none shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
-      {/* Primary Row */}
-      <div className="flex items-center justify-between gap-1.5 sm:gap-3">
-        {/* Left: Mobile Toggle & Brand/Context */}
-        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-          {onToggleMobileMenu && (
-            <button
-              onClick={onToggleMobileMenu}
-              className="p-1.5 rounded-xl hover:bg-white/5 text-jatayu-secondary md:hidden cursor-pointer"
-              aria-label="Toggle Navigation Menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          )}
-
-          <div className="flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-jatayu-primary font-mono tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#00D99A]"></span>
-                {t('brand.name')}
-              </span>
-              <span className="text-[10px] text-jatayu-muted font-sans hidden 2xl:inline">
-                • AI Disaster Intelligence
-              </span>
-            </div>
-          </div>
-
-          {isOperatorTab && (
-            <span className="text-xs font-mono text-emerald-400/90 border-l border-white/10 pl-2 hidden lg:inline flex-shrink-0">
-              {t('topbar.consolePrefix')} / {activeTab}
-            </span>
-          )}
-
-          {/* Public Quick Navigation Links */}
-          {!isOperatorTab && onSelectTab && (
-            <nav className="hidden 2xl:flex items-center gap-1.5 ml-2 flex-shrink-0">
-              {[
-                { id: 'home' as NavigationTab, label: t('nav.home'), icon: <Home className="w-3.5 h-3.5" /> },
-                { id: 'weather' as NavigationTab, label: t('nav.weatherWarnings'), icon: <CloudRain className="w-3.5 h-3.5" /> },
-                { id: 'saferoute' as NavigationTab, label: t('nav.saferoute'), icon: <Navigation2 className="w-3.5 h-3.5" /> },
-                { id: 'facilities' as NavigationTab, label: t('nav.facilities'), icon: <Building2 className="w-3.5 h-3.5" /> },
-                { id: 'research' as NavigationTab, label: t('nav.climateResearch'), icon: <Globe className="w-3.5 h-3.5" /> },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => onSelectTab(item.id)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                    activeTab === item.id
-                      ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/40 shadow-[0_0_12px_rgba(0,217,154,0.2)]'
-                      : 'text-jatayu-secondary hover:text-jatayu-primary hover:bg-white/5'
-                  }`}
-                  title={item.label}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </nav>
-          )}
-        </div>
-
-        {/* Center: Universal Location Search & Sector Preset */}
-        <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 flex-1 max-w-xs sm:max-w-sm lg:max-w-md min-w-0 mx-1 sm:mx-2" ref={searchRef}>
-          <div className="relative flex-1 min-w-[80px] sm:min-w-[100px]">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => {
-                  if (searchResults.length > 0) setIsDropdownOpen(true);
-                }}
-                placeholder={t('home.searchPlaceholder')}
-                className="w-full pl-9 pr-7 py-1.5 text-xs bg-obsidian/90 border border-white/15 rounded-xl text-jatayu-primary focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40 font-sans placeholder:text-jatayu-secondary truncate transition-all shadow-inner"
-              />
-              {isSearching && (
-                <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin absolute right-2.5 top-2.5" />
-              )}
-            </div>
-
-            {/* Autocomplete Dropdown */}
-            {isDropdownOpen && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1.5 bg-charcoal/95 border border-white/15 rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-2xl z-50 max-h-60 overflow-y-auto">
-                <div className="p-2 text-[10px] font-mono text-emerald-400/80 uppercase tracking-wider px-3 border-b border-white/10">
-                  Search Results
-                </div>
-                {searchResults.map((result, idx) => (
-                  <button
-                    key={`${result.latitude}-${result.longitude}-${idx}`}
-                    onClick={() => handleSelectPlace(result)}
-                    className="w-full px-3 py-2.5 text-left hover:bg-white/5 flex items-start gap-2.5 border-b border-white/5 last:border-none transition-colors cursor-pointer"
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-jatayu-primary truncate">
-                        {result.displayName}
-                      </p>
-                      <span className="text-[10px] font-mono text-jatayu-muted">
-                        {result.latitude.toFixed(4)}°N, {result.longitude.toFixed(4)}°E
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* GPS "Use My Location" Action */}
-          <button
-            onClick={handleUseMyLocation}
-            disabled={geoLoading}
-            className="p-1.5 bg-dark-emerald/50 hover:bg-dark-emerald text-emerald-400 rounded-xl border border-emerald-500/40 transition-all flex items-center justify-center flex-shrink-0 cursor-pointer disabled:opacity-50 shadow-[0_0_10px_rgba(0,217,154,0.15)]"
-            title={t('home.useLocationBtn')}
-            aria-label={t('home.useLocationBtn')}
-          >
-            <Compass className={`w-4 h-4 text-emerald-400 ${geoLoading ? 'animate-spin' : ''}`} />
-          </button>
-
-          {/* Preset Selector Dropdown */}
-          <select
-            value={selectedLocation.name}
-            onChange={(e) => {
-              const match = PRESET_LOCATIONS.find((loc) => loc.name === e.target.value);
-              if (match) onSelectLocation(match);
-            }}
-            className="bg-surface-secondary/90 hover:bg-surface-secondary border border-emerald-500/30 rounded-xl px-2.5 py-1.5 text-xs text-jatayu-primary font-medium cursor-pointer outline-none w-[110px] sm:w-[130px] lg:w-[155px] truncate flex-shrink-0 transition-colors"
-            title="Select Target Disaster Sector"
-          >
-            {!PRESET_LOCATIONS.some((loc) => loc.name === selectedLocation.name) && (
-              <option value={selectedLocation.name} className="bg-charcoal text-jatayu-primary">
-                {selectedLocation.name}
-              </option>
-            )}
-            {PRESET_LOCATIONS.map((loc) => (
-              <option key={loc.name} value={loc.name} className="bg-charcoal text-jatayu-primary">
-                {loc.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Right: Language Selector, Export SITREP, Refresh, Login */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 flex-nowrap">
-          {/* Language Selector */}
-          <LanguageSelector className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[11px] sm:text-xs rounded-xl bg-obsidian/70 border-white/10 text-jatayu-primary" />
-
-          {/* Export Situation Report on Operator Console */}
-          {isOperatorTab && onExportSitrep && (
-            <button
-              onClick={onExportSitrep}
-              className="p-1 sm:px-2.5 sm:py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 text-xs font-mono font-bold shadow-[0_0_10px_rgba(245,158,11,0.15)] whitespace-nowrap flex-shrink-0"
-              title={t('sitrep.exportBtn')}
-            >
-              <FileText className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-              <span className="hidden 2xl:inline">{t('sitrep.exportBtn')}</span>
-              <span className="hidden sm:inline 2xl:hidden">SITREP</span>
-            </button>
-          )}
-
-          {/* Refresh Action */}
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className="p-1 sm:px-2.5 sm:py-1 bg-obsidian/60 border border-white/10 hover:bg-white/5 text-jatayu-secondary hover:text-jatayu-primary rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 text-xs font-medium whitespace-nowrap flex-shrink-0"
-              title={t('topbar.refresh')}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 flex-shrink-0 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-              <span className="hidden 2xl:inline">{t('topbar.refresh')}</span>
-            </button>
-          )}
-
-          <div className="h-4 w-px bg-white/10 hidden sm:block flex-shrink-0" />
-
-          {/* Response Console Button / Role Badge */}
-          {isAuthenticated && user ? (
-            <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-dark-emerald/50 border border-emerald-500/40 rounded-xl text-xs text-white flex-shrink-0 whitespace-nowrap shadow-[0_0_12px_rgba(0,217,154,0.15)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0 shadow-[0_0_6px_#00D99A]" />
-              <span className="font-mono text-[10px] font-semibold text-emerald-200 hidden md:inline truncate max-w-[100px]">
-                {user.displayName || user.username}
-              </span>
-              <span className="text-[9px] font-mono px-1.5 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-500/40 rounded-full uppercase font-bold flex-shrink-0">
-                {user.role}
-              </span>
-              <button
-                onClick={logout}
-                className="ml-1 text-slate-400 hover:text-red-400 transition-colors flex items-center gap-1 text-[11px] font-mono uppercase cursor-pointer flex-shrink-0"
-                title="Sign Out"
-              >
-                <LogOut className="w-3 h-3 flex-shrink-0" />
-                <span className="hidden md:inline">{t('topbar.logout')}</span>
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => {
-                if (onOpenLogin) {
-                  onOpenLogin();
-                } else if (onSelectTab && !isOperatorTab) {
-                  onSelectTab('overview');
-                }
-              }}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-dark-emerald/60 hover:bg-dark-emerald text-emerald-300 text-xs font-mono font-bold rounded-xl border border-emerald-500/40 transition-all shadow-[0_0_15px_rgba(0,217,154,0.2)] cursor-pointer whitespace-nowrap flex-shrink-0"
-              title="Access Authorized Response & Researcher Tools"
-            >
-              <Shield className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span className="hidden sm:inline">{t('topbar.commandSignIn')}</span>
-              <span className="sm:hidden text-[10px]">LOGIN</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Row 2: Dedicated Compact Mobile Location Search & Sector Presets */}
-      <div className="flex sm:hidden items-center gap-1.5 mt-2 pt-2 border-t border-white/10 w-full">
-        <div className="relative flex-1 min-w-0">
-          <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-2 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => {
-              if (searchResults.length > 0) setIsDropdownOpen(true);
-            }}
-            placeholder={t('home.searchPlaceholder')}
-            className="w-full pl-7 pr-2 py-1 text-[11px] bg-obsidian/70 border border-white/10 rounded-xl text-jatayu-primary focus:outline-none focus:border-emerald-500 font-sans truncate"
-          />
-        </div>
-        <button
-          onClick={handleUseMyLocation}
-          disabled={geoLoading}
-          className="p-1.5 bg-dark-emerald/50 hover:bg-dark-emerald text-emerald-400 rounded-xl border border-emerald-500/40 flex-shrink-0"
-          title={t('home.useLocationBtn')}
-        >
-          <Compass className={`w-3.5 h-3.5 text-emerald-400 ${geoLoading ? 'animate-spin' : ''}`} />
-        </button>
-        <select
-          value={selectedLocation.name}
-          onChange={(e) => {
-            const match = PRESET_LOCATIONS.find((loc) => loc.name === e.target.value);
-            if (match) onSelectLocation(match);
-          }}
-          className="bg-charcoal border border-white/10 rounded-xl px-2 py-1 text-[11px] text-jatayu-primary font-medium outline-none max-w-[120px] truncate flex-shrink-0"
-        >
-          {PRESET_LOCATIONS.map((loc) => (
-            <option key={loc.name} value={loc.name} className="bg-charcoal text-jatayu-primary">
-              {loc.name.split(' ')[0]}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Geolocation feedback notification banner */}
-      {geoNotice && (
-        <div className="absolute top-full left-4 right-4 mt-2 p-2.5 bg-amber-950/90 border border-amber-500/40 rounded-xl text-amber-200 text-xs flex items-center justify-between z-50 shadow-xl backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            <span>{geoNotice}</span>
-          </div>
-          <button onClick={() => setGeoNotice(null)} className="text-amber-400 font-bold ml-2">
-            ✕
-          </button>
-        </div>
-      )}
-    </header>
-  );
+  const title = { home:t('nav.home'),weather:t('nav.weatherWarnings'),overview:t('nav.overview'),map:t('nav.map'),risk:t('nav.risk'),alerts:t('nav.alerts'),ai:t('nav.ai'),preparedness:t('nav.preparedness'),saferoute:t('nav.saferoute'),facilities:t('nav.facilities'),research:t('nav.climateResearch'),command3d:t('nav.command3d'),admin:'Admin Console' }[activeTab];
+  return <header className={`app-topbar refined-topbar ${showSearch ? 'has-location-search' : ''}`} data-page={activeTab}>
+    <div className="topbar-identity"><button className="topbar-menu" aria-label="Toggle Navigation Menu" onClick={onToggleMobileMenu}><Menu size={19}/></button><button className="topbar-mobile-brand" onClick={()=>onSelectTab?.('home')}>JATAYU</button><div className="topbar-breadcrumb"><span>JATAYU</span><ChevronRight size={12}/><strong>{title}</strong></div></div>
+    {showSearch && <div className="refined-location" onBlur={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setOpen(false);}}>
+      <div className="refined-place-input"><Search size={15}/><input aria-label={t('home.searchLabel')} placeholder={t('home.searchPlaceholder')} value={query} onChange={(event)=>{setQuery(event.target.value);setOpen(true);}} onFocus={()=>setOpen(true)} onKeyDown={(event)=>{if(event.key==='Escape')setOpen(false);if(event.key==='Enter'&&results[0])choose(results[0]);}}/>{searching&&<RefreshCw size={13} className="animate-spin"/>}</div>
+      <button className="topbar-icon" aria-label={t('home.useLocationBtn')} title={t('home.useLocationBtn')} onClick={gps} disabled={locating}><LocateFixed size={16} className={locating?'animate-spin':''}/></button>
+      <select aria-label="Select Target Disaster Sector" value={selectedLocation.name} onChange={(event)=>{const place=places.find((item)=>item.name===event.target.value);if(place)onSelectLocation(place);}}>
+        {!places.some((place)=>place.name===selectedLocation.name)&&<option value={selectedLocation.name}>{selectedLocation.name}</option>}
+        {places.map((place)=><option key={place.name} value={place.name}>{place.name}</option>)}
+      </select>
+      {open&&query.length>=2&&<div className="refined-search-results" role="listbox" aria-label={t('home.searchLabel')}>{notice?<p>{notice}</p>:searching?<p>{t('home.searching')}</p>:results.length?results.map((place)=><button role="option" aria-selected="false" key={`${place.latitude},${place.longitude}`} onMouseDown={(event)=>event.preventDefault()} onClick={()=>choose(place)}><MapPin size={15}/>{place.displayName}</button>):<p>{t('home.noResultsFound')}</p>}</div>}
+    </div>}
+    <div className="topbar-tools"><LanguageSelector/>{onToggleColorTheme && <button className="topbar-icon color-theme-toggle" onClick={onToggleColorTheme} aria-label={t(colorTheme === 'dark' ? 'theme.light' : 'theme.dark')} title={t(colorTheme === 'dark' ? 'theme.light' : 'theme.dark')}>{colorTheme === 'dark' ? <Sun size={17}/> : <Moon size={17}/>}</button>}{onToggleMotion && <button className="topbar-icon weather-motion-toggle" onClick={onToggleMotion} aria-pressed={motionEnabled} aria-label={motionEnabled ? 'Pause background animation' : 'Play background animation'} title={motionEnabled ? 'Pause background animation' : 'Play background animation'}>{motionEnabled ? <Pause size={15}/> : <Play size={15}/>}</button>}{onExportSitrep&&<button className="topbar-icon" onClick={onExportSitrep} title="Export Situation Report" aria-label={t('sitrep.exportBtn')}><FileText size={16}/></button>}{onRefresh&&<button className="topbar-icon" onClick={onRefresh} disabled={isRefreshing} title={t('topbar.refresh')} aria-label={t('topbar.refresh')}><RefreshCw size={16} className={isRefreshing?'animate-spin':''}/></button>}
+      {isAuthenticated&&user?<div className="topbar-account"><span><strong>{user.displayName||user.username}</strong><small>{user.role}</small></span><button className="topbar-icon" onClick={logout} title="Sign Out" aria-label={t('topbar.logout')}><LogOut size={15}/></button></div>:<button className="topbar-signin" onClick={()=>onOpenLogin?onOpenLogin():onSelectTab?.('overview')} aria-label={t('topbar.commandSignIn')} title="Access Authorized Response & Researcher Tools"><Shield size={15}/><span>{t('topbar.commandSignIn')}</span></button>}
+    </div>
+    {notice&&!(open&&query.length>=2)&&<div className="topbar-notice" role="status">{notice}<button aria-label="Dismiss" onClick={()=>setNotice('')}><X size={14}/></button></div>}
+  </header>;
 };

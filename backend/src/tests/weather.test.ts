@@ -44,12 +44,23 @@ const mockValidPayload = {
   },
 };
 
+function completePayload() {
+  const start = Date.parse('2026-10-08T15:00:00Z');
+  const hourly: Record<string, unknown[]> = {};
+  for (const [field, values] of Object.entries(mockValidPayload.hourly)) {
+    hourly[field] = Array.from({ length: 96 }, (_, i) => field === 'time'
+      ? new Date(start + i * 3_600_000).toISOString().slice(0, 16)
+      : values[(i + 1) % values.length]);
+  }
+  return { ...mockValidPayload, hourly };
+}
+
 describe('Weather API Integration & Route Validation', () => {
   let fetchSpy: any;
 
   beforeEach(() => {
     fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
-      return new Response(JSON.stringify(mockValidPayload), {
+      return new Response(JSON.stringify(completePayload()), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -75,7 +86,7 @@ describe('Weather API Integration & Route Validation', () => {
     expect(res.body.units).toBeDefined();
     expect(res.body.units.temperature).toBe('°C');
     expect(res.body.units.surfacePressure).toBe('hPa');
-    expect(res.body.sourceType).toBe('OBSERVED');
+    expect(res.body.sourceType).toBe('MODEL_ANALYSIS');
     expect(res.body.sourceAttribution).toContain('Open-Meteo');
   });
 
@@ -90,7 +101,7 @@ describe('Weather API Integration & Route Validation', () => {
     expect(typeof res.body.accumulations.next72hRainfallMm).toBe('number');
     expect(res.body.soilProfile).toBeDefined();
     expect(['LOW', 'MODERATE', 'HIGH', 'SATURATED']).toContain(res.body.soilProfile.saturationTier);
-    expect(res.body.dataSource.type).toBe('OFFICIAL_FORECAST');
+    expect(res.body.dataSource.type).toBe('NUMERICAL_FORECAST');
   });
 
   it('GET /api/weather/current should reject missing coordinates with HTTP 400', async () => {
@@ -124,7 +135,7 @@ describe('Open-Meteo Response Parser & Soil Saturation Unit Tests', () => {
     expect(obs.soilMoisture0To7cm).toBe(0.35); // matched current hour 15:00
     expect(obs.weatherDescription).toBe('Slight rain');
     expect(obs.isStale).toBe(false);
-    expect(obs.sourceType).toBe('OBSERVED');
+    expect(obs.sourceType).toBe('MODEL_ANALYSIS');
   });
 
   it('parseCurrentObservation marks data as stale when timestamp is > 90 minutes old', () => {
@@ -141,22 +152,43 @@ describe('Open-Meteo Response Parser & Soil Saturation Unit Tests', () => {
     expect(obs.isStale).toBe(true);
   });
 
-  it('parseCurrentObservation gracefully handles missing optional fields without NaN or crashing', () => {
-    const minimalPayload = {
-      current: {
-        time: '2026-10-09T15:00',
-        temperature_2m: 22.0,
-        // apparent_temperature, precipitation, wind_gusts, surface_pressure omitted
-      },
-    };
-    const obs = parseCurrentObservation(minimalPayload, 19.076, 72.8777, 'Sparse Station', new Date().toISOString());
+  it('rejects incomplete current data rather than fabricating dry weather', () => {
+    const payload = { ...mockValidPayload, current: { ...mockValidPayload.current, precipitation: null } };
+    expect(() => parseCurrentObservation(payload, 17.385, 78.4867, 'Hyderabad', '2026-10-09T15:05:00Z'))
+      .toThrow('measurement unavailable: precipitation');
+  });
 
-    expect(obs.temperatureC).toBe(22.0);
-    expect(obs.apparentTemperatureC).toBe(22.0); // falls back to temperature_2m
-    expect(obs.precipitationMm).toBe(0);
-    expect(obs.windGustsKmh).toBe(0);
-    expect(obs.surfacePressureHpa).toBe(1013.25);
-    expect(obs.soilMoisture0To7cm).toBeUndefined();
+  it('matches a 15-minute current timestamp to its actual hour and soil values', () => {
+    const payload = { ...mockValidPayload, current: { ...mockValidPayload.current, time: '2026-10-09T15:45' } };
+    const forecast = parseForecastResponse(payload, 17.385, 78.4867, 'Hyderabad', '2026-10-09T15:45:00Z', Date.now());
+    expect(forecast.hourly[0].time).toBe('2026-10-09T15:00:00.000Z');
+    expect(forecast.current.soilMoisture0To7cm).toBe(0.35);
+    expect(forecast.accumulations.next24hRainfallMm).toBe(10.5);
+  });
+
+  it('rejects null forecast rainfall instead of including it as zero in totals', () => {
+    const payload = { ...mockValidPayload, hourly: { ...mockValidPayload.hourly, precipitation: [2, null, 6] } };
+    expect(() => parseForecastResponse(payload, 17.385, 78.4867, 'Hyderabad', '2026-10-09T15:05:00Z', Date.now()))
+      .toThrow('measurement unavailable: precipitation');
+  });
+
+  it('requests 72 rolling forecast hours and 24 previous hours', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(completePayload())));
+    try {
+      const result = await new WeatherService().getForecast(17.385, 78.4867, 'Hyderabad');
+      const url = new URL(String(spy.mock.calls[0][0]));
+      expect(url.searchParams.get('forecast_hours')).toBe('72');
+      expect(url.searchParams.get('past_hours')).toBe('24');
+      expect(result.hourly).toHaveLength(72);
+      expect(result.hourly[0].time).toBe('2026-10-09T15:00:00.000Z');
+    } finally { spy.mockRestore(); }
+  });
+
+  it('does not claim a short provider response is a complete 72-hour forecast', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(mockValidPayload)));
+    try {
+      await expect(new WeatherService().getForecast(17.385, 78.4867)).rejects.toThrow('forecast incomplete');
+    } finally { spy.mockRestore(); }
   });
 
   it('parseCurrentObservation throws descriptive error for empty or invalid payload', () => {
@@ -173,7 +205,7 @@ describe('Open-Meteo Response Parser & Soil Saturation Unit Tests', () => {
     expect(evaluateSoilSaturation(0.32).saturationTier).toBe('HIGH');
     expect(evaluateSoilSaturation(0.22).saturationTier).toBe('MODERATE');
     expect(evaluateSoilSaturation(0.10).saturationTier).toBe('LOW');
-    expect(evaluateSoilSaturation(undefined).saturationTier).toBe('LOW');
+    expect(evaluateSoilSaturation(undefined).saturationTier).toBe('UNKNOWN');
   });
 
   it('WeatherService throws on upstream network failure and NEVER returns fabricated data', async () => {

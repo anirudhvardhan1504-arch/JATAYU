@@ -123,13 +123,13 @@ describe('JATAYU Phase 3A — FacilitiesPage Dedicated Public Directory', () => 
 
     // Filter to Hospitals only
     fireEvent.click(screen.getByRole('button', { name: /^Hospitals & Trauma/i }));
-    expect(screen.getByText('Government Multi Super Speciality Hospital')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Government Multi Super Speciality Hospital')).toBeInTheDocument());
     expect(screen.queryByText('Saidapet Community Evacuation Relief Centre')).toBeNull();
 
     // Filter to Relief Shelters only
     fireEvent.click(screen.getByRole('button', { name: /^Relief Shelters/i }));
     expect(screen.queryByText('Government Multi Super Speciality Hospital')).toBeNull();
-    expect(screen.getByText('Saidapet Community Evacuation Relief Centre')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Saidapet Community Evacuation Relief Centre')).toBeInTheDocument());
   });
 
   it('filters facilities by search query term', async () => {

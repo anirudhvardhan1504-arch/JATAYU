@@ -28,7 +28,7 @@ export const OperationalStatusBar: React.FC<OperationalStatusBarProps> = ({
   }, []);
 
   return (
-    <div className="bg-obsidian/90 backdrop-blur-md text-jatayu-secondary text-xs border-b border-white/10 px-4 py-2 flex flex-wrap items-center justify-between gap-3 select-none">
+    <div className="app-statusbar bg-obsidian/90 backdrop-blur-md text-jatayu-secondary text-xs border-b border-white/10 px-4 py-2 flex flex-wrap items-center justify-between gap-3 select-none">
       {/* Left: System state and telemetry */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">

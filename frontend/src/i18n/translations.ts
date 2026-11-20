@@ -1,14 +1,24 @@
+import { teluguTranslations } from './telugu';
 import { SupportedLanguage, TranslationKey } from './types';
 
-export const translations: Record<SupportedLanguage, Record<TranslationKey, string>> = {
+const baseTranslations: Record<Exclude<SupportedLanguage, 'te'>, Record<TranslationKey, string>> = {
   en: {
+    'theme.light': 'Switch to light mode',
+    'theme.dark': 'Switch to dark mode',
+    'home.cachedWarnings': 'Cached warning information',
+    'home.cachedWarningsNote': 'Latest available IMD check; refresh for current information. Checked:',
+    'ai.unavailableTitle': 'Local assistant unavailable',
+    'ai.unavailableNotice': 'Start Ollama with the configured model and retry. Weather and emergency information remain available in the other tabs.',
+    'facilities.filterTrauma': 'Trauma care',
+    'facilities.filterAmbulance': 'Ambulance services',
+    'facilities.directoryListing': 'Directory listing',
     // Brand & Header
     'brand.name': 'JATAYU',
     'brand.tagline': 'Disaster Intelligence & Response',
     'brand.network': 'JATAYU DISASTER NETWORK',
     'header.meteorology': 'METEOROLOGY: OPEN-METEO ECMWF/GFS',
-    'header.aiEngineActive': 'AI ENGINE: OPENROUTER (ACTIVE)',
-    'header.aiEngineScaffolding': 'AI ENGINE: OPENROUTER (SCAFFOLDING READY)',
+    'header.aiEngineActive': 'AI ENGINE: OLLAMA (LOCAL)',
+    'header.aiEngineScaffolding': 'AI ENGINE: OLLAMA (WAITING)',
     'header.disclaimer': 'PHASE 1 SCAFFOLDING — INDICATIVE ASSESSMENTS STRICTLY SEGREGATED',
     'header.sync': 'SYNCHRONIZING...',
 
@@ -18,7 +28,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKey, stri
     'nav.map': 'Tactical Map',
     'nav.risk': 'Flood Risk Matrix',
     'nav.alerts': 'Alert Monitoring',
-    'nav.ai': 'Command AI (OpenRouter)',
+    'nav.ai': 'JATAYU Assistant',
     'nav.preparedness': 'Preparedness Protocol',
     'nav.command3d': '3D Command Globe',
     'badge.live': 'LIVE',
@@ -105,10 +115,10 @@ export const translations: Record<SupportedLanguage, Record<TranslationKey, stri
     'ai.title': 'Operational AI Intelligence Console',
     'ai.subtitle':
       'Server-side conversational reasoning engine with real-time telemetry for {location}',
-    'ai.badge': 'OPENROUTER INTEGRATION',
+    'ai.badge': 'LOCAL OLLAMA',
     'ai.gateway': 'GATEWAY:',
     'ai.active': 'ACTIVE',
-    'ai.scaffolding': 'SCAFFOLDING (DETERMINISTIC SITREP)',
+    'ai.scaffolding': 'UNAVAILABLE',
     'ai.preset1': 'Generate operational SITREP with current sector telemetry',
     'ai.preset2': 'Should I evacuate or stay indoors?',
     'ai.preset3': 'Where is the nearest verified shelter?',
@@ -116,7 +126,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKey, stri
     'ai.inputPlaceholder': 'Ask JATAYU about local weather, flood risk, or emergency help...',
     'ai.send': 'Send message',
     'ai.initialGreeting':
-      'JATAYU Operational Disaster Intelligence Agent online.\nCurrent Focus: {location} ({lat}°N, {lon}°E)\n\nI am connected via server-side OpenRouter to assist emergency coordinators, provide structured SITREPs, and cross-reference standard operating procedures. How can I assist this operational shift?',
+      'JATAYU Operational Disaster Intelligence Agent online.\nCurrent Focus: {location} ({lat}°N, {lon}°E)\n\nI am connected via local Ollama to assist emergency coordinators, provide structured SITREPs, and cross-reference standard operating procedures. How can I assist this operational shift?',
 
     // Preparedness & Map
     'prep.title': 'Civil Defense Preparedness Protocols',
@@ -292,13 +302,22 @@ export const translations: Record<SupportedLanguage, Record<TranslationKey, stri
   },
 
   ta: {
+    'theme.light': 'ஒளி நிறத்திற்கு மாற்றவும்',
+    'theme.dark': 'இருண்ட நிறத்திற்கு மாற்றவும்',
+    'home.cachedWarnings': 'சேமிக்கப்பட்ட எச்சரிக்கை தகவல்',
+    'home.cachedWarningsNote': 'கடைசியாக கிடைத்த IMD தகவல். தற்போதைய நிலைக்கு புதுப்பிக்கவும். நேரம்:',
+    'ai.unavailableTitle': 'உள்ளூர் உதவியாளர் கிடைக்கவில்லை',
+    'ai.unavailableNotice': 'Ollama சேவையைத் தொடங்கி மீண்டும் முயற்சிக்கவும். மற்ற பக்கங்களில் வானிலை மற்றும் அவசர உதவியைப் பார்க்கலாம்.',
+    'facilities.filterTrauma': 'விபத்து சிகிச்சை',
+    'facilities.filterAmbulance': 'ஆம்புலன்ஸ் சேவைகள்',
+    'facilities.directoryListing': 'மருத்துவமனைப் பட்டியல்',
     // Brand & Header
     'brand.name': 'ஜடாயு',
     'brand.tagline': 'பேரிடர் நுண்ணறிவு மற்றும் பதிலளிப்பு',
     'brand.network': 'ஜடாயு பேரிடர் கட்டமைப்பு',
     'header.meteorology': 'வானிலை: ஓபன்-மீட்டியோ ECMWF/GFS',
-    'header.aiEngineActive': 'AI இயந்திரம்: ஓபன்ரூட்டர் (செயலில்)',
-    'header.aiEngineScaffolding': 'AI இயந்திரம்: ஓபன்ரூட்டர் (சாரக்கட்டு தயார்)',
+    'header.aiEngineActive': 'AI இயந்திரம்: Ollama (செயலில்)',
+    'header.aiEngineScaffolding': 'AI இயந்திரம்: Ollama (சாரக்கட்டு தயார்)',
     'header.disclaimer': 'கட்டம் 1 கட்டமைப்பு — உத்தேச மதிப்பீடுகள் கண்டிப்பாக பிரிக்கப்பட்டுள்ளன',
     'header.sync': 'ஒத்திசைக்கப்படுகிறது...',
 
@@ -308,7 +327,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKey, stri
     'nav.map': 'தந்திரோபாய வரைபடம்',
     'nav.risk': 'வெள்ள அபாய அணி',
     'nav.alerts': 'எச்சரிக்கை கண்காணிப்பு',
-    'nav.ai': 'கட்டளை AI (ஓபன்ரூட்டர்)',
+    'nav.ai': 'கட்டளை AI (Ollama)',
     'nav.preparedness': 'தயார்நிலை நெறிமுறைகள்',
     'nav.command3d': '3D கட்டளை பூகோளம்',
     'badge.live': 'நேரடி',
@@ -395,7 +414,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKey, stri
     'ai.title': 'செயல்பாட்டு AI நுண்ணறிவு கன்சோல்',
     'ai.subtitle':
       'நிகழ்நேர தொலைத்தொடர்புடன் கூடிய சர்வர் பக்க உரையாடல் பகுத்தறிவு இயந்திரம் ({location})',
-    'ai.badge': 'ஓபன்ரூட்டர் ஒருங்கிணைப்பு',
+    'ai.badge': 'Ollama ஒருங்கிணைப்பு',
     'ai.gateway': 'கேட்வே:',
     'ai.active': 'செயலில்',
     'ai.scaffolding': 'சாரக்கட்டு (திட்டவட்டமான SITREP)',
@@ -582,6 +601,15 @@ export const translations: Record<SupportedLanguage, Record<TranslationKey, stri
   },
 
   hi: {
+    'theme.light': 'हल्का रंग चुनें',
+    'theme.dark': 'गहरा रंग चुनें',
+    'home.cachedWarnings': 'सहेजी गई चेतावनी जानकारी',
+    'home.cachedWarningsNote': 'अंतिम उपलब्ध IMD जानकारी। ताज़ा स्थिति के लिए रीफ़्रेश करें। समय:',
+    'ai.unavailableTitle': 'स्थानीय सहायक उपलब्ध नहीं है',
+    'ai.unavailableNotice': 'Ollama शुरू करके फिर प्रयास करें। अन्य टैब पर मौसम और आपातकालीन जानकारी उपलब्ध है।',
+    'facilities.filterTrauma': 'ट्रॉमा देखभाल',
+    'facilities.filterAmbulance': 'एम्बुलेंस सेवाएँ',
+    'facilities.directoryListing': 'निर्देशिका प्रविष्टि',
     // Brand & Header
     'brand.name': 'जटायु',
     'brand.tagline': 'आपदा खुफिया एवं प्रतिक्रिया',
@@ -871,3 +899,5 @@ export const translations: Record<SupportedLanguage, Record<TranslationKey, stri
     'sitrep.generating': 'स्थिति रिपोर्ट तैयार की जा रही है...',
   },
 };
+
+export const translations: Record<SupportedLanguage, Record<TranslationKey, string>> = { ...baseTranslations, te: { ...baseTranslations.en, ...teluguTranslations } };

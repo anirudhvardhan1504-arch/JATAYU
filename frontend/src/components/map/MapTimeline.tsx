@@ -234,23 +234,23 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
 
   return (
     <div
-      className={`pointer-events-auto w-full max-w-4xl bg-navy-900/95 backdrop-blur-md border border-navy-700/80 rounded-xl px-3 py-1.5 shadow-2xl flex flex-row items-center justify-between gap-2 text-slate-200 font-mono text-xs select-none transition-all ${className}`}
+      className={`map-timeline pointer-events-auto w-full max-w-4xl bg-slate-50 backdrop-blur-md border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xl flex flex-row items-center justify-between gap-2 text-slate-700 font-mono text-xs select-none transition-all ${className}`}
       aria-label="Map Animation Timeline"
     >
       {/* 1. Category Switcher (LIVE OBS vs 72H FORECAST) */}
       {liveActive && forecastActive && (
-        <div className="flex items-center bg-navy-950 p-0.5 rounded-lg border border-navy-800 flex-shrink-0">
+        <div className="flex items-center bg-slate-50 p-0.5 rounded-lg border border-slate-200 flex-shrink-0">
           <button
             onClick={() => onChangeTimelineMode && onChangeTimelineMode('live')}
             aria-label="Switch to Live observations timeline"
             title="Focus timeline on Live observations (Radar / Satellite)"
             className={`px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
               effectiveMode === 'live'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-blue-600 text-slate-900 shadow-sm'
+                : 'text-slate-700 hover:text-slate-700'
             }`}
           >
-            <Radio className="w-3 h-3 text-blue-300" />
+            <Radio className="w-3 h-3 text-blue-800" />
             <span>LIVE OBS</span>
             {(isPlaying || isSatellitePlaying) && (
               <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-ping" />
@@ -262,11 +262,11 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
             title="Focus timeline on 72-Hour NWP numerical forecasts"
             className={`px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
               effectiveMode === 'forecast'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-emerald-600 text-slate-900 shadow-sm'
+                : 'text-slate-700 hover:text-slate-700'
             }`}
           >
-            <CloudRain className="w-3 h-3 text-emerald-300" />
+            <CloudRain className="w-3 h-3 text-emerald-800" />
             <span>72H FORECAST</span>
             {isForecastPlaying && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping" />
@@ -277,18 +277,18 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
 
       {/* 2. Sub-Track Driver Selector within Live Mode (Satellite vs Radar) */}
       {effectiveMode === 'live' && bothLiveActive && (
-        <div className="flex items-center bg-navy-950 p-0.5 rounded-lg border border-navy-800 flex-shrink-0">
+        <div className="flex items-center bg-slate-50 p-0.5 rounded-lg border border-slate-200 flex-shrink-0">
           <button
             onClick={() => onChangeDriver && onChangeDriver('satellite')}
             aria-label="Focus timeline on NASA GIBS Satellite"
             title="Focus timeline on NASA GIBS Satellite"
             className={`px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
               effectiveLiveDriver === 'satellite'
-                ? 'bg-cyan-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-cyan-600 text-slate-900 shadow-sm'
+                : 'text-slate-700 hover:text-slate-700'
             }`}
           >
-            <Globe className="w-3 h-3 text-cyan-300" />
+            <Globe className="w-3 h-3 text-cyan-800" />
             <span>SAT</span>
             {isSatellitePlaying && (
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping" />
@@ -300,11 +300,11 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
             title="Focus timeline on RainViewer Radar"
             className={`px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
               effectiveLiveDriver === 'radar'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-blue-600 text-slate-900 shadow-sm'
+                : 'text-slate-700 hover:text-slate-700'
             }`}
           >
-            <Radio className="w-3 h-3 text-blue-300" />
+            <Radio className="w-3 h-3 text-blue-800" />
             <span>RADAR</span>
             {isPlaying && (
               <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-ping" />
@@ -319,7 +319,7 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
         <button
           onClick={handleTogglePlay}
           disabled={totalFrames <= 1 || (effectiveMode === 'live' && isHDMode)}
-          className={`w-7 h-7 rounded-lg text-white flex items-center justify-center shadow-md transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed ${
+          className={`w-7 h-7 rounded-lg text-slate-900 flex items-center justify-center shadow-md transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed ${
             isForecastTrack
               ? 'bg-emerald-600 hover:bg-emerald-500'
               : isSatTrack
@@ -346,7 +346,7 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
         <button
           onClick={handleStepBack}
           disabled={totalFrames <= 1 || (effectiveMode === 'live' && isHDMode)}
-          className="p-1.5 rounded-md bg-navy-800 hover:bg-navy-700 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
+          className="p-1.5 rounded-md bg-slate-50 hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
           title={isForecastTrack ? 'Previous forecast hour (T-1h)' : 'Previous frame'}
           aria-label={isForecastTrack ? 'Previous forecast hour' : 'Previous frame'}
         >
@@ -357,7 +357,7 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
         <button
           onClick={handleStepForward}
           disabled={totalFrames <= 1 || (effectiveMode === 'live' && isHDMode)}
-          className="p-1.5 rounded-md bg-navy-800 hover:bg-navy-700 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
+          className="p-1.5 rounded-md bg-slate-50 hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
           title={isForecastTrack ? 'Next forecast hour (T+1h)' : 'Next frame'}
           aria-label={isForecastTrack ? 'Next forecast hour' : 'Next frame'}
         >
@@ -365,7 +365,7 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
         </button>
 
         {/* Current Timestamp & Latency Badge */}
-        <div className="px-2 py-0.5 rounded-md bg-navy-950 border border-navy-800 flex items-center gap-1.5 text-[11px] max-w-[240px] sm:max-w-none truncate">
+        <div className="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 flex items-center gap-1.5 text-[11px] max-w-[240px] sm:max-w-none truncate">
           {isForecastTrack && forecastInfo ? (
             <>
               <span
@@ -373,20 +373,20 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
                   isForecastPlaying ? 'bg-emerald-400 animate-ping' : 'bg-emerald-400'
                 }`}
               />
-              <span className="font-bold text-amber-300 font-mono whitespace-nowrap">
+              <span className="font-bold text-amber-800 font-mono whitespace-nowrap">
                 {forecastInfo.stepLabel}
               </span>
-              <span className="font-bold text-white whitespace-nowrap">
+              <span className="font-bold text-slate-900 whitespace-nowrap">
                 {forecastInfo.formattedUtc}
               </span>
-              <span className="text-[10px] text-cyan-300 hidden md:inline">
+              <span className="text-[10px] text-cyan-800 hidden md:inline">
                 {forecastInfo.model}
               </span>
-              <span className="text-[9px] px-1 py-0.2 bg-navy-800 text-slate-300 rounded border border-navy-700 hidden lg:inline">
+              <span className="text-[9px] px-1 py-0.2 bg-slate-50 text-slate-700 rounded border border-slate-200 hidden lg:inline">
                 {forecastInfo.runCycle}
               </span>
               {forecastInfo.isFallback && (
-                <span className="bg-amber-900/80 text-amber-300 px-1 rounded text-[8.5px] font-bold">
+                <span className="bg-amber-50 text-amber-800 px-1 rounded text-[8.5px] font-bold">
                   FAILOVER
                 </span>
               )}
@@ -399,10 +399,10 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
           ) : isHDMode ? (
             <>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span className="font-bold text-emerald-300 truncate">
+              <span className="font-bold text-emerald-800 truncate">
                 {hdProductName}
               </span>
-              <span className="text-[10px] text-slate-400 hidden sm:inline">
+              <span className="text-[10px] text-slate-700 hidden sm:inline">
                 {hdCompositeDate} (Daily Swath)
               </span>
             </>
@@ -415,16 +415,16 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
                     : 'bg-slate-400'
                 }`}
               />
-              <span className="font-bold text-white whitespace-nowrap">
+              <span className="font-bold text-slate-900 whitespace-nowrap">
                 {currentSatFrame ? currentSatFrame.utcLabel : 'Loading'}
               </span>
-              <span className="text-[10px] text-slate-400 hidden md:inline">
+              <span className="text-[10px] text-slate-700 hidden md:inline">
                 ({currentSatFrame?.label})
               </span>
-              <span className="text-[10px] text-cyan-400 whitespace-nowrap">
+              <span className="text-[10px] text-cyan-800 whitespace-nowrap">
                 {currentSatFrame ? currentSatFrame.relativeTime : ''}
               </span>
-              <span className="text-[9px] px-1 py-0.2 bg-navy-800 text-amber-300 rounded border border-amber-900/50 hidden lg:inline">
+              <span className="text-[9px] px-1 py-0.2 bg-slate-50 text-amber-800 rounded border border-amber-900/50 hidden lg:inline">
                 ~40m latency
               </span>
             </>
@@ -435,10 +435,10 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
                   isNowcast ? 'bg-amber-400 animate-ping' : 'bg-blue-500 animate-pulse'
                 }`}
               />
-              <span className="font-bold text-white whitespace-nowrap">
+              <span className="font-bold text-slate-900 whitespace-nowrap">
                 {currentRadarFrame ? currentRadarFrame.label : 'Live Stream'}
               </span>
-              <span className={`text-[10px] ${isNowcast ? 'text-amber-400' : 'text-blue-400'} whitespace-nowrap`}>
+              <span className={`text-[10px] ${isNowcast ? 'text-amber-800' : 'text-blue-800'} whitespace-nowrap`}>
                 {currentRadarFrame ? currentRadarFrame.relativeTime : ''}
               </span>
             </>
@@ -456,7 +456,7 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
           onChange={(e) => handleSeek(Number(e.target.value))}
           disabled={totalFrames <= 1 || (effectiveMode === 'live' && isHDMode)}
           aria-label={isForecastTrack ? 'Forecast Timestep Scrubber' : 'Timeline Scrubber'}
-          className={`w-full h-1 bg-navy-800 rounded cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed ${
+          className={`w-full h-1 bg-slate-50 rounded cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed ${
             isForecastTrack
               ? 'accent-emerald-500'
               : isSatTrack
@@ -464,7 +464,7 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
               : 'accent-blue-500'
           }`}
         />
-        <span className="text-[9px] text-slate-400 whitespace-nowrap hidden sm:inline">
+        <span className="text-[9px] text-slate-700 whitespace-nowrap hidden sm:inline">
           {isForecastTrack
             ? `${forecastInfo?.stepLabel || 'T+00h'} (${currentFrameIdx + 1}/72)`
             : isHDMode
@@ -476,8 +476,8 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
       </div>
 
       {/* 5. Playback Speed Selector (0.5x, 1x, 2x) */}
-      <div className="flex items-center gap-1 text-[9px] border-l border-navy-800 pl-2 flex-shrink-0">
-        <span className="text-slate-400 hidden sm:inline">SPD:</span>
+      <div className="flex items-center gap-1 text-[9px] border-l border-slate-200 pl-2 flex-shrink-0">
+        <span className="text-slate-700 hidden sm:inline">SPD:</span>
         {[
           { label: '0.5x', ms: 1600 },
           { label: '1x', ms: 800 },
@@ -490,11 +490,11 @@ export const MapTimeline: React.FC<MapTimelineProps> = ({
             className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed ${
               activeSpeed === spd.ms
                 ? isForecastTrack
-                  ? 'bg-emerald-600 text-white font-bold'
+                  ? 'bg-emerald-600 text-slate-900 font-bold'
                   : isSatTrack
-                  ? 'bg-cyan-600 text-white font-bold'
-                  : 'bg-blue-600 text-white font-bold'
-                : 'bg-navy-800 text-slate-400 hover:text-white'
+                  ? 'bg-cyan-600 text-slate-900 font-bold'
+                  : 'bg-blue-600 text-slate-900 font-bold'
+                : 'bg-slate-50 text-slate-700 hover:text-slate-900'
             }`}
           >
             {spd.label}

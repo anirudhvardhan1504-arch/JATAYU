@@ -30,6 +30,7 @@ import {
   CheckCircle,
   Mountain,
 } from 'lucide-react';
+import './globe-workspace.css';
 import { useAuth } from '../../context/AuthContext';
 import {
   getOperationalSectors,
@@ -158,11 +159,9 @@ export const Command3DView: React.FC<Command3DViewProps> = ({
   const [inspectError, setInspectError] = useState<string | null>(null);
 
   // Cyclone Intelligence States (Zoom Earth Inspired)
-  const [selectedCyclone, setSelectedCyclone] = useState<CycloneEvent | null>(VERIFIED_HISTORICAL_CYCLONES[0]);
-  const [selectedTrackPoint, setSelectedTrackPoint] = useState<CycloneTrackPoint | null>(
-    VERIFIED_HISTORICAL_CYCLONES[0].track[4] // Peak off Chennai
-  );
-  const [isStormPanelOpen, setIsStormPanelOpen] = useState<boolean>(true);
+  const [selectedCyclone, setSelectedCyclone] = useState<CycloneEvent | null>(null);
+  const [selectedTrackPoint, setSelectedTrackPoint] = useState<CycloneTrackPoint | null>(null);
+  const [isStormPanelOpen, setIsStormPanelOpen] = useState<boolean>(false);
   const [stormTab, setStormTab] = useState<'DETAILS' | 'TABLE' | 'ARCHIVES'>('DETAILS');
   const [activeStormTypeFilter, setActiveStormTypeFilter] = useState<'ALL' | 'OBSERVED' | 'FORECAST'>('ALL');
 
@@ -379,6 +378,7 @@ export const Command3DView: React.FC<Command3DViewProps> = ({
       }
 
       viewer = new Cesium.Viewer(containerRef.current, {
+        baseLayer: false,
         baseLayerPicker: false,
         geocoder: false,
         homeButton: false,
@@ -397,7 +397,7 @@ export const Command3DView: React.FC<Command3DViewProps> = ({
       // Atmosphere, depth, lighting & curvature
       if (viewer.scene) {
         if (viewer.scene.globe) {
-          viewer.scene.globe.enableLighting = true;
+          viewer.scene.globe.enableLighting = false;
           viewer.scene.globe.showGroundAtmosphere = true;
           viewer.scene.globe.depthTestAgainstTerrain = Boolean(terrainInstance);
           if (Cesium.Color?.fromCssColorString) {
@@ -434,14 +434,14 @@ export const Command3DView: React.FC<Command3DViewProps> = ({
       // Initial camera setup looking at Indian Ocean / subcontinent
       const initialLat = selectedLocation?.lat ?? 13.0827;
       const initialLon = selectedLocation?.lon ?? 80.2707;
-      const initialHeight = 1800000;
+      const initialHeight = 16000000;
 
       if (viewer.camera?.setView) {
         viewer.camera.setView({
-          destination: Cesium.Cartesian3.fromDegrees(initialLon + 1.5, initialLat - 3.5, initialHeight),
+          destination: Cesium.Cartesian3.fromDegrees(initialLon, initialLat, initialHeight),
           orientation: {
             heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-40),
+            pitch: Cesium.Math.toRadians(-90),
             roll: 0.0,
           },
         });
@@ -885,6 +885,7 @@ export const Command3DView: React.FC<Command3DViewProps> = ({
     if (coordMatch) {
       const lat = parseFloat(coordMatch[1]);
       const lon = parseFloat(coordMatch[3]);
+      if (Math.abs(lat) > 90 || Math.abs(lon) > 180) { setSearchQuery(''); return; }
       handleSearchSelect({ name: `Coordinates ${lat.toFixed(3)}, ${lon.toFixed(3)}`, lat, lon });
       return;
     }
@@ -1063,15 +1064,15 @@ ${selectedCyclone.track
     : CLASSIFICATION_COLORS.CYCLONIC_STORM;
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-navy-950 flex flex-col select-none">
+    <div className="globe-workspace w-full h-full relative overflow-hidden bg-navy-950 flex flex-col select-none" aria-label="3D weather globe">
       {/* Cesium 3D Planetary Canvas Container */}
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
 
       {/* Floating Tactical Overlay System */}
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 sm:p-4 overflow-hidden z-10">
+      <div className="globe-overlay absolute inset-0 pointer-events-none flex flex-col justify-between p-3 sm:p-4 overflow-hidden z-10">
         
         {/* Top Intelligence & Search Header Bar (Zoom Earth Style) */}
-        <div className="pointer-events-auto flex items-center justify-between gap-2.5 flex-wrap bg-slate-900/85 backdrop-blur-md border border-slate-700/70 rounded-xl px-3 py-2 shadow-2xl">
+        <div className="globe-topbar pointer-events-auto flex items-center justify-between gap-2.5 flex-wrap bg-slate-900/85 backdrop-blur-md border border-slate-700/70 rounded-xl px-3 py-2 shadow-2xl">
           {/* Left Brand & Return */}
           <div className="flex items-center gap-2.5">
             <button
@@ -1088,10 +1089,10 @@ ${selectedCyclone.track
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-cyan-400 animate-pulse" />
               <span className="font-mono text-xs font-bold text-white tracking-wide uppercase">
-                GOD’S EYE VIEW — CESIUM 3D COMMAND GLOBE
+                3D EARTH — WEATHER EXPLORER
               </span>
               <span className="hidden lg:inline-flex px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/80 text-[10px] font-mono text-cyan-300 font-semibold">
-                CYCLONE INTELLIGENCE
+                SATELLITE BASEMAP · NOT LIVE
               </span>
               <span className="hidden xl:inline-flex px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">
                 ROLE: {user?.role || 'CITIZEN'}
@@ -1110,7 +1111,7 @@ ${selectedCyclone.track
                 onFocus={() => {
                   if (searchResults.length > 0) setShowSearchDropdown(true);
                 }}
-                placeholder="Search city, basin, or coords..."
+                aria-label="Search the 3D globe" placeholder="Search city or coordinates..."
                 className="w-full pl-8 pr-16 py-1 bg-slate-950/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-sans transition-colors"
               />
               <button
@@ -1204,7 +1205,7 @@ ${selectedCyclone.track
         )}
 
         {/* Middle Viewport Layer Controls & Storm Information Panel */}
-        <div className="flex items-start justify-between gap-4 my-auto overflow-hidden pointer-events-none relative z-10 w-full">
+        <div className="globe-panels flex items-start justify-between gap-4 my-auto overflow-hidden pointer-events-none relative z-10 w-full">
           
           {/* Left: Collapsible Map Layers Panel (Zoom Earth Style) */}
           <div className="pointer-events-auto flex flex-col items-start gap-2">
@@ -1523,7 +1524,7 @@ ${selectedCyclone.track
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping" />
                 <span className="font-bold text-amber-300">
-                  {selectedCyclone ? selectedCyclone.name : 'CYCLONE TRACK'}
+                  {selectedCyclone ? selectedCyclone.name : 'HISTORICAL STORMS'}
                 </span>
                 <span className="text-[10px] text-slate-400 font-semibold">
                   {currentDisplayPoint ? `${currentDisplayPoint.windKmh} km/h` : ''}
@@ -1943,7 +1944,7 @@ ${selectedCyclone.track
         )}
 
         {/* Bottom Floating Interactive Timeline & Camera Controls (Zoom Earth Style) */}
-        <div className="pointer-events-auto flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-2xl px-4 py-2.5 shadow-2xl z-10">
+        <div className="globe-playback pointer-events-auto flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-2xl px-4 py-2.5 shadow-2xl z-10">
           
           {/* Left: Playback Controls */}
           <div className="flex items-center gap-2">
@@ -2035,6 +2036,7 @@ ${selectedCyclone.track
                   setActiveFrameIndex(idx);
                 }
               }}
+              aria-label="3D map timeline"
               className="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
           </div>

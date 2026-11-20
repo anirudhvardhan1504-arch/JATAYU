@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { OpenRouterService } from '../services/openrouter.service.js';
+import { OllamaService } from '../services/ollama.service.js';
 import { UserStore } from '../auth/userStore.js';
 import { getSharedUserStore } from '../auth/defaultStore.js';
 
@@ -10,10 +10,10 @@ export interface HealthRouterDependencies {
 
 export function createHealthRouter(deps: HealthRouterDependencies = {}): Router {
   const router = Router();
-  const aiService = deps.aiService || new OpenRouterService();
+  const aiService = deps.aiService || new OllamaService();
 
-  router.get('/', (_req: Request, res: Response) => {
-    const aiStatus = aiService.getStatus();
+  router.get('/', async (_req: Request, res: Response) => {
+    const aiStatus = await aiService.getStatus();
     let dbStatus = 'ready';
     let isDbHealthy = true;
 

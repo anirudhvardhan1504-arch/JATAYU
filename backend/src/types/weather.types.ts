@@ -1,4 +1,4 @@
-export type DataSourceType = 'OBSERVED' | 'OFFICIAL_FORECAST' | 'INDICATIVE_MODEL' | 'DEMO_DATA';
+export type DataSourceType = 'OBSERVED' | 'MODEL_ANALYSIS' | 'NUMERICAL_FORECAST' | 'OFFICIAL_FORECAST' | 'INDICATIVE_MODEL' | 'DEMO_DATA';
 
 export interface GeoLocation {
   latitude: number;
@@ -46,6 +46,7 @@ export interface CurrentWeatherObservation {
 }
 
 export interface HourlyForecastDataPoint {
+  weatherCode?: number;
   time: string; // ISO 8601
   temperatureC: number;
   relativeHumidityPercent: number;
@@ -65,7 +66,7 @@ export interface SoilSaturationProfile {
   moisture0To7cm?: number;
   moisture7To28cm?: number;
   moisture28To100cm?: number;
-  saturationTier: 'LOW' | 'MODERATE' | 'HIGH' | 'SATURATED';
+  saturationTier: 'UNKNOWN' | 'LOW' | 'MODERATE' | 'HIGH' | 'SATURATED';
   description: string;
 }
 

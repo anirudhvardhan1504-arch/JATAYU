@@ -1,4 +1,4 @@
-export type DataSourceType = 'OBSERVED' | 'OFFICIAL_FORECAST' | 'INDICATIVE_MODEL' | 'DEMO_DATA';
+export type DataSourceType = 'OBSERVED' | 'MODEL_ANALYSIS' | 'NUMERICAL_FORECAST' | 'OFFICIAL_FORECAST' | 'INDICATIVE_MODEL' | 'DEMO_DATA';
 
 export interface GeoLocation {
   latitude: number;
@@ -46,6 +46,7 @@ export interface CurrentWeatherObservation {
 }
 
 export interface HourlyForecastDataPoint {
+  weatherCode?: number;
   time: string;
   temperatureC: number;
   relativeHumidityPercent: number;
@@ -65,7 +66,7 @@ export interface SoilSaturationProfile {
   moisture0To7cm?: number;
   moisture7To28cm?: number;
   moisture28To100cm?: number;
-  saturationTier: 'LOW' | 'MODERATE' | 'HIGH' | 'SATURATED';
+  saturationTier: 'UNKNOWN' | 'LOW' | 'MODERATE' | 'HIGH' | 'SATURATED';
   description: string;
 }
 
@@ -230,7 +231,7 @@ export interface AIChatResponse {
 
 export interface AIStatusResponse {
   configured: boolean;
-  provider: 'OpenRouter';
+  provider: 'OpenRouter' | 'Ollama';
   model: string;
   message: string;
 }
@@ -368,6 +369,12 @@ export interface EmergencyFacility {
   district?: string;
   phone?: string;
   source: string;
+  sourceUrl?: string;
+  capabilitySourceUrl?: string;
+  sourceReviewedAt?: string;
+  coordinateSourceUrl?: string;
+  capabilities?: string[];
+  outsideSearchRadius?: boolean;
   sourceProvenance?: SourceProvenance;
   sourceUpdateDate?: string;
   verificationStatus: VerificationStatus;

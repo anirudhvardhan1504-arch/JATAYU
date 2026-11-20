@@ -369,7 +369,7 @@ export const PreparednessPage: React.FC<PreparednessPageProps> = ({
                     weather.isStale ? 'text-amber-400 font-bold' : 'text-emerald-400'
                   }`}
                 >
-                  {weather.isStale ? 'STALE (>90m OBS)' : 'OBSERVED (OPEN-METEO)'}
+                  {weather.isStale ? 'STALE (>90m OBS)' : weather.sourceType === 'MODEL_ANALYSIS' ? 'MODEL-DERIVED (OPEN-METEO)' : weather.sourceType}
                 </span>
               </div>
             ) : (

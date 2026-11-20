@@ -28,6 +28,15 @@ import { WeatherService } from './weather.service.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export function facilityMatchesCategory(facility: EmergencyFacility, category = 'ALL'): boolean {
+  const requested = category.toUpperCase();
+  if (requested === 'ALL' || facility.category === requested) return true;
+  if (requested === 'HOSPITAL') return ['TRAUMA_CENTRE', 'ORR_TRAUMA_CENTRE'].includes(facility.category);
+  if (requested === 'TRAUMA_CENTRE') return facility.category === 'ORR_TRAUMA_CENTRE' || !!facility.capabilities?.includes('Trauma care');
+  if (requested === 'AMBULANCE_SERVICE') return !!facility.capabilities?.includes('Ambulance service');
+  return false;
+}
+
 export class RoutingServiceError extends Error {
   code: string;
   statusCode: number;
@@ -357,7 +366,7 @@ export class RouteService {
     let list = [...this.facilities];
 
     if (category && category !== 'ALL') {
-      list = list.filter((f) => f.category.toUpperCase() === category.toUpperCase());
+      list = list.filter((f) => facilityMatchesCategory(f, category));
     }
 
     if (
@@ -411,14 +420,14 @@ export class RouteService {
       return {
         facilities: list,
         count: list.length,
-        sourceAttribution: 'Greater Chennai Corporation (GCC) & TNSDMA Official Emergency Registries',
+        sourceAttribution: 'Curated public directories: Greater Chennai Corporation, Telangana State Portal and hospital providers',
         disclaimer:
-          'Facility records are officially verified from public civil defense directories. Real-time vacancy and operational availability are designated UNKNOWN and require verification upon arrival or through official emergency dispatch.',
+          'Directory entries retain their individual source and verification status. Real-time vacancy and operational availability are designated UNKNOWN and require verification upon arrival or through official emergency dispatch.',
       };
     }
 
-    // Clamp radius: between 1,000m and 50,000m
-    const clampedRadius = Math.max(1000, Math.min(50000, radiusMeters));
+    // Match the public API and UI radius limit (100 km).
+    const clampedRadius = Math.max(1000, Math.min(100000, radiusMeters));
     const cacheKey = `${nearLat.toFixed(3)},${nearLon.toFixed(3)},${clampedRadius},${category}`;
     const cached = this.facilityCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
@@ -433,12 +442,12 @@ export class RouteService {
         [f.location.longitude, f.location.latitude]
       );
       if (distMeters <= clampedRadius) {
-        if (category === 'ALL' || f.category.toUpperCase() === category.toUpperCase()) {
+        if (category === 'ALL' || facilityMatchesCategory(f, category)) {
           curatedMatches.push({
             ...f,
             distanceKm: parseFloat((distMeters / 1000).toFixed(2)),
-            sourceProvenance: 'CURATED_SOURCE',
-            verificationStatus: 'OFFICIALLY_VERIFIED',
+            sourceProvenance: f.sourceProvenance || 'CURATED_SOURCE',
+            verificationStatus: f.verificationStatus,
             currentAvailability: 'UNKNOWN',
           });
         }
@@ -450,8 +459,6 @@ export class RouteService {
     let overpassSucceeded = false;
 
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4500);
 
       const overpassQuery = `
         [out:json][timeout:5];
@@ -467,19 +474,18 @@ export class RouteService {
       const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'JATAYU-Disaster-Intelligence-Platform/2.0 (contact@jatayu.gov.in)',
+          'User-Agent': 'JATAYU-Disaster-Intelligence-Platform/2.0',
         },
-        signal: controller.signal,
+        signal: AbortSignal.timeout(4500),
       });
-      clearTimeout(timeout);
 
       if (res.ok) {
         const data = (await res.json()) as any;
         if (data && Array.isArray(data.elements)) {
           overpassSucceeded = true;
           for (const el of data.elements) {
-            const lat = el.lat || el.center?.lat;
-            const lon = el.lon || el.center?.lon;
+            const lat = el.lat ?? el.center?.lat;
+            const lon = el.lon ?? el.center?.lon;
             if (typeof lat !== 'number' || typeof lon !== 'number') continue;
 
             const tags = el.tags || {};
@@ -527,13 +533,14 @@ export class RouteService {
                 : `Vicinity coordinates (${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E)`;
 
             communityFacilities.push({
-              id: `osm_${el.id}`,
+              id: `osm_${el.type || 'node'}_${el.id}`,
               name,
               category: cat,
               location: { latitude: lat, longitude: lon },
               address,
               phone: tags.phone || tags['contact:phone'] || undefined,
               source: 'OpenStreetMap Overpass Community Registry',
+              sourceUrl: `https://www.openstreetmap.org/${el.type === 'way' ? 'way' : 'node'}/${el.id}`,
               sourceProvenance: 'COMMUNITY_MAPPED',
               verificationStatus: 'GENERAL_DIRECTORY',
               currentAvailability: 'UNKNOWN',
@@ -550,13 +557,14 @@ export class RouteService {
     // 3. Deduplicate and merge: Curated entries take priority
     const merged: EmergencyFacility[] = [...curatedMatches];
     for (const com of communityFacilities) {
-      const isDup = merged.some(
-        (m) =>
-          haversineDistanceMeters(
-            [m.location.longitude, m.location.latitude],
-            [com.location.longitude, com.location.latitude]
-          ) < 250 || m.name.toLowerCase() === com.name.toLowerCase()
-      );
+      const normalizeName = (name: string) => name.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+      const isDup = merged.some((m) => m.id === com.id || (
+        normalizeName(m.name) === normalizeName(com.name) &&
+        haversineDistanceMeters(
+          [m.location.longitude, m.location.latitude],
+          [com.location.longitude, com.location.latitude]
+        ) < 250
+      ));
       if (!isDup) {
         merged.push(com);
       }
@@ -568,8 +576,9 @@ export class RouteService {
       for (const f of fallbackCurated) {
         merged.push({
           ...f,
-          sourceProvenance: 'CURATED_SOURCE',
-          verificationStatus: 'OFFICIALLY_VERIFIED',
+          sourceProvenance: f.sourceProvenance || 'CURATED_SOURCE',
+          verificationStatus: f.verificationStatus,
+          outsideSearchRadius: true,
           currentAvailability: 'UNKNOWN',
         });
       }
@@ -582,9 +591,9 @@ export class RouteService {
       count: merged.length,
       sourceAttribution: overpassSucceeded
         ? 'OpenStreetMap Community Emergency Registry & Official Civil Defense Directories'
-        : 'Greater Chennai Corporation (GCC) & TNSDMA Official Emergency Registries (Fallback)',
+        : 'Curated public directories: Greater Chennai Corporation, Telangana State Portal and hospital providers (Fallback)',
       disclaimer:
-        'Facility records are aggregated from verified civil defense directories and OpenStreetMap community infrastructure. Operational availability and current vacancy are designated strictly UNKNOWN and require verification on arrival or through official disaster dispatch.',
+        'Facility records are aggregated from sourced directories and unverified OpenStreetMap community records. Entries marked outsideSearchRadius are fallback results beyond the requested radius. Operational availability and current vacancy are designated strictly UNKNOWN and require verification on arrival or through official disaster dispatch.',
     };
 
     this.facilityCache.set(cacheKey, { timestamp: Date.now(), data: response });

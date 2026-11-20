@@ -433,5 +433,241 @@
     "verificationStatus": "OFFICIALLY_VERIFIED",
     "currentAvailability": "UNKNOWN",
     "operationalStatus": "Verification required on arrival"
+  },
+  {
+    "id": "fac_hyd_osmania",
+    "name": "Osmania General Hospital",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.37289,
+      "longitude": 78.47351
+    },
+    "address": "Afzal Gunj, Hyderabad, Telangana 500012",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "040-24600146",
+    "source": "Telangana State Portal",
+    "sourceUrl": "https://www.telangana.gov.in/Contacts/Hospitals/",
+    "coordinateSourceUrl": "https://www.openstreetmap.org/way/238302531",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "General hospital"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity."
+  },
+  {
+    "id": "fac_hyd_gandhi",
+    "name": "Gandhi Hospital, Secunderabad",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.42467,
+      "longitude": 78.5044
+    },
+    "address": "Musheerabad / Padmarao Nagar, Secunderabad, Telangana",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "9849902979",
+    "source": "Telangana State Portal",
+    "sourceUrl": "https://www.telangana.gov.in/Contacts/Hospitals/",
+    "coordinateSourceUrl": "https://www.openstreetmap.org/node/6490450001",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "General hospital"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity."
+  },
+  {
+    "id": "fac_hyd_nims",
+    "name": "Nizam’s Institute of Medical Sciences (NIMS)",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.42191,
+      "longitude": 78.45155
+    },
+    "address": "Punjagutta, Hyderabad, Telangana 500082",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "040-23489999",
+    "source": "Telangana State Portal",
+    "sourceUrl": "https://www.telangana.gov.in/Contacts/Hospitals/",
+    "coordinateSourceUrl": "https://www.openstreetmap.org/way/237976870",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "General hospital"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity."
+  },
+  {
+    "id": "fac_hyd_niloufer",
+    "name": "Niloufer Hospital",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.39863,
+      "longitude": 78.46138
+    },
+    "address": "Red Hills, Hyderabad, Telangana 500004",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "040-23314095",
+    "source": "Telangana State Portal",
+    "sourceUrl": "https://www.telangana.gov.in/Contacts/Hospitals/",
+    "coordinateSourceUrl": "https://www.openstreetmap.org/way/238195448",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "Women and children"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity."
+  },
+  {
+    "id": "fac_hyd_apollo_hyderguda",
+    "name": "Apollo Hospitals, Hyderguda",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.3994805,
+      "longitude": 78.4793278
+    },
+    "address": "Plot 3-5-836 to 838, Hyderguda-Basheerbagh Road, Hyderabad, Telangana 500029",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "040-23231380",
+    "source": "Apollo Hospitals",
+    "sourceUrl": "https://www.apollohospitals.com/hospitals/apollo-hospitals-hyderguda",
+    "coordinateSourceUrl": "https://www.apollohospitals.com/hospitals/apollo-hospitals-hyderguda",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "Emergency care",
+      "Trauma care",
+      "Intensive care",
+      "Ambulance service"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity."
+  },
+  {
+    "id": "fac_hyd_yashoda_secunderabad",
+    "name": "Yashoda Hospitals, Secunderabad",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.4421265,
+      "longitude": 78.4969974
+    },
+    "address": "Alexander Road, Secunderabad, Hyderabad, Telangana 500003",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "08065906165",
+    "source": "Yashoda Hospitals",
+    "sourceUrl": "https://www.yashodahospitals.com/contact-us",
+    "coordinateSourceUrl": "https://www.yashodahospitals.com/contact-us",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "Emergency care",
+      "Trauma care"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity.",
+    "capabilitySourceUrl": "https://www.yashodahospitals.com/specialities/emergency-services"
+  },
+  {
+    "id": "fac_hyd_yashoda_somajiguda",
+    "name": "Yashoda Hospitals, Somajiguda",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.4245312,
+      "longitude": 78.4567138
+    },
+    "address": "Rajbhavan Road, Somajiguda, Hyderabad, Telangana 500082",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "08065906165",
+    "source": "Yashoda Hospitals",
+    "sourceUrl": "https://www.yashodahospitals.com/contact-us",
+    "coordinateSourceUrl": "https://www.yashodahospitals.com/contact-us",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "Emergency care",
+      "Trauma care"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity.",
+    "capabilitySourceUrl": "https://www.yashodahospitals.com/specialities/emergency-services"
+  },
+  {
+    "id": "fac_hyd_yashoda_malakpet",
+    "name": "Yashoda Hospitals, Malakpet",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.3744847,
+      "longitude": 78.4998599
+    },
+    "address": "Nalgonda X Roads, Malakpet, Hyderabad, Telangana 500036",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "08065906165",
+    "source": "Yashoda Hospitals",
+    "sourceUrl": "https://www.yashodahospitals.com/contact-us",
+    "coordinateSourceUrl": "https://www.yashodahospitals.com/contact-us",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "Emergency care",
+      "Trauma care"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity.",
+    "capabilitySourceUrl": "https://www.yashodahospitals.com/specialities/emergency-services"
+  },
+  {
+    "id": "fac_hyd_yashoda_hitec",
+    "name": "Yashoda Hospitals, Hitec City",
+    "category": "HOSPITAL",
+    "location": {
+      "latitude": 17.4620761,
+      "longitude": 78.3844152
+    },
+    "address": "Kothaguda, Hitec City, Telangana 500084",
+    "state": "Telangana",
+    "district": "Hyderabad metropolitan area",
+    "phone": "08065906165",
+    "source": "Yashoda Hospitals",
+    "sourceUrl": "https://www.yashodahospitals.com/contact-us",
+    "coordinateSourceUrl": "https://www.yashodahospitals.com/contact-us",
+    "sourceReviewedAt": "2026-11-20",
+    "sourceProvenance": "OFFICIAL_SOURCE",
+    "verificationStatus": "GENERAL_DIRECTORY",
+    "currentAvailability": "UNKNOWN",
+    "capabilities": [
+      "Emergency care",
+      "Trauma care"
+    ],
+    "operationalStatus": "Directory information only; call to confirm services, availability and entrance.",
+    "notes": "Campus/reference point, not a verified emergency entrance. Source review does not establish current operation or capacity.",
+    "capabilitySourceUrl": "https://www.yashodahospitals.com/specialities/emergency-services"
   }
 ]

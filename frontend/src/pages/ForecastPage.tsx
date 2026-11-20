@@ -168,14 +168,14 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
   }, [forecast]);
 
   return (
-    <div className="space-y-6 pb-12 font-sans">
+    <div className="forecast-workspace space-y-5 pb-6 font-sans">
       {/* Top Header & Context Bar */}
       <div className="bento-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400">
             <Compass className="w-4 h-4 text-emerald-400" />
-            <span>NUMERICAL WEATHER PREDICTION OBSERVATORY</span>
-            <Badge variant="cyan" size="sm">LIVE NWP</Badge>
+            <span>Weather & outlook</span>
+            <Badge variant="cyan" size="sm">Numerical forecast</Badge>
           </div>
           <h1 className="text-2xl font-bold text-jatayu-primary mt-1.5 flex items-center gap-2 flex-wrap">
             <span>{location.name}</span>
@@ -189,7 +189,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
             )}
           </h1>
           <p className="text-xs text-jatayu-secondary mt-1 max-w-2xl leading-relaxed">
-            High-resolution multi-variable meteorological forecast powered by ECMWF IFS & DWD ICON NWP models.
+            Hourly numerical forecasts and model-derived current conditions from Open-Meteo.
           </p>
         </div>
 
@@ -207,7 +207,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
             className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-medium rounded-xl shadow-subtle flex items-center gap-2 transition-all cursor-pointer"
           >
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span>Official Alerts ({officialAlerts.length})</span>
+            <span>{alertFeed?.feedStatus === 'LIVE_VERIFIED' ? `Official alerts (${officialAlerts.length})` : 'Warning feed unavailable'}</span>
           </button>
         </div>
       </div>
@@ -253,9 +253,9 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
       )}
 
       {/* 1. CURRENT CONDITIONS HERO & METRICS GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="forecast-current-grid grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Main Observation Hero Card */}
-        <div className="bento-card p-6 relative overflow-hidden bg-gradient-to-br from-charcoal via-dark-emerald/40 to-charcoal border border-emerald-500/30 flex flex-col justify-between shadow-panel">
+        <div className="forecast-current-card bento-card p-6 relative overflow-hidden bg-gradient-to-br from-charcoal via-dark-emerald/40 to-charcoal border border-emerald-500/30 flex flex-col justify-between shadow-panel">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono uppercase tracking-wider text-emerald-400 font-semibold flex items-center gap-1.5">
@@ -302,9 +302,9 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
         </div>
 
         {/* Detailed Metrics Grid (2 cols) */}
-        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="forecast-metric-grid lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
           {/* Rain Rate */}
-          <div className="bento-card p-4.5 flex flex-col justify-between">
+          <div className="bento-card p-4 flex flex-col justify-between">
             <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
                 <CloudRain className="w-4 h-4 text-cyan-400" />
@@ -323,7 +323,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
           </div>
 
           {/* 24h & 72h Rain Accumulations */}
-          <div className="bento-card p-4.5 flex flex-col justify-between">
+          <div className="bento-card p-4 flex flex-col justify-between">
             <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
@@ -342,7 +342,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
           </div>
 
           {/* Wind Speed & Gusts */}
-          <div className="bento-card p-4.5 flex flex-col justify-between">
+          <div className="bento-card p-4 flex flex-col justify-between">
             <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
                 <Wind className="w-4 h-4 text-teal-400" />
@@ -358,7 +358,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
           </div>
 
           {/* Relative Humidity */}
-          <div className="bento-card p-4.5 flex flex-col justify-between">
+          <div className="bento-card p-4 flex flex-col justify-between">
             <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
                 <Droplets className="w-4 h-4 text-sky-400" />
@@ -369,12 +369,12 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
               {weather ? `${weather.relativeHumidityPercent}%` : '--'}
             </div>
             <div className="mt-1 text-xs text-jatayu-secondary">
-              Surface saturation level
+              Relative humidity
             </div>
           </div>
 
           {/* Surface Pressure */}
-          <div className="bento-card p-4.5 flex flex-col justify-between">
+          <div className="bento-card p-4 flex flex-col justify-between">
             <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
                 <Gauge className="w-4 h-4 text-amber-400" />
@@ -385,19 +385,19 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
               {weather ? `${weather.surfacePressureHpa} hPa` : '--'}
             </div>
             <div className="mt-1 text-xs text-jatayu-secondary">
-              Sea-level normalized
+              At local elevation
             </div>
           </div>
 
           {/* Soil Moisture */}
-          <div className="bento-card p-4.5 flex flex-col justify-between">
+          <div className="bento-card p-4 flex flex-col justify-between">
             <div className="flex items-center justify-between text-xs font-mono text-jatayu-secondary uppercase">
               <span className="flex items-center gap-1.5">
                 <Layers className="w-4 h-4 text-emerald-400" />
                 <span>Soil Moisture</span>
               </span>
               <span className="text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded-md font-mono font-bold">
-                {forecast?.soilProfile.saturationTier || 'LOW'}
+                {forecast?.soilProfile.saturationTier || 'UNKNOWN'}
               </span>
             </div>
             <div className="mt-2 text-2xl font-extrabold text-jatayu-primary font-mono">
@@ -420,7 +420,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-emerald-400" />
             <h2 className="text-sm font-bold text-jatayu-primary uppercase font-mono tracking-wider">
-              24-Hour Hourly Forecast Strip
+              Hourly outlook
             </h2>
           </div>
           <span className="text-xs font-mono text-jatayu-muted">
@@ -470,7 +470,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-emerald-400" />
             <h2 className="text-sm font-bold text-jatayu-primary uppercase font-mono tracking-wider">
-              Weather Trend Telemetry
+              Weather trends
             </h2>
           </div>
 
@@ -541,46 +541,46 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
-                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#B5C5BF' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#B5C5BF' }} unit="°" />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#647D8A' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#647D8A' }} unit="°" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#101817', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#F0F7F4', fontSize: 12 }}
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#304C5C', fontSize: 12 }}
                   formatter={(value: any) => [`${value}°C`, 'Temperature']}
                   labelFormatter={(l, items) => items[0]?.payload?.fullTime || l}
                 />
-                <Area type="monotone" dataKey="temperature" stroke="#EF4444" strokeWidth={2.5} fillOpacity={1} fill="url(#tempGradient)" />
+                <Area type="monotone" dataKey="temperature" stroke="#578A9F" strokeWidth={2.5} fillOpacity={1} fill="url(#tempGradient)" />
               </AreaChart>
             </ResponsiveContainer>
           ) : activeChartTab === 'precip' ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
-                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#B5C5BF' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#B5C5BF' }} unit="mm" />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#647D8A' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#647D8A' }} unit="mm" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#101817', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#F0F7F4', fontSize: 12 }}
-                  formatter={(val: any, name: string) => [
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#304C5C', fontSize: 12 }}
+                  formatter={(val: any, name: string): [string, string] => [
                     name === 'rainMm' ? `${val} mm` : `${val}%`,
                     name === 'rainMm' ? 'Precipitation' : 'Probability',
                   ]}
                   labelFormatter={(l, items) => items[0]?.payload?.fullTime || l}
                 />
-                <Bar dataKey="rainMm" fill="#00D99A" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="rainMm" fill="#83AABD" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
-                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#B5C5BF' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#B5C5BF' }} unit="km/h" />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#647D8A' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#647D8A' }} unit="km/h" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#101817', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#F0F7F4', fontSize: 12 }}
-                  formatter={(val: any, name: string) => [`${val} km/h`, name === 'windSpeed' ? 'Sustained Wind' : 'Wind Gusts']}
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, color: '#304C5C', fontSize: 12 }}
+                  formatter={(val: any, name: string): [string, string] => [`${val} km/h`, name === 'windSpeed' ? 'Sustained Wind' : 'Wind Gusts']}
                   labelFormatter={(l, items) => items[0]?.payload?.fullTime || l}
                 />
-                <Line type="monotone" dataKey="windSpeed" stroke="#42F5B0" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="windGusts" stroke="#F59E0B" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+                <Line type="monotone" dataKey="windSpeed" stroke="#337F79" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="windGusts" stroke="#B28B55" strokeWidth={2} strokeDasharray="4 4" dot={false} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8, color: '#B5C5BF' }} />
               </LineChart>
             </ResponsiveContainer>
@@ -594,11 +594,11 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-emerald-400" />
             <h2 className="text-sm font-bold text-jatayu-primary uppercase font-mono tracking-wider">
-              7-Day Extended Weather Outlook
+              Multi-day outlook
             </h2>
           </div>
           <span className="text-xs font-mono text-jatayu-muted">
-            Aggregated from verified NWP data
+            Available forecast hours grouped by day · partial days included
           </span>
         </div>
 
@@ -660,17 +660,17 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({
         <div className="flex items-center justify-between font-mono text-[11px] uppercase">
           <span className="flex items-center gap-1.5 font-bold text-jatayu-primary">
             <Info className="w-4 h-4 text-emerald-400" />
-            <span>OPERATIONAL METEOROLOGICAL PROVENANCE</span>
+            <span>Sources & freshness</span>
           </span>
-          <span className="text-emerald-400 font-bold">VERIFIED REAL-TIME STREAM</span>
+          <span className="text-emerald-400 font-bold">Open-Meteo</span>
         </div>
         <p className="leading-relaxed font-sans text-jatayu-secondary">
-          Weather telemetry and multi-day projections are derived directly from the Open-Meteo operational API integrating the European Centre for Medium-Range Weather Forecasts (ECMWF IFS) and Deutscher Wetterdienst (DWD ICON). No synthetic or fabricated weather data is rendered. Missing variables are flagged explicitly.
+          Model-derived conditions and forecasts are supplied by Open-Meteo using automatic model selection. They are separate from official warnings and direct station measurements. Check source times before making decisions.
         </p>
         <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-jatayu-muted pt-2 border-t border-white/10">
-          <div>MODEL GENERATION: <strong className="text-jatayu-primary">{forecast?.generationTimeMs || 15} ms</strong></div>
+          <div>REQUEST PROCESSING: <strong className="text-jatayu-primary">{forecast?.generationTimeMs || 15} ms</strong></div>
           <div>FETCHED AT: <strong className="text-jatayu-primary">{forecast?.fetchedAt ? new Date(forecast.fetchedAt).toLocaleTimeString() : 'Current session'}</strong></div>
-          <div>DATA TRUST TIER: <strong className="text-emerald-300 font-bold">OFFICIAL_FORECAST</strong></div>
+          <div>DATA TRUST TIER: <strong className="text-emerald-300 font-bold">NUMERICAL_FORECAST</strong></div>
         </div>
       </div>
     </div>

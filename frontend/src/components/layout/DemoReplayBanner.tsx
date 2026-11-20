@@ -16,10 +16,10 @@ export const DemoReplayBanner: React.FC<DemoReplayBannerProps> = ({
 }) => {
   if (!isReplayMode) {
     return (
-      <div className="bg-slate-900 border-b border-slate-800 px-4 py-1.5 flex items-center justify-between text-xs text-slate-400">
+      <div className="mode-banner bg-slate-900 border-b border-slate-800 px-4 py-1.5 flex items-center justify-between text-xs text-slate-400">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="font-medium text-slate-300">Live Operational Telemetry Active</span>
+          <span className="font-medium text-slate-300">Live data mode</span>
         </div>
         <button
           onClick={() => onToggleReplay(true)}
@@ -27,7 +27,7 @@ export const DemoReplayBanner: React.FC<DemoReplayBannerProps> = ({
           title="Switch to recorded historical disaster telemetry for offline evaluation"
         >
           <Play className="w-3 h-3" />
-          <span>Launch Recorded Demo Replay</span>
+          <span>Demo replay</span>
         </button>
       </div>
     );
@@ -37,7 +37,7 @@ export const DemoReplayBanner: React.FC<DemoReplayBannerProps> = ({
     <div
       role="region"
       aria-label="Demo Replay Notification"
-      className="bg-amber-500 text-slate-950 px-4 py-2 flex flex-wrap items-center justify-between shadow-md text-xs sm:text-sm font-medium z-50 border-b border-amber-600"
+      className="replay-mode-banner bg-amber-500 text-slate-950 px-4 py-2 flex flex-wrap items-center justify-between shadow-md text-xs sm:text-sm font-medium z-50 border-b border-amber-600"
     >
       <div className="flex items-center gap-2.5 my-0.5">
         <span className="flex items-center gap-1 px-2 py-0.5 bg-black text-amber-400 font-bold rounded uppercase tracking-wider text-[10px]">

@@ -23,7 +23,7 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
   isNationalMode = false,
   className = '',
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   // If nothing with a legend is enabled, don't display
   if (!showRadar && !showSatellite && !showSimulation && !activeForecastLayer && !showDistrictImpact) {
@@ -32,17 +32,17 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
 
   return (
     <div
-      className={`bg-navy-900/95 backdrop-blur-md border border-navy-700/80 rounded-xl p-2 shadow-2xl text-slate-300 font-mono text-[9px] pointer-events-auto transition-all select-none w-52 ${className}`}
+      className={`bg-slate-50 backdrop-blur-md border border-slate-200 rounded-xl p-2 shadow-2xl text-slate-700 font-mono text-[9px] pointer-events-auto transition-all select-none w-52 ${className}`}
       aria-label="Map Visual Legends"
     >
-      <div className="flex items-center justify-between pb-1 mb-1 border-b border-navy-800 text-slate-400 font-semibold gap-1.5">
+      <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-200 text-slate-700 font-semibold gap-1.5">
         <div className="flex items-center gap-1">
-          <Layers className="w-3 h-3 text-amber-400" />
+          <Layers className="w-3 h-3 text-amber-800" />
           <span className="uppercase tracking-wider">MAP LEGENDS</span>
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-0.5 hover:bg-navy-800 rounded text-slate-400 hover:text-white cursor-pointer"
+          className="p-0.5 hover:bg-slate-50 rounded text-slate-700 hover:text-slate-900 cursor-pointer"
           title={isCollapsed ? 'Expand legend' : 'Collapse legend'}
           aria-label={isCollapsed ? 'Expand legend' : 'Collapse legend'}
         >
@@ -55,12 +55,12 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
           {/* 1. Radar Reflectivity Legend */}
           {showRadar && (
             <div>
-              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
+              <div className="flex items-center justify-between text-slate-700 mb-0.5 text-[8.5px]">
                 <span className="font-semibold">RADAR REFLECTIVITY (dBZ)</span>
-                <span className="text-sky-400">RainViewer</span>
+                <span className="text-sky-800">RainViewer</span>
               </div>
               <div className="w-full h-2 rounded bg-gradient-to-r from-[#4A90E2] via-[#50E3C2] via-[#F8E71C] via-[#F5A623] to-[#D0021B]" />
-              <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+              <div className="flex justify-between text-[8px] text-slate-700 mt-0.5">
                 <span>10 (Light)</span>
                 <span>35 (Mod)</span>
                 <span>50 (Hvy)</span>
@@ -71,21 +71,21 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
 
           {/* 1b. Satellite Imagery Legend */}
           {showSatellite && (
-            <div className="pt-1.5 border-t border-navy-800">
-              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
-                <span className="font-semibold text-cyan-400">
+            <div className="pt-1.5 border-t border-slate-200">
+              <div className="flex items-center justify-between text-slate-700 mb-0.5 text-[8.5px]">
+                <span className="font-semibold text-cyan-800">
                   {satelliteProductKey === 'ir'
                     ? 'SATELLITE CLEAN IR (Band 13)'
                     : satelliteProductKey === 'airmass'
                     ? 'AIR MASS RGB COMPOSITE'
                     : 'OPTICAL TRUE COLOR'}
                 </span>
-                <span className="text-slate-500">GIBS</span>
+                <span className="text-slate-700">GIBS</span>
               </div>
               {satelliteProductKey === 'ir' ? (
                 <>
                   <div className="w-full h-2 rounded bg-gradient-to-r from-[#1E293B] via-[#475569] via-[#0284C7] via-[#DC2626] to-[#FFFFFF]" />
-                  <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+                  <div className="flex justify-between text-[8px] text-slate-700 mt-0.5">
                     <span>+30°C</span>
                     <span>0°C</span>
                     <span>-40°C</span>
@@ -93,11 +93,11 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
                   </div>
                 </>
               ) : satelliteProductKey === 'airmass' ? (
-                <div className="text-[8px] text-slate-400 leading-tight">
-                  <span className="text-emerald-400">■ Warm air</span> &bull; <span className="text-sky-400">■ Cold polar</span> &bull; <span className="text-amber-400">■ Dry intrusion</span>
+                <div className="text-[8px] text-slate-700 leading-tight">
+                  <span className="text-emerald-800">■ Warm air</span> &bull; <span className="text-sky-800">■ Cold polar</span> &bull; <span className="text-amber-800">■ Dry intrusion</span>
                 </div>
               ) : (
-                <div className="text-[8px] text-slate-400 leading-tight">
+                <div className="text-[8px] text-slate-700 leading-tight">
                   Corrected solar reflectance (optical natural color)
                 </div>
               )}
@@ -106,21 +106,21 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
 
           {/* 2. SFINCS Hydraulic Depth Legend */}
           {showSimulation && (
-            <div className="pt-1.5 border-t border-navy-800">
-              <div className="flex items-center justify-between text-slate-400 mb-1 text-[8.5px]">
-                <span className="font-semibold text-amber-400">SFINCS FLOOD DEPTH</span>
+            <div className="pt-1.5 border-t border-slate-200">
+              <div className="flex items-center justify-between text-slate-700 mb-1 text-[8.5px]">
+                <span className="font-semibold text-amber-800">SFINCS FLOOD DEPTH</span>
                 <span className="text-amber-500 font-bold">Adyar S2</span>
               </div>
               <div className="grid grid-cols-3 gap-1 text-[8px]">
-                <div className="flex items-center gap-1 bg-navy-950/80 px-1 py-0.5 rounded border border-navy-800">
+                <div className="flex items-center gap-1 bg-slate-50 px-1 py-0.5 rounded border border-slate-200">
                   <span className="w-1.5 h-1.5 rounded bg-[#FEF08A] flex-shrink-0" />
                   <span className="truncate">&lt; 0.5m</span>
                 </div>
-                <div className="flex items-center gap-1 bg-navy-950/80 px-1 py-0.5 rounded border border-navy-800">
+                <div className="flex items-center gap-1 bg-slate-50 px-1 py-0.5 rounded border border-slate-200">
                   <span className="w-1.5 h-1.5 rounded bg-[#FB923C] flex-shrink-0" />
                   <span className="truncate">0.5-1.5m</span>
                 </div>
-                <div className="flex items-center gap-1 bg-navy-950/80 px-1 py-0.5 rounded border border-navy-800">
+                <div className="flex items-center gap-1 bg-slate-50 px-1 py-0.5 rounded border border-slate-200">
                   <span className="w-1.5 h-1.5 rounded bg-[#DC2626] flex-shrink-0" />
                   <span className="truncate">&gt; 1.5m</span>
                 </div>
@@ -130,13 +130,13 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
 
           {/* 3. Forecast Precipitation Legend */}
           {activeForecastLayer === 'precipitation' && (
-            <div className="pt-1.5 border-t border-navy-800">
-              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
-                <span className="font-semibold text-sky-400">PRECIP RATE (mm/h)</span>
-                <span className="text-slate-500">ECMWF</span>
+            <div className="pt-1.5 border-t border-slate-200">
+              <div className="flex items-center justify-between text-slate-700 mb-0.5 text-[8.5px]">
+                <span className="font-semibold text-sky-800">PRECIP RATE (mm/h)</span>
+                <span className="text-slate-700">ECMWF</span>
               </div>
               <div className="w-full h-2 rounded bg-gradient-to-r from-[#E0F2FE] via-[#38BDF8] via-[#2563EB] to-[#7C3AED]" />
-              <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+              <div className="flex justify-between text-[8px] text-slate-700 mt-0.5">
                 <span>0 mm</span>
                 <span>5 mm</span>
                 <span>15 mm</span>
@@ -147,13 +147,13 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
 
           {/* 4. Forecast Wind Legend */}
           {activeForecastLayer === 'wind' && (
-            <div className="pt-1.5 border-t border-navy-800">
-              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
-                <span className="font-semibold text-teal-400">WIND SPEED (km/h)</span>
-                <span className="text-slate-500">10m AGL</span>
+            <div className="pt-1.5 border-t border-slate-200">
+              <div className="flex items-center justify-between text-slate-700 mb-0.5 text-[8.5px]">
+                <span className="font-semibold text-teal-800">WIND SPEED (km/h)</span>
+                <span className="text-slate-700">10m AGL</span>
               </div>
               <div className="w-full h-2 rounded bg-gradient-to-r from-[#99F6E4] via-[#14B8A6] via-[#0D9488] to-[#115E59]" />
-              <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+              <div className="flex justify-between text-[8px] text-slate-700 mt-0.5">
                 <span>0 km/h</span>
                 <span>25 km/h</span>
                 <span>50 km/h</span>
@@ -164,13 +164,13 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
 
           {/* 5. Forecast Temperature Legend */}
           {activeForecastLayer === 'temperature' && (
-            <div className="pt-1.5 border-t border-navy-800">
-              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
-                <span className="font-semibold text-amber-300">TEMPERATURE (°C)</span>
-                <span className="text-slate-500">2m</span>
+            <div className="pt-1.5 border-t border-slate-200">
+              <div className="flex items-center justify-between text-slate-700 mb-0.5 text-[8.5px]">
+                <span className="font-semibold text-amber-800">TEMPERATURE (°C)</span>
+                <span className="text-slate-700">2m</span>
               </div>
               <div className="w-full h-2 rounded bg-gradient-to-r from-[#3B82F6] via-[#10B981] via-[#FBBF24] to-[#EF4444]" />
-              <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+              <div className="flex justify-between text-[8px] text-slate-700 mt-0.5">
                 <span>10°C</span>
                 <span>20°C</span>
                 <span>30°C</span>
@@ -181,13 +181,13 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
 
           {/* 6. Forecast Pressure Legend */}
           {activeForecastLayer === 'pressure' && (
-            <div className="pt-1.5 border-t border-navy-800">
-              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
-                <span className="font-semibold text-purple-300">PRESSURE (hPa)</span>
-                <span className="text-slate-500">MSLP</span>
+            <div className="pt-1.5 border-t border-slate-200">
+              <div className="flex items-center justify-between text-slate-700 mb-0.5 text-[8.5px]">
+                <span className="font-semibold text-purple-800">PRESSURE (hPa)</span>
+                <span className="text-slate-700">MSLP</span>
               </div>
               <div className="w-full h-2 rounded bg-gradient-to-r from-[#C084FC] via-[#A855F7] to-[#6B21A8]" />
-              <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+              <div className="flex justify-between text-[8px] text-slate-700 mt-0.5">
                 <span>990</span>
                 <span>1005</span>
                 <span>1015</span>
@@ -198,21 +198,21 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
 
           {/* 7. District Forecast Impact Legend (Phase 3D-2B) */}
           {showDistrictImpact && (
-            <div className="pt-1.5 border-t border-navy-800 space-y-1">
-              <div className="p-1 bg-amber-950/40 border border-amber-600/40 rounded text-center">
-                <span className="font-bold text-amber-300 text-[8px] block tracking-wider">
+            <div className="pt-1.5 border-t border-slate-200 space-y-1">
+              <div className="p-1 bg-amber-50 border border-amber-600/40 rounded text-center">
+                <span className="font-bold text-amber-800 text-[8px] block tracking-wider">
                   FORECAST RAINFALL — NOT FLOOD INUNDATION
                 </span>
-                <span className="text-[7.5px] text-slate-400">
+                <span className="text-[7.5px] text-slate-700">
                   {isNationalMode
                     ? 'INDICATIVE NATIONAL SYNOPTIC (1.5° Mesh)'
                     : 'MESOSCALE SECTOR SAMPLING (0.25° Mesh)'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-slate-400 mb-0.5 text-[8.5px]">
-                <span className="font-semibold text-emerald-400">24H RAINFALL HAZARD (IMD)</span>
-                <span className="text-slate-500">T+1..24</span>
+              <div className="flex items-center justify-between text-slate-700 mb-0.5 text-[8.5px]">
+                <span className="font-semibold text-emerald-800">24H RAINFALL HAZARD (IMD)</span>
+                <span className="text-slate-700">T+1..24</span>
               </div>
 
               <div className="space-y-0.5 text-[8px]">
@@ -221,53 +221,53 @@ export const WeatherLegend: React.FC<WeatherLegendProps> = ({
                     <span className="w-2 h-2 rounded-sm bg-[#C026D3]" />
                     <span>Extremely Heavy</span>
                   </span>
-                  <span className="font-mono text-slate-400">&ge; 204.5 mm</span>
+                  <span className="font-mono text-slate-700">&ge; 204.5 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#DC2626]" />
                     <span>Very Heavy</span>
                   </span>
-                  <span className="font-mono text-slate-400">115.5–204.4 mm</span>
+                  <span className="font-mono text-slate-700">115.5–204.4 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#EA580C]" />
                     <span>Heavy</span>
                   </span>
-                  <span className="font-mono text-slate-400">64.5–115.4 mm</span>
+                  <span className="font-mono text-slate-700">64.5–115.4 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#D97706]" />
                     <span>Moderate</span>
                   </span>
-                  <span className="font-mono text-slate-400">15.0–64.4 mm</span>
+                  <span className="font-mono text-slate-700">15.0–64.4 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#0284C7]" />
                     <span>Light</span>
                   </span>
-                  <span className="font-mono text-slate-400">0.1–14.9 mm</span>
+                  <span className="font-mono text-slate-700">0.1–14.9 mm</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#334155]" />
                     <span>No Rain</span>
                   </span>
-                  <span className="font-mono text-slate-400">0.0 mm (Nil)</span>
+                  <span className="font-mono text-slate-700">0.0 mm (Nil)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-sm bg-[#1E293B] border border-slate-600" />
                     <span>Insufficient Coverage</span>
                   </span>
-                  <span className="font-mono text-slate-500">No Data</span>
+                  <span className="font-mono text-slate-700">No Data</span>
                 </div>
               </div>
 
-              <div className="pt-0.5 text-[7.5px] text-slate-500 leading-tight">
+              <div className="pt-0.5 text-[7.5px] text-slate-700 leading-tight">
                 * Single-node districts: localized point sampling.<br />
                 Historical choke points: static Chennai markers only.
               </div>

@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
-import { OpenRouterService } from '../services/openrouter.service.js';
+import { OllamaService } from '../services/ollama.service.js';
 import { AIChatRequest } from '../types/ai.types.js';
 
 export const aiRouter = Router();
-const aiService = new OpenRouterService();
+const aiService = new OllamaService();
 
-aiRouter.get('/status', (_req: Request, res: Response) => {
-  const status = aiService.getStatus();
+aiRouter.get('/status', async (_req: Request, res: Response) => {
+  const status = await aiService.getStatus();
   res.status(200).json(status);
 });
 
@@ -25,7 +25,7 @@ aiRouter.post('/chat', async (req: Request, res: Response) => {
     }
 
     for (const msg of chatRequest.messages) {
-      if (!msg || typeof msg.role !== 'string' || typeof msg.content !== 'string') {
+      if (!msg || !['user', 'assistant'].includes(msg.role) || typeof msg.content !== 'string') {
         res.status(400).json({ error: 'Each message must have a valid role and content string.', code: 'INVALID_MESSAGE_FORMAT' });
         return;
       }
@@ -35,11 +35,14 @@ aiRouter.post('/chat', async (req: Request, res: Response) => {
       }
     }
 
-    if (chatRequest.language && !['en', 'ta', 'hi'].includes(chatRequest.language)) {
-      res.status(400).json({ error: 'Language must be one of: en, ta, hi', code: 'INVALID_LANGUAGE' });
+    if (chatRequest.language && !['en', 'ta', 'hi', 'te'].includes(chatRequest.language)) {
+      res.status(400).json({ error: 'Language must be one of: en, ta, hi, te', code: 'INVALID_LANGUAGE' });
       return;
     }
 
+    if (!chatRequest.messages.some(m => m.role === 'user')) {
+      res.status(400).json({ error: 'A user message is required.', code: 'INVALID_MESSAGES' }); return;
+    }
     const result = await aiService.generateChatResponse(chatRequest);
     res.status(200).json(result);
   } catch (err: any) {

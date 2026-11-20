@@ -1,3 +1,4 @@
+import { completeWeatherFixture } from './weather-fixture.js';
 /**
  * Comprehensive Operational Command APIs & Server-Enforced RBAC Test Suite for JATAYU.
  * Verifies:
@@ -246,7 +247,7 @@ describe('JATAYU Operational Command APIs & Server-Enforced RBAC', () => {
       fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: any) => {
         const urlStr = String(url);
         if (urlStr.includes('open-meteo.com')) {
-          return new Response(JSON.stringify(mockWeatherPayload), {
+          return new Response(JSON.stringify(completeWeatherFixture(mockWeatherPayload)), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           });
@@ -275,14 +276,14 @@ describe('JATAYU Operational Command APIs & Server-Enforced RBAC', () => {
       const res = await request(productionApp).get('/api/weather/current?lat=19.076&lon=72.8777');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('temperatureC');
-      expect(res.body.sourceType).toBe('OBSERVED');
+      expect(res.body.sourceType).toBe('MODEL_ANALYSIS');
     }, 45000);
 
     it('GET /api/weather/forecast responds with 200 without authentication', async () => {
       const res = await request(productionApp).get('/api/weather/forecast?lat=19.076&lon=72.8777');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('hourly');
-      expect(res.body.dataSource.type).toBe('OFFICIAL_FORECAST');
+      expect(res.body.dataSource.type).toBe('NUMERICAL_FORECAST');
     }, 45000);
 
     it('GET /api/alerts responds with 200 without authentication', async () => {

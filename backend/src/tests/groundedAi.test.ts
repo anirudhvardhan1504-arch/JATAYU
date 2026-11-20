@@ -157,24 +157,15 @@ describe('JATAYU Phase 3H: Grounded AI Emergency Assistant', () => {
       expect(res.whereToGetHelp).toContain('1070');
     });
 
-    it('Q8 (Deterministic Fallback via HTTP API): Returns structured 6-part response via POST /api/ai/chat when unconfigured', async () => {
-      const res = await request(app)
-        .post('/api/ai/chat')
-        .send({
-          messages: [{ role: 'user', content: 'What is happening near me and where can I get help?' }],
-          language: 'en',
-          context: mockContext,
-        });
-
-      expect(res.status).toBe(200);
-      expect(res.body.configured).toBe(false);
-      expect(res.body.message.content).toContain('### 1. Situation Overview');
-      expect(res.body.message.content).toContain('### 2. What We Know');
-      expect(res.body.message.content).toContain('### 3. Data Sources and Time');
-      expect(res.body.message.content).toContain('### 4. What Is Uncertain');
-      expect(res.body.message.content).toContain('### 5. Recommended Precautions');
-      expect(res.body.message.content).toContain('### 6. Where to Get Help');
-      expect(res.body.message.content).toContain('112');
+    it('Q8: HTTP API fails honestly when local Ollama is unavailable', async () => {
+      const mock = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+      try {
+        const res=await request(app).post('/api/ai/chat').send({messages:[{role:'user',content:'What is happening near me and where can I get help?'}],language:'en',context:mockContext});
+        expect(res.status).toBe(200);expect(res.body.configured).toBe(false);
+        expect(res.body.message.content).toContain('unavailable');
+        expect(res.body.message.content).not.toContain('NO ACTIVE WARNINGS');
+      } finally { mock.mockRestore(); }
     });
+
   });
 });

@@ -14,13 +14,13 @@ import { ClimateResearchPage } from './pages/ClimateResearchPage';
 import { AdminPage } from './pages/AdminPage';
 import { LoginModal } from './components/auth/LoginModal';
 import { Command3DLoading } from './components/command3d/Command3DLoading';
-import { AccessDeniedView } from './components/command3d/AccessDeniedView';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { generateTacticalSitrep } from './utils/sitrepGenerator';
 import { SitrepExportModal } from './components/sitrep/SitrepExportModal';
 import { DemoReplayBanner } from './components/layout/DemoReplayBanner';
 import {
+  EmergencyFacility,
   NavigationTab,
   CurrentWeatherObservation,
   WeatherForecastResponse,
@@ -38,8 +38,9 @@ import { reverseGeocodeLocation } from './services/route';
 const LazyCommand3DContainer = lazy(() => import('./components/command3d/Command3DContainer'));
 
 export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTab = 'home' }) => {
-  const { user, hasPermission } = useAuth();
+  const { user } = useAuth();
   const { language } = useLanguage();
+  const [routeFacility, setRouteFacility] = useState<EmergencyFacility | null>(null);
   const [activeTab, setActiveTab] = useState<NavigationTab>(initialTab);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSitrepModalOpen, setIsSitrepModalOpen] = useState(false);
@@ -270,7 +271,7 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
   ]);
 
   return (
-    <>
+    <div className="app-root">
       <DemoReplayBanner
         isReplayMode={isReplayMode}
         scenarioId={replayScenario}
@@ -279,6 +280,7 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
       />
 
       <AppShell
+        weather={weather}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         selectedLocation={selectedLocation}
@@ -291,6 +293,10 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
       >
         {activeTab === 'home' && (
           <HomePage
+            riskAssessment={riskAssessment}
+            isLoading={isLoading}
+            error={weatherError}
+            onRetry={loadData}
             location={selectedLocation}
             onSelectLocation={setSelectedLocation}
             weather={weather}
@@ -305,6 +311,9 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
 
         {activeTab === 'overview' && (
           <OverviewPage
+            onSelectTab={setActiveTab}
+            onSelectLocation={setSelectedLocation}
+            alertsLoading={alertsLoading}
             location={selectedLocation}
             weather={weather}
             forecast={forecast}
@@ -345,13 +354,13 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
         )}
 
         {activeTab === 'saferoute' && (
-          <SafeRoutePage currentSector={selectedLocation} />
+          <SafeRoutePage currentSector={selectedLocation} initialFacility={routeFacility} onFacilityConsumed={() => setRouteFacility(null)} />
         )}
 
         {activeTab === 'facilities' && (
           <FacilitiesPage
             location={selectedLocation}
-            onPlanRouteToFacility={() => setActiveTab('saferoute')}
+            onPlanRouteToFacility={(facility) => { setRouteFacility(facility); setActiveTab('saferoute'); }}
           />
         )}
 
@@ -401,20 +410,9 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
         )}
 
         {activeTab === 'command3d' && (
-          hasPermission('command3d:view_globe') ? (
-            <Suspense fallback={<Command3DLoading />}>
-              <LazyCommand3DContainer
-                selectedLocation={selectedLocation}
-                onSelectLocation={setSelectedLocation}
-                onReturnTo2D={() => setActiveTab('map')}
-              />
-            </Suspense>
-          ) : (
-            <AccessDeniedView
-              onReturnToMap={() => setActiveTab('map')}
-              onOpenLogin={() => setIsLoginModalOpen(true)}
-            />
-          )
+          <Suspense fallback={<Command3DLoading />}>
+            <LazyCommand3DContainer selectedLocation={selectedLocation} onSelectLocation={setSelectedLocation} onReturnTo2D={() => setActiveTab('map')} />
+          </Suspense>
         )}
       </AppShell>
 
@@ -432,7 +430,7 @@ export const AppContent: React.FC<{ initialTab?: NavigationTab }> = ({ initialTa
         sitrepMarkdown={sitrepMarkdown}
         locationName={selectedLocation.name}
       />
-    </>
+    </div>
   );
 };
 

@@ -99,6 +99,12 @@ export interface EmergencyFacility {
   district?: string;
   phone?: string;
   source: string;
+  sourceUrl?: string;
+  capabilitySourceUrl?: string;
+  sourceReviewedAt?: string;
+  coordinateSourceUrl?: string;
+  capabilities?: string[];
+  outsideSearchRadius?: boolean;
   sourceProvenance?: SourceProvenance;
   sourceUpdateDate?: string;
   verificationStatus: VerificationStatus;

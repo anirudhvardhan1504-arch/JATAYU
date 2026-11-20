@@ -119,7 +119,7 @@ describe('JATAYU Phase 3A — HomePage Public First Component', () => {
 
     // Headline and subheadline
     expect(
-      screen.getByText('Understand the weather. Know the risks. Plan your next step.')
+      screen.getByRole('heading', { level: 1, name: 'Your city, in focus.' })
     ).toBeInTheDocument();
     expect(
       screen.getByText(/JATAYU provides indicative situational screening and aggregates official alerts/i)

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
+import { applyBasemap, IMAGERY_SOURCE, BasemapMode } from '../../services/basemap';
 import { Layers, ShieldAlert, Crosshair, RotateCcw, AlertTriangle, Eye, EyeOff, Globe, Wind, Play, Pause } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { getLatestRadarInfo, RainViewerRadarInfo } from '../../services/radar';
@@ -67,6 +68,8 @@ export interface TacticalMapProps {
   onRadarLoaded?: (info: RainViewerRadarInfo) => void;
   variant?: 'standalone' | 'full';
   hideDefaultControls?: boolean;
+  basemap?: BasemapMode;
+  showBasemapLabels?: boolean;
   // Phase 3B-3A Forecast Scalar Canvas Layer
   showForecast?: boolean;
   forecastProduct?: ForecastProductType;
@@ -132,6 +135,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   onRadarLoaded,
   variant = 'standalone',
   hideDefaultControls = false,
+  basemap = 'map',
+  showBasemapLabels = true,
   showForecast = false,
   forecastProduct = 'precipitation',
   forecastTimestepIndex = 0,
@@ -254,6 +259,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, []);
 
+  const baseLayers = useRef<maplibregl.LayerSpecification[]>([]);
+  const [styleReady, setStyleReady] = useState(false);
+  const [imageryFailed, setImageryFailed] = useState(false);
+
   // Initialize MapLibre instance
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -262,7 +271,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     try {
       const map = new maplibregl.Map({
         container: mapContainer.current,
-        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
         center: center,
         zoom: zoom,
         minZoom: 2,
@@ -273,6 +282,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'bottom-right');
 
       map.on('load', () => {
+        baseLayers.current = map.getStyle?.()?.layers || [];
+        setStyleReady(true);
         // Sector target reticle marker
         const el = document.createElement('div');
         el.className = 'w-6 h-6 rounded-full border-2 border-amber-400 bg-amber-500/30 flex items-center justify-center cursor-pointer shadow-md';
@@ -428,7 +439,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         }
       });
 
-      map.on('error', (e) => {
+      map.on('error', (e: any) => {
+        if (e.sourceId === IMAGERY_SOURCE) setImageryFailed(true);
         // Capture basemap/network tile errors without unmounting
         if (e.error && !mapError) {
           console.warn('MapLibre GL error:', e.error);
@@ -455,6 +467,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, []);
 
+  useEffect(() => { setImageryFailed(false); }, [basemap]);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    let applied = false;
+    const applyWhenReady = () => {
+      if (applied || !map.isStyleLoaded()) return;
+      applied = true;
+      applyBasemap(map, baseLayers.current, imageryFailed ? 'map' : basemap, showBasemapLabels);
+    };
+    map.on('styledata', applyWhenReady);
+    map.on('idle', applyWhenReady);
+    applyWhenReady();
+    return () => {
+      map.off('styledata', applyWhenReady);
+      map.off('idle', applyWhenReady);
+    };
+  }, [basemap, showBasemapLabels, styleReady, imageryFailed]);
+
   // Update center & marker position when props change
   useEffect(() => {
     if (mapRef.current) {
@@ -471,7 +502,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         `);
       }
     }
-  }, [center, zoom, locationName, rainfallMm, riskLevel]);
+  }, [center[0], center[1], zoom, locationName, rainfallMm, riskLevel]);
 
   // Synchronize Radar Layer when radarInfo resolves after map has already loaded
   useEffect(() => {
@@ -1288,7 +1319,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       {/* Forecast Scientific Disclosure Banner (Phase 3B-3A, 3B-3B & 3B-3C) */}
       {(effectiveShowForecast || effectiveShowPressureContours || effectiveShowWindParticles) && effectiveForecastGrid && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-auto max-w-2xl text-center px-2">
+        <div className="forecast-disclosure absolute bottom-20 left-3 z-20 pointer-events-auto max-w-2xl text-left px-2">
           <div className="bg-navy-950/95 border border-sky-500/80 text-sky-200 px-3.5 py-1.5 rounded-lg shadow-xl font-mono text-[11px] space-y-1">
             <div className="flex items-center justify-center gap-2 font-bold text-amber-300">
               <ShieldAlert className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
@@ -1327,8 +1358,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
       )}
 
+      {basemap === 'satellite' && imageryFailed && <div className="map-imagery-notice" role="status">Satellite imagery unavailable — showing the street map.</div>}
+      <div className="map-basemap-credit">{basemap === 'satellite' && !imageryFailed && <>Basemap © Esri (not live) · </>}Map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> · CARTO</div>
+
       {/* Forecast Product Legend */}
-      {effectiveShowForecast && (
+      {!hideDefaultControls && effectiveShowForecast && (
         <div className="absolute bottom-6 left-3 z-20 pointer-events-auto max-w-xs bg-navy-950/90 border border-navy-700 p-2 rounded shadow-lg text-slate-200 font-mono text-[10px]">
           <div className="flex items-center justify-between font-bold text-cyan-300 border-b border-navy-800 pb-1 mb-1.5">
             <span>FORECAST: {FORECAST_PRODUCTS[forecastProduct]?.shortLabel.toUpperCase()}</span>
@@ -1370,7 +1404,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       )}
 
       {/* Flood Vulnerability Points Legend */}
-      {showVulnerabilityPoints && (
+      {!hideDefaultControls && showVulnerabilityPoints && (
         <div className="absolute bottom-6 right-3 z-20 pointer-events-auto max-w-xs bg-navy-950/90 border border-amber-700/80 p-2.5 rounded shadow-lg text-slate-200 font-mono text-[10px] space-y-1">
           <div className="flex items-center gap-1.5 font-bold text-amber-400 border-b border-navy-800 pb-1">
             <ShieldAlert className="w-3.5 h-3.5" />
@@ -1397,7 +1431,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       )}
 
       {/* Emergency Facilities Legend */}
-      {showFacilities && (
+      {!hideDefaultControls && showFacilities && (
         <div className="absolute bottom-28 right-3 z-20 pointer-events-auto max-w-xs bg-navy-950/90 border border-sky-700/80 p-2.5 rounded shadow-lg text-slate-200 font-mono text-[10px] space-y-1">
           <div className="flex items-center gap-1.5 font-bold text-sky-400 border-b border-navy-800 pb-1">
             <Globe className="w-3.5 h-3.5" />
@@ -1553,7 +1587,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                     {effectiveShowForecast ? <Eye className="w-3.5 h-3.5 text-sky-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
                   </button>
                 </div>
-                {effectiveShowForecast && (
+                {!hideDefaultControls && effectiveShowForecast && (
                   <div className="text-[9px] text-slate-400 font-mono space-y-0.5">
                     <div>{FORECAST_PRODUCTS[forecastProduct]?.shortLabel || 'Precipitation'} • {forecastOpacity}%</div>
                     <div className="text-[8.5px] text-amber-300">

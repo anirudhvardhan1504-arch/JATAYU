@@ -1,3 +1,4 @@
+import { currentHourIndex, utcTime, weatherNumber } from './weather-integrity.js';
 import { config } from '../config.js';
 import {
   CurrentWeatherObservation,
@@ -76,7 +77,7 @@ export function evaluateSoilSaturation(m0To7?: number, m7To28?: number): SoilSat
   const primary = m0To7 ?? m7To28;
   if (primary === undefined || primary === null || isNaN(primary)) {
     return {
-      saturationTier: 'LOW',
+      saturationTier: 'UNKNOWN',
       description: 'Soil moisture telemetry unavailable for this coordinate.',
     };
   }
@@ -134,8 +135,11 @@ export function parseCurrentObservation(
     throw new Error('Open-Meteo response missing "current" observation payload.');
   }
 
-  const weatherCode = typeof current.weather_code === 'number' ? current.weather_code : 0;
-  const obsTimeStr = current.time || fetchedAt;
+  const weatherCode = weatherNumber(current.weather_code, 'weather_code');
+  const obsTimeStr = current.time;
+  if (typeof obsTimeStr !== 'string' || !Number.isFinite(utcTime(obsTimeStr))) {
+    throw new Error('Open-Meteo current timestamp unavailable.');
+  }
   const normalizedObsTime =
     obsTimeStr.endsWith('Z') || obsTimeStr.includes('+') ? obsTimeStr : `${obsTimeStr}Z`;
 
@@ -155,8 +159,7 @@ export function parseCurrentObservation(
   let soil0To7: number | undefined = undefined;
   let soil7To28: number | undefined = undefined;
   if (data.hourly && Array.isArray(data.hourly.time)) {
-    const hourIndex = data.hourly.time.findIndex((t: string) => t === current.time);
-    const targetIndex = hourIndex >= 0 ? hourIndex : 0;
+    const targetIndex = currentHourIndex(data.hourly.time, obsTimeStr, false);
     if (Array.isArray(data.hourly.soil_moisture_0_to_7cm)) {
       soil0To7 = data.hourly.soil_moisture_0_to_7cm[targetIndex] ?? undefined;
     }
@@ -171,25 +174,25 @@ export function parseCurrentObservation(
       longitude: lon,
       name: locationName,
     },
-    timestamp: obsTimeStr,
+    timestamp: new Date(utcTime(obsTimeStr)).toISOString(),
     fetchedAt,
-    temperatureC: current.temperature_2m ?? 0,
-    apparentTemperatureC: current.apparent_temperature ?? current.temperature_2m ?? 0,
-    relativeHumidityPercent: current.relative_humidity_2m ?? 0,
-    precipitationMm: current.precipitation ?? 0,
-    rainMm: current.rain ?? 0,
-    showersMm: current.showers ?? 0,
-    windSpeedKmh: current.wind_speed_10m ?? 0,
-    windDirectionDegrees: current.wind_direction_10m ?? 0,
-    windGustsKmh: current.wind_gusts_10m ?? current.wind_speed_10m ?? 0,
-    surfacePressureHpa: current.surface_pressure ?? 1013.25,
+    temperatureC: weatherNumber(current.temperature_2m, 'temperature_2m'),
+    apparentTemperatureC: weatherNumber(current.apparent_temperature, 'apparent_temperature'),
+    relativeHumidityPercent: weatherNumber(current.relative_humidity_2m, 'relative_humidity_2m'),
+    precipitationMm: weatherNumber(current.precipitation, 'precipitation'),
+    rainMm: weatherNumber(current.rain, 'rain'),
+    showersMm: weatherNumber(current.showers, 'showers'),
+    windSpeedKmh: weatherNumber(current.wind_speed_10m, 'wind_speed_10m'),
+    windDirectionDegrees: weatherNumber(current.wind_direction_10m, 'wind_direction_10m'),
+    windGustsKmh: weatherNumber(current.wind_gusts_10m, 'wind_gusts_10m'),
+    surfacePressureHpa: weatherNumber(current.surface_pressure, 'surface_pressure'),
     weatherCode,
     weatherDescription: WMO_CODE_MAP[weatherCode] || 'Unknown meteorological condition',
     soilMoisture0To7cm: soil0To7,
     soilMoisture7To28cm: soil7To28,
     isStale,
-    sourceType: 'OBSERVED',
-    sourceAttribution: 'Open-Meteo Live NWP Analysis (ECMWF IFS / DWD ICON)',
+    sourceType: 'MODEL_ANALYSIS',
+    sourceAttribution: 'Open-Meteo model-derived current conditions (best_match); not a station observation',
     units: STANDARD_WEATHER_UNITS,
   };
 }
@@ -212,19 +215,13 @@ export function parseForecastResponse(
   const times: string[] = hourly.time;
   const hourlyPoints: HourlyForecastDataPoint[] = [];
 
-  // Identify current hour index in the timeseries (account for past_days=1)
-  const currentHourStr = data.current?.time;
-  let currentIdx = times.findIndex((t) => t === currentHourStr);
-  if (currentIdx === -1) {
-    // If exact match not found, estimate index based on time difference or fallback to 24 (1 past day)
-    currentIdx = Math.min(24, Math.floor(times.length / 4));
-  }
+  const currentIdx = currentHourIndex(times, data.current.time);
 
   // Calculate past 24h accumulation
   let past24hRain = 0;
   const pastStart = Math.max(0, currentIdx - 24);
   for (let i = pastStart; i < currentIdx; i++) {
-    const p = hourly.precipitation?.[i] ?? 0;
+    const p = weatherNumber(hourly.precipitation?.[i], `precipitation[${i}]`);
     if (typeof p === 'number' && !isNaN(p)) {
       past24hRain += p;
     }
@@ -236,7 +233,7 @@ export function parseForecastResponse(
   const forecastEnd = Math.min(times.length, currentIdx + 72);
 
   for (let i = currentIdx; i < forecastEnd; i++) {
-    const p = hourly.precipitation?.[i] ?? 0;
+    const p = weatherNumber(hourly.precipitation?.[i], `precipitation[${i}]`);
     const val = typeof p === 'number' && !isNaN(p) ? p : 0;
     if (i < currentIdx + 24) {
       next24hRain += val;
@@ -244,17 +241,18 @@ export function parseForecastResponse(
     next72hRain += val;
 
     hourlyPoints.push({
-      time: times[i],
-      temperatureC: hourly.temperature_2m?.[i] ?? 0,
-      relativeHumidityPercent: hourly.relative_humidity_2m?.[i] ?? 0,
+      weatherCode: typeof hourly.weather_code?.[i] === 'number' && Number.isFinite(hourly.weather_code[i]) ? hourly.weather_code[i] : undefined,
+      time: new Date(utcTime(times[i])).toISOString(),
+      temperatureC: weatherNumber(hourly.temperature_2m?.[i], `temperature_2m[${i}]`),
+      relativeHumidityPercent: weatherNumber(hourly.relative_humidity_2m?.[i], `relative_humidity_2m[${i}]`),
       precipitationMm: val,
-      precipitationProbabilityPercent: hourly.precipitation_probability?.[i] ?? 0,
-      rainMm: hourly.rain?.[i] ?? 0,
-      showersMm: hourly.showers?.[i] ?? 0,
-      windSpeedKmh: hourly.wind_speed_10m?.[i] ?? 0,
-      windDirectionDegrees: hourly.wind_direction_10m?.[i] ?? 0,
-      windGustsKmh: hourly.wind_gusts_10m?.[i] ?? hourly.wind_speed_10m?.[i] ?? 0,
-      surfacePressureHpa: hourly.surface_pressure?.[i] ?? 1013.25,
+      precipitationProbabilityPercent: weatherNumber(hourly.precipitation_probability?.[i], `precipitation_probability[${i}]`),
+      rainMm: weatherNumber(hourly.rain?.[i], `rain[${i}]`),
+      showersMm: weatherNumber(hourly.showers?.[i], `showers[${i}]`),
+      windSpeedKmh: weatherNumber(hourly.wind_speed_10m?.[i], `wind_speed_10m[${i}]`),
+      windDirectionDegrees: weatherNumber(hourly.wind_direction_10m?.[i], `wind_direction_10m[${i}]`),
+      windGustsKmh: weatherNumber(hourly.wind_gusts_10m?.[i], `wind_gusts_10m[${i}]`),
+      surfacePressureHpa: weatherNumber(hourly.surface_pressure?.[i], `surface_pressure[${i}]`),
       soilMoistureDepth0To7cm: hourly.soil_moisture_0_to_7cm?.[i] ?? undefined,
       soilMoistureDepth7To28cm: hourly.soil_moisture_7_to_28cm?.[i] ?? undefined,
     });
@@ -286,8 +284,8 @@ export function parseForecastResponse(
     soilProfile,
     dataSource: {
       provider: 'Open-Meteo Forecast Engine',
-      model: 'ECMWF IFS / GFS Seamless Ensemble',
-      type: 'OFFICIAL_FORECAST',
+      model: 'Open-Meteo best_match (automatic model selection)',
+      type: 'NUMERICAL_FORECAST',
       note: 'Hourly numerical weather prediction with volumetric soil moisture and accumulation integration.',
     },
   };
@@ -414,8 +412,8 @@ export class WeatherService implements IWeatherService {
       'hourly',
       'temperature_2m,relative_humidity_2m,precipitation,precipitation_probability,rain,showers,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,soil_moisture_0_to_7cm,soil_moisture_7_to_28cm,soil_moisture_28_to_100cm'
     );
-    url.searchParams.set('past_days', '1');
-    url.searchParams.set('forecast_days', '3');
+    url.searchParams.set('past_hours', '24');
+    url.searchParams.set('forecast_hours', '72');
     url.searchParams.set('timezone', 'UTC');
 
     let response: Response;
@@ -459,6 +457,9 @@ export class WeatherService implements IWeatherService {
 
     const data = await response.json();
     const forecast = parseForecastResponse(data, lat, lon, locationName, fetchedAt, startTime);
+    if (forecast.hourly.length !== 72) {
+      throw new Error(`Open-Meteo forecast incomplete: ${forecast.hourly.length}/72 hours available.`);
+    }
     this.forecastCache.set(key, { forecast, fetchedAt: now });
     return forecast;
   }

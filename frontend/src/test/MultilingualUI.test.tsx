@@ -176,13 +176,13 @@ describe('JATAYU Multilingual UI & Localization Engine', () => {
     );
 
     // Tamil elements
-    expect(screen.getByText('செயல்பாட்டு மேலோட்டம்')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'செயல்பாட்டு மேலோட்டம்' })).toBeInTheDocument();
     expect(screen.getByText('தந்திரோபாய வரைபடம்')).toBeInTheDocument();
     expect(screen.getByText('வெள்ள அபாய அணி')).toBeInTheDocument();
     expect(screen.getByText('எச்சரிக்கை கண்காணிப்பு')).toBeInTheDocument();
     expect(screen.getByText('தயார்நிலை நெறிமுறைகள்')).toBeInTheDocument();
-    expect(screen.getByText('கன்சோல் / overview')).toBeInTheDocument();
-    expect(screen.getByText('புதுப்பி')).toBeInTheDocument();
+    expect(screen.getByText('செயல்பாட்டு மேலோட்டம்', { selector: 'strong' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'புதுப்பி' })).toBeInTheDocument();
 
     // Rerender in Hindi
     rerender(
@@ -200,13 +200,13 @@ describe('JATAYU Multilingual UI & Localization Engine', () => {
     );
 
     // Hindi elements
-    expect(screen.getByText('परिचालन अवलोकन')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'परिचालन अवलोकन' })).toBeInTheDocument();
     expect(screen.getByText('सामरिक मानचित्र')).toBeInTheDocument();
     expect(screen.getByText('बाढ़ जोखिम मैट्रिक्स')).toBeInTheDocument();
     expect(screen.getByText('चेतावनी निगरानी')).toBeInTheDocument();
     expect(screen.getByText('तैयारी प्रोटोकॉल')).toBeInTheDocument();
-    expect(screen.getByText('कंसोल / overview')).toBeInTheDocument();
-    expect(screen.getByText('ताज़ा करें')).toBeInTheDocument();
+    expect(screen.getByText('परिचालन अवलोकन', { selector: 'strong' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ताज़ा करें' })).toBeInTheDocument();
   });
 
   it('passes active language to sendAIChat and retains conversation history across language switches', async () => {

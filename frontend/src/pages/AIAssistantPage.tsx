@@ -49,10 +49,7 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({
   const [messages, setMessages] = useState<AIChatMessage[]>(() => [
     {
       role: 'assistant',
-      content:
-        `JATAYU Operational Disaster Intelligence Agent online.\n` +
-        `Current Focus: ${location.name} (${location.lat.toFixed(4)}°N, ${location.lon.toFixed(4)}°E)\n\n` +
-        `I am connected via server-side OpenRouter to assist emergency coordinators, provide structured SITREPs, and cross-reference standard operating procedures. How can I assist this operational shift?`,
+      content: t('ai.initialGreeting', { location: location.name, lat: location.lat.toFixed(4), lon: location.lon.toFixed(4) }),
     },
   ]);
   const [input, setInput] = useState('');
@@ -243,12 +240,10 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({
           <Server className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
           <div className="text-xs text-jatayu-secondary leading-relaxed">
             <p className="font-bold uppercase tracking-wider text-[11px] text-jatayu-primary">
-              OpenRouter Operational Scaffolding Mode
+              {t('ai.unavailableTitle')}
             </p>
             <p className="mt-1">
-              The AI service is operating in deterministic scaffolding mode without fabricating hallucinated responses.
-              Queries are synthesized using live Open-Meteo observations, IMD nowcast feeds, and indicative flood risk heuristics.
-              To activate external LLM inference, configure <code className="bg-charcoal px-2 py-0.5 rounded font-mono text-emerald-300 border border-white/15">OPENROUTER_API_KEY</code> on the backend.
+              {t('ai.unavailableNotice')}
             </p>
           </div>
         </div>
@@ -323,6 +318,7 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSend();
             }}
+            aria-label={t('ai.inputPlaceholder')}
             placeholder={t('ai.inputPlaceholder')}
             disabled={isLoading}
             className="flex-1 bg-obsidian border border-white/20 focus:border-emerald-400 rounded-xl px-4 py-2.5 text-xs text-jatayu-primary placeholder:text-jatayu-secondary outline-none font-sans transition-all shadow-inner"

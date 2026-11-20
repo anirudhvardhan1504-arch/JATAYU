@@ -18,6 +18,14 @@ export const Badge: React.FC<BadgeProps> = ({
 
   if (sourceType) {
     switch (sourceType) {
+      case 'MODEL_ANALYSIS':
+      case 'NUMERICAL_FORECAST':
+        return (
+          <span className={`inline-flex items-center rounded border border-cyan-500/40 bg-cyan-950/60 text-cyan-200 ${sizeClasses}`}
+            title="Model-derived weather data from Open-Meteo; not an official warning or station measurement">
+            {sourceType === 'MODEL_ANALYSIS' ? 'Model-derived conditions' : 'Numerical forecast'}
+          </span>
+        );
       case 'OBSERVED':
         return (
           <span

@@ -1,10 +1,14 @@
+import '../components/map/earth-workspace.css';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Layers,
   AlertTriangle,
   Globe,
   Radio,
-  CheckCircle2,
+  MapPin,
+  Cloud,
+  CloudRain,
+  Wind,
   Compass,
   FileText,
 } from 'lucide-react';
@@ -106,11 +110,12 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   const user = auth?.user ?? null;
   const token = auth?.token ?? null;
   const isAuthorized = Boolean(user && ['RESEARCHER', 'GOVERNMENT', 'ADMIN'].includes(user.role));
-  const hasCesiumPermission = Boolean(auth?.hasPermission?.('command3d:view_globe'));
 
   // Drawer & Overlay Visibilities
-  const [showLayerSidebar, setShowLayerSidebar] = useState(true);
-  const [showDetailsPanel, setShowDetailsPanel] = useState(true);
+  const [showLayerSidebar, setShowLayerSidebar] = useState(false);
+  const [basemap, setBasemap] = useState<'map' | 'satellite'>('satellite');
+  const [showBasemapLabels, setShowBasemapLabels] = useState(true);
+  const [showDetailsPanel, setShowDetailsPanel] = useState(false);
   const [showImpactDashboard, setShowImpactDashboard] = useState(false);
 
   // Category A: Live Maps State
@@ -143,7 +148,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   const [windSpeedMultiplier, setWindSpeedMultiplier] = useState<number>(1.0);
 
   // Phase 3D-2B: District Forecast Impact Layer & Selection
-  const [showDistrictImpactLayer, setShowDistrictImpactLayer] = useState<boolean>(true);
+  const [showDistrictImpactLayer, setShowDistrictImpactLayer] = useState<boolean>(false);
   const [districtImpactOpacity, setDistrictImpactOpacity] = useState<number>(65);
   const [selectedDistrictName, setSelectedDistrictName] = useState<string | null>(null);
   const [districtImpactResponse, setDistrictImpactResponse] = useState<ForecastImpactResponse | null>(null);
@@ -387,7 +392,6 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
 
   const rainfallMm = weather?.precipitationMm ?? 0;
   const riskLevel = riskAssessment?.overallRiskLevel ?? 'GUARDED';
-  const geoRes = alertFeed?.geographicResolution;
   const officialAlerts = alertFeed?.officialAlerts || [];
   const hasActiveAlert = officialAlerts.length > 0;
 
@@ -402,128 +406,33 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
   }, [showPrecipLayer, showWindLayer, showTempLayer, showHumidityLayer, showPressureLayer]);
 
   return (
-    <div className="relative w-full h-[calc(100vh-58px)] min-h-[580px] flex flex-col overflow-hidden bg-obsidian select-none">
+    <div className="tactical-workspace relative w-full h-full min-h-0 flex flex-col overflow-hidden bg-obsidian select-none">
       {/* 1. TOP STREAMLINED COMMAND & INTELLIGENCE BAR (RESPONSIVE SINGLE LINE) */}
-      <header className="absolute top-2.5 left-2.5 right-2.5 z-30 pointer-events-none flex flex-row items-center justify-between gap-2 flex-nowrap">
-        {/* Left: Branding, Layers Toggle, and Sector Quick Jumps */}
-        <div className="pointer-events-auto flex items-center gap-2 flex-nowrap bg-charcoal/85 backdrop-blur-xl border border-white/15 p-1.5 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.6)] flex-shrink-0">
-          <div className="px-2.5 py-0.5 flex items-center gap-2 text-white font-mono font-bold text-xs border-r border-white/10">
-            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse flex-shrink-0" />
-            <span className="hidden xl:inline">Tactical Geospatial Command Center</span>
-            <span className="xl:hidden hidden sm:inline">Tactical Command</span>
-            <span className="sm:hidden">GIS</span>
-            {geoRes?.resolvedDistrict && (
-              <span className="text-[10px] text-mint font-normal hidden 2xl:inline">
-                ({geoRes.resolvedDistrict})
-              </span>
-            )}
-          </div>
-
-          {/* Collapsible Layers Sidebar Toggle */}
-          <button
-            onClick={() => setShowLayerSidebar(!showLayerSidebar)}
-            className={`px-3 py-1 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 ${
-              showLayerSidebar
-                ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 shadow-[0_0_12px_rgba(0,217,154,0.2)]'
-                : 'bg-charcoal text-jatayu-secondary hover:text-white hover:bg-white/5 border border-transparent'
-            }`}
-            title="Toggle Geospatial Layers Sidebar"
-            aria-label="Toggle Geospatial Layers Sidebar"
-          >
-            <Layers className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">LAYERS</span>
-          </button>
-
-          {/* Operational Sector Segmented Control */}
-          <div className="flex items-center gap-1 pl-1 border-l border-white/10 flex-shrink-0">
-            <span className="text-[9px] font-mono text-jatayu-muted uppercase px-1 hidden lg:inline">SECTORS:</span>
-            {SECTOR_QUICK_JUMPS.map((sec) => (
-              <button
-                key={sec.name}
-                onClick={() => onSelectLocation(sec)}
-                className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-mono rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                  location.name === sec.name
-                    ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 font-bold shadow-[0_0_8px_rgba(0,217,154,0.2)]'
-                    : 'text-jatayu-secondary hover:text-white hover:bg-white/5'
-                }`}
-                title={sec.name}
-              >
-                <span className="hidden md:inline">{sec.label}</span>
-                <span className="md:hidden">{sec.code}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: Warnings, Cesium 3D Shortcut, and Telemetry Toggle */}
-        <div className="pointer-events-auto flex items-center gap-2 flex-nowrap flex-shrink-0">
-          {/* Official Warning Entry Point Banner */}
-          {hasActiveAlert ? (
-            <button
-              onClick={() => onSelectTab && onSelectTab('alerts')}
-              className="bg-red-950/90 border border-red-500/80 hover:bg-red-900/90 text-red-200 px-3 py-1.5 rounded-2xl text-xs font-mono font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.35)] transition-all animate-pulse cursor-pointer whitespace-nowrap flex-shrink-0 backdrop-blur-xl"
-              title="Click to view full official warnings in Alerts page"
-            >
-              <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-              <span className="hidden sm:inline">{officialAlerts.length} ACTIVE WARNING</span>
-              <span className="sm:hidden">{officialAlerts.length} ALERTS</span>
-            </button>
-          ) : (
-            <div className="bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-3 py-1.5 rounded-2xl text-xs font-mono flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,217,154,0.15)] hidden lg:flex flex-shrink-0 backdrop-blur-xl">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span className="text-[10px] whitespace-nowrap">IMD NOWCAST: NO ACTIVE WARNINGS</span>
-            </div>
-          )}
-
-          {/* Cesium 3D Globe Shortcut */}
-          {hasCesiumPermission && onSelectTab && (
-            <button
-              onClick={() => onSelectTab('command3d')}
-              className="bg-charcoal/85 hover:bg-white/5 border border-white/10 text-amber-300 px-3 py-1.5 rounded-2xl text-xs font-mono font-bold flex items-center gap-1.5 shadow-panel transition-all cursor-pointer whitespace-nowrap flex-shrink-0 backdrop-blur-xl"
-              title="Switch to Cesium 3D Global Visualization"
-            >
-              <Globe className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-              <span className="hidden sm:inline">CESIUM 3D</span>
-            </button>
-          )}
-
-          {/* Forecast Impact Intelligence Dashboard Toggle */}
-          <button
-            onClick={() => setShowImpactDashboard(!showImpactDashboard)}
-            className={`px-3 py-1.5 rounded-2xl text-xs font-mono font-semibold flex items-center gap-1.5 border transition-all cursor-pointer flex-shrink-0 backdrop-blur-xl ${
-              showImpactDashboard
-                ? 'bg-mint/20 border-emerald-400 text-mint shadow-[0_0_15px_rgba(66,245,176,0.3)] ring-1 ring-emerald-400/50'
-                : 'bg-charcoal/85 border-white/10 text-jatayu-primary hover:text-mint hover:bg-white/5'
-            }`}
-            title="Toggle district-level forecast impact intelligence dashboard"
-            aria-label="Toggle district-level forecast impact intelligence dashboard"
-          >
-            <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-            <span className="hidden sm:inline">IMPACT ANALYSIS</span>
-          </button>
-
-          {/* Telemetry Details Panel Toggle */}
-          <button
-            onClick={() => setShowDetailsPanel(!showDetailsPanel)}
-            className={`px-3 py-1.5 rounded-2xl text-xs font-mono font-semibold flex items-center gap-1.5 border transition-all cursor-pointer flex-shrink-0 backdrop-blur-xl ${
-              showDetailsPanel
-                ? 'bg-dark-emerald/80 border-emerald-500 text-emerald-300 shadow-[0_0_15px_rgba(0,217,154,0.25)]'
-                : 'bg-charcoal/85 border-white/10 text-jatayu-secondary hover:text-white hover:bg-white/5'
-            }`}
-            title="Toggle contextual telemetry panel"
-            aria-label="Toggle contextual telemetry panel"
-          >
-            <Compass className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-            <span className="hidden sm:inline">TELEMETRY</span>
-          </button>
+      <header className="earth-toolbar">
+        <div className="earth-place"><Globe size={17}/><div><strong>Weather map</strong><span>{location.name}</span></div></div>
+        <div className="earth-basemaps" aria-label="Basemap style"><button aria-pressed={basemap === 'satellite'} onClick={() => setBasemap('satellite')}>Satellite</button><button aria-pressed={basemap === 'map'} onClick={() => setBasemap('map')}>Map</button></div>
+        <div className="earth-actions">
+          <button aria-label="Toggle map labels" aria-pressed={showBasemapLabels} title="Place labels" onClick={() => setShowBasemapLabels(!showBasemapLabels)}><MapPin size={16}/><span>Labels</span></button>
+          {hasActiveAlert && <button className="earth-warning" onClick={() => onSelectTab?.('alerts')} title="View official warnings"><AlertTriangle size={16}/><span>{officialAlerts.length} warning{officialAlerts.length !== 1 ? 's' : ''}</span></button>}
+          <button aria-label="Toggle district-level forecast impact intelligence dashboard" aria-pressed={showImpactDashboard} title="District impact" onClick={() => setShowImpactDashboard(!showImpactDashboard)}><FileText size={16}/><span>Impact</span></button>
+          <button aria-label="Toggle contextual telemetry panel" aria-pressed={showDetailsPanel} title="Inspect location" onClick={() => setShowDetailsPanel(!showDetailsPanel)}><Compass size={16}/><span>Inspect</span></button>
+          {onSelectTab && <button title="Open 3D globe" onClick={() => onSelectTab('command3d')}><Globe size={16}/><span>3D</span></button>}
         </div>
       </header>
+      <nav className="earth-toolrail" aria-label="Weather overlays">
+        <button aria-label="Toggle Geospatial Layers Sidebar" title="All layers" aria-pressed={showLayerSidebar} onClick={() => setShowLayerSidebar(!showLayerSidebar)}><Layers size={19}/><span>Layers</span></button>
+        <span className="earth-rail-divider"/>
+        <button aria-label="Toggle radar overlay" title="Observed weather radar" aria-pressed={showRadar} onClick={() => setShowRadar(!showRadar)}><Radio size={18}/><span>Radar</span></button>
+        <button aria-label="Toggle satellite clouds overlay" title="Weather satellite imagery (separate from the basemap)" aria-pressed={showSatellite} onClick={() => setShowSatellite(!showSatellite)}><Cloud size={19}/><span>Clouds</span></button>
+        <button aria-label="Toggle wind overlay" title="Forecast wind" aria-pressed={showWindLayer} onClick={() => setShowWindLayer(!showWindLayer)}><Wind size={19}/><span>Wind</span></button>
+        <button aria-label="Toggle rainfall forecast overlay" title="Forecast rainfall" aria-pressed={showPrecipLayer} onClick={() => setShowPrecipLayer(!showPrecipLayer)}><CloudRain size={19}/><span>Rain</span></button>
+      </nav>
 
       {/* 2. FULL-SCREEN MAPLIBRE CANVAS (MAP IS THE PRIMARY FOCUS) */}
       <main className="w-full h-full relative flex-1">
         <TacticalMap
           center={[location.lon, location.lat]}
-          zoom={10}
+          zoom={7}
           locationName={location.name}
           rainfallMm={rainfallMm}
           riskLevel={riskLevel}
@@ -585,6 +494,8 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
           alerts={alertFeed?.officialAlerts}
           variant="full"
           hideDefaultControls={true}
+          basemap={basemap}
+          showBasemapLabels={showBasemapLabels}
           className="w-full h-full min-h-full rounded-none border-none"
         />
       </main>
@@ -658,7 +569,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
       />
 
       {/* 5. DYNAMIC CONTEXTUAL LEGEND (BOTTOM-RIGHT, NEVER OVERLAPS TIMELINE) */}
-      <div className="absolute bottom-14 right-3 z-20">
+      <div className="map-legend-position absolute bottom-14 right-3 z-20">
         <WeatherLegend
           showRadar={showRadar}
           showSatellite={showSatellite}
@@ -671,7 +582,7 @@ export const LiveMapPage: React.FC<LiveMapPageProps> = ({
       </div>
 
       {/* 6. MODULAR BOTTOM TIMELINE & PLAYBACK CONTROLS (COMPACT PILL) */}
-      <div className="absolute bottom-2.5 left-3 right-3 z-20 pointer-events-none flex justify-center">
+      <div className="map-timeline-position absolute bottom-2.5 left-3 right-3 z-20 pointer-events-none flex justify-center">
         <MapTimeline
           timeline={timeline}
           activeFrameIndex={activeFrameIndex}

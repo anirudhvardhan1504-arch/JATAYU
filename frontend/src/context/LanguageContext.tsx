@@ -18,13 +18,13 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode; defaultLang
   defaultLanguage,
 }) => {
   const [language, setLanguageState] = useState<SupportedLanguage>(() => {
-    if (defaultLanguage && ['en', 'ta', 'hi'].includes(defaultLanguage)) {
+    if (defaultLanguage && ['en', 'ta', 'hi', 'te'].includes(defaultLanguage)) {
       return defaultLanguage;
     }
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const stored = window.localStorage.getItem(STORAGE_KEY);
-        if (stored === 'en' || stored === 'ta' || stored === 'hi') {
+        if (stored === 'en' || stored === 'ta' || stored === 'hi' || stored === 'te') {
           return stored;
         }
       }
@@ -35,13 +35,15 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode; defaultLang
   });
 
   useEffect(() => {
-    if (defaultLanguage && ['en', 'ta', 'hi'].includes(defaultLanguage)) {
+    if (defaultLanguage && ['en', 'ta', 'hi', 'te'].includes(defaultLanguage)) {
       setLanguageState(defaultLanguage);
     }
   }, [defaultLanguage]);
 
+  useEffect(() => { document.documentElement.lang = language; }, [language]);
+
   const setLanguage = useCallback((newLang: SupportedLanguage) => {
-    if (!['en', 'ta', 'hi'].includes(newLang)) return;
+    if (!['en', 'ta', 'hi', 'te'].includes(newLang)) return;
     setLanguageState(newLang);
     try {
       if (typeof window !== 'undefined' && window.localStorage) {

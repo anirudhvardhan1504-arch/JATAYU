@@ -167,18 +167,18 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
 
   return (
     <aside
-      className={`absolute top-16 left-3 z-30 w-72 sm:w-76 max-h-[calc(100vh-140px)] overflow-y-auto bg-navy-900/95 backdrop-blur-md border border-navy-700/80 rounded-xl p-3 shadow-2xl text-slate-300 font-mono text-xs space-y-2.5 transition-all animate-in fade-in slide-in-from-left duration-200 select-none ${className}`}
+      className={`absolute top-16 left-3 z-30 w-72 sm:w-76 max-h-[calc(100vh-140px)] overflow-y-auto bg-slate-50 backdrop-blur-md border border-slate-200 rounded-xl p-3 shadow-2xl text-slate-700 font-mono text-xs space-y-2.5 transition-all animate-in fade-in slide-in-from-left duration-200 select-none ${className}`}
       aria-label="Geospatial Layers Sidebar"
     >
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between pb-1.5 border-b border-navy-800">
-        <div className="flex items-center gap-1.5 text-white font-bold tracking-wider text-xs">
-          <Layers className="w-3.5 h-3.5 text-blue-400" />
+      <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
+        <div className="flex items-center gap-1.5 text-slate-900 font-bold tracking-wider text-xs">
+          <Layers className="w-3.5 h-3.5 text-blue-800" />
           <span>GEOSPATIAL LAYERS</span>
         </div>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-white p-1 rounded hover:bg-navy-800 transition-colors cursor-pointer"
+          className="text-slate-700 hover:text-slate-900 p-1 rounded hover:bg-slate-50 transition-colors cursor-pointer"
           title="Close layers sidebar"
           aria-label="Close layers sidebar"
         >
@@ -189,50 +189,50 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
       {/* ========================================================================= */}
       {/* SYSTEM A: LIVE MAPS — What is happening now?                             */}
       {/* ========================================================================= */}
-      <div className="rounded-lg border border-blue-500/30 bg-blue-950/20 overflow-hidden">
+      <div className="rounded-lg border border-blue-500/30 bg-blue-50 overflow-hidden">
         <button
           onClick={() => toggleSection('A')}
-          className="w-full px-2.5 py-1.5 bg-blue-900/30 hover:bg-blue-900/40 border-b border-blue-800/40 flex items-center justify-between text-left transition-colors cursor-pointer"
+          className="w-full px-2.5 py-1.5 bg-blue-50 hover:bg-blue-50 border-b border-blue-800/40 flex items-center justify-between text-left transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-1.5">
-            <Radio className="w-3 h-3 text-blue-400 animate-pulse" />
+            <Radio className="w-3 h-3 text-blue-800 animate-pulse" />
             <div>
-              <div className="font-bold text-white text-[11px] tracking-wide">A. LIVE MAPS</div>
-              <div className="text-[9px] text-blue-300/80 font-normal">Observed radar & satellite telemetry</div>
+              <div className="font-bold text-slate-900 text-[11px] tracking-wide">A. LIVE MAPS</div>
+              <div className="text-[9px] text-blue-800 font-normal">Observed radar & satellite telemetry</div>
             </div>
           </div>
-          {isSectionOpen('A') ? <ChevronUp className="w-3.5 h-3.5 text-blue-400" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-400" />}
+          {isSectionOpen('A') ? <ChevronUp className="w-3.5 h-3.5 text-blue-800" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-800" />}
         </button>
 
         {isSectionOpen('A') && (
           <div className="p-2 space-y-2">
             {/* Layer A.1: RainViewer Radar Composite */}
-            <div className="space-y-1.5 bg-navy-950/70 p-2 rounded-lg border border-navy-800/80">
+            <div className="space-y-1.5 bg-slate-50 p-2 rounded-lg border border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Radio className="w-3 h-3 text-blue-400" />
-                  <span className="font-bold text-white text-[11px]">RainViewer Radar</span>
+                  <Radio className="w-3 h-3 text-blue-800" />
+                  <span className="font-bold text-slate-900 text-[11px]">RainViewer Radar</span>
                 </div>
                 <button
                   onClick={() => onToggleRadar(!showRadar)}
                   className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                     showRadar
-                      ? 'bg-blue-600/30 text-blue-300 border-blue-500'
-                      : 'bg-navy-800 text-slate-500 border-navy-700'
+                      ? 'bg-blue-600/30 text-blue-800 border-blue-500'
+                      : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
                   {showRadar ? 'VISIBLE' : 'HIDDEN'}
                 </button>
               </div>
-              <div className="text-[9px] text-slate-400 leading-tight">
+              <div className="text-[9px] text-slate-700 leading-tight">
                 Live composite radar tiles (256x256 EPSG:3857)
               </div>
 
               {showRadar && (
-                <div className="pt-1.5 border-t border-navy-800/80 space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-400">
+                <div className="pt-1.5 border-t border-slate-200 space-y-1">
+                  <div className="flex justify-between text-[10px] text-slate-700">
                     <span>Opacity:</span>
-                    <span className="font-bold text-white">{radarOpacity}%</span>
+                    <span className="font-bold text-slate-900">{radarOpacity}%</span>
                   </div>
                   <input
                     type="range"
@@ -240,39 +240,39 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                     max="100"
                     value={radarOpacity}
                     onChange={(e) => onChangeRadarOpacity(Number(e.target.value))}
-                    className="w-full accent-blue-500 h-1 bg-navy-800 rounded-lg cursor-pointer"
+                    className="w-full accent-blue-500 h-1 bg-slate-50 rounded-lg cursor-pointer"
                   />
                 </div>
               )}
             </div>
 
             {/* Layer A.2: Satellite Imagery (NASA GIBS Live & HD) */}
-            <div className="space-y-2 bg-navy-950/70 p-2 rounded-lg border border-navy-800/80">
+            <div className="space-y-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Globe className="w-3 h-3 text-cyan-400" />
-                  <span className="font-bold text-white text-[11px]">Satellite Imagery</span>
+                  <Globe className="w-3 h-3 text-cyan-800" />
+                  <span className="font-bold text-slate-900 text-[11px]">Satellite Imagery</span>
                 </div>
                 <button
                   onClick={() => onToggleSatellite(!showSatellite)}
                   className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                     showSatellite
-                      ? 'bg-cyan-600/30 text-cyan-300 border-cyan-500'
-                      : 'bg-navy-800 text-slate-500 border-navy-700'
+                      ? 'bg-cyan-600/30 text-cyan-800 border-cyan-500'
+                      : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
                   {showSatellite ? 'VISIBLE' : 'HIDDEN'}
                 </button>
               </div>
-              <div className="text-[9px] text-slate-400 leading-tight">
+              <div className="text-[9px] text-slate-700 leading-tight">
                 NASA GIBS geostationary & optical composites
               </div>
 
               {showSatellite && (
-                <div className="pt-1.5 border-t border-navy-800/80 space-y-2">
+                <div className="pt-1.5 border-t border-slate-200 space-y-2">
                   {/* Mode Selector: LIVE vs HD */}
                   <div className="space-y-1">
-                    <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
+                    <div className="text-[9px] text-slate-700 uppercase tracking-wider font-semibold">
                       Mode
                     </div>
                     <div className="grid grid-cols-2 gap-1">
@@ -280,8 +280,8 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                         onClick={() => onChangeSatelliteMode && onChangeSatelliteMode('live')}
                         className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
                           satelliteMode === 'live'
-                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 shadow-xs'
-                            : 'bg-navy-900 text-slate-400 border-navy-700 hover:text-white'
+                            ? 'bg-cyan-500/20 text-cyan-800 border-cyan-400 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                         }`}
                       >
                         Live (10m)
@@ -290,8 +290,8 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                         onClick={() => onChangeSatelliteMode && onChangeSatelliteMode('hd')}
                         className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
                           satelliteMode === 'hd'
-                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 shadow-xs'
-                            : 'bg-navy-900 text-slate-400 border-navy-700 hover:text-white'
+                            ? 'bg-cyan-500/20 text-cyan-800 border-cyan-400 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                         }`}
                       >
                         HD (250m)
@@ -302,7 +302,7 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                   {/* Channel / Product Selection */}
                   {satelliteMode === 'live' ? (
                     <div className="space-y-1">
-                      <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
+                      <div className="text-[9px] text-slate-700 uppercase tracking-wider font-semibold">
                         Geostationary Channel
                       </div>
                       <div className="grid grid-cols-1 gap-1">
@@ -310,62 +310,62 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                           onClick={() => onChangeSatelliteChannel && onChangeSatelliteChannel('ir')}
                           className={`px-2 py-1 rounded text-[9.5px] font-medium border text-left flex items-center justify-between transition-colors cursor-pointer ${
                             satelliteChannel === 'ir'
-                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
-                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                              ? 'bg-cyan-50 text-cyan-800 border-cyan-500'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                           }`}
                         >
                           <span>Infrared (10.4 µm)</span>
-                          <span className="text-[8.5px] text-cyan-400/80">Day & Night</span>
+                          <span className="text-[8.5px] text-cyan-800">Day & Night</span>
                         </button>
                         <button
                           onClick={() => onChangeSatelliteChannel && onChangeSatelliteChannel('visible')}
                           className={`px-2 py-1 rounded text-[9.5px] font-medium border text-left flex items-center justify-between transition-colors cursor-pointer ${
                             satelliteChannel === 'visible'
-                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
-                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                              ? 'bg-cyan-50 text-cyan-800 border-cyan-500'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                           }`}
                         >
                           <span>Visible (0.64 µm)</span>
-                          <span className="text-[8.5px] text-amber-400">Daylight Only</span>
+                          <span className="text-[8.5px] text-amber-800">Daylight Only</span>
                         </button>
                         <button
                           onClick={() => onChangeSatelliteChannel && onChangeSatelliteChannel('airmass')}
                           className={`px-2 py-1 rounded text-[9.5px] font-medium border text-left flex items-center justify-between transition-colors cursor-pointer ${
                             satelliteChannel === 'airmass'
-                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
-                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                              ? 'bg-cyan-50 text-cyan-800 border-cyan-500'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                           }`}
                         >
                           <span>Air Mass RGB</span>
-                          <span className="text-[8.5px] text-teal-400/80">Jet Streams</span>
+                          <span className="text-[8.5px] text-teal-800">Jet Streams</span>
                         </button>
                       </div>
 
                       {/* Visible Daylight Notice */}
                       {satelliteChannel === 'visible' && (
-                        <div className="p-1.5 bg-amber-950/40 border border-amber-600/40 rounded text-[8.5px] text-amber-300 leading-tight">
+                        <div className="p-1.5 bg-amber-50 border border-amber-600/40 rounded text-[8.5px] text-amber-800 leading-tight">
                           ⚠️ Optical band requires solar illumination. Dark/black during Indian nighttime (12:00-01:00 UTC).
                         </div>
                       )}
 
                       {/* Live Metadata & Processing Latency Notice */}
-                      <div className="p-1.5 bg-navy-900/80 border border-navy-800 rounded text-[8.5px] text-slate-400 space-y-0.5">
-                        <div className="flex justify-between text-slate-300">
+                      <div className="p-1.5 bg-slate-50 border border-slate-200 rounded text-[8.5px] text-slate-700 space-y-0.5">
+                        <div className="flex justify-between text-slate-700">
                           <span>Observation:</span>
-                          <span className="font-mono text-cyan-300">{liveObs.observationTimeLabel}</span>
+                          <span className="font-mono text-cyan-800">{liveObs.observationTimeLabel}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Processing Latency:</span>
-                          <span className="text-amber-400">~40 min delay</span>
+                          <span className="text-amber-800">~40 min delay</span>
                         </div>
-                        <div className="text-[8px] text-slate-500 pt-0.5 border-t border-navy-800">
+                        <div className="text-[8px] text-slate-700 pt-0.5 border-t border-slate-200">
                           Provider: NASA GIBS / JMA Himawari-9 AHI
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
+                      <div className="text-[9px] text-slate-700 uppercase tracking-wider font-semibold">
                         Daily True Color Product
                       </div>
                       <div className="grid grid-cols-2 gap-1">
@@ -373,8 +373,8 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                           onClick={() => onChangeHDProduct && onChangeHDProduct('viirs')}
                           className={`px-2 py-1 rounded text-[9.5px] font-medium border text-center transition-colors cursor-pointer ${
                             hdProduct === 'viirs'
-                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
-                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                              ? 'bg-cyan-50 text-cyan-800 border-cyan-500'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                           }`}
                         >
                           VIIRS NOAA-20
@@ -383,20 +383,20 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                           onClick={() => onChangeHDProduct && onChangeHDProduct('modis')}
                           className={`px-2 py-1 rounded text-[9.5px] font-medium border text-center transition-colors cursor-pointer ${
                             hdProduct === 'modis'
-                              ? 'bg-cyan-950/60 text-cyan-200 border-cyan-500'
-                              : 'bg-navy-900/60 text-slate-400 border-navy-800 hover:text-white'
+                              ? 'bg-cyan-50 text-cyan-800 border-cyan-500'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                           }`}
                         >
                           MODIS Terra
                         </button>
                       </div>
 
-                      <div className="p-1.5 bg-navy-900/80 border border-navy-800 rounded text-[8.5px] text-slate-400 space-y-0.5">
-                        <div className="flex justify-between text-slate-300">
+                      <div className="p-1.5 bg-slate-50 border border-slate-200 rounded text-[8.5px] text-slate-700 space-y-0.5">
+                        <div className="flex justify-between text-slate-700">
                           <span>Resolution:</span>
-                          <span className="text-cyan-300 font-bold">250m at equator</span>
+                          <span className="text-cyan-800 font-bold">250m at equator</span>
                         </div>
-                        <div className="text-[8px] text-slate-500 leading-tight pt-0.5 border-t border-navy-800">
+                        <div className="text-[8px] text-slate-700 leading-tight pt-0.5 border-t border-slate-200">
                           Daily polar swath mosaic. Not an animated geostationary feed.
                         </div>
                       </div>
@@ -404,10 +404,10 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                   )}
 
                   {/* Satellite Opacity Slider */}
-                  <div className="space-y-1 pt-1 border-t border-navy-800/80">
-                    <div className="flex justify-between text-[10px] text-slate-400">
+                  <div className="space-y-1 pt-1 border-t border-slate-200">
+                    <div className="flex justify-between text-[10px] text-slate-700">
                       <span>Satellite Opacity:</span>
-                      <span className="font-bold text-white">{satelliteOpacity}%</span>
+                      <span className="font-bold text-slate-900">{satelliteOpacity}%</span>
                     </div>
                     <input
                       type="range"
@@ -415,16 +415,16 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                       max="100"
                       value={satelliteOpacity}
                       onChange={(e) => onChangeSatelliteOpacity && onChangeSatelliteOpacity(Number(e.target.value))}
-                      className="w-full accent-cyan-500 h-1 bg-navy-800 rounded-lg cursor-pointer"
+                      className="w-full accent-cyan-500 h-1 bg-slate-50 rounded-lg cursor-pointer"
                     />
                   </div>
 
                   {/* Sector Viewing Geometry Context (e.g. Mumbai limb foreshortening) */}
                   {sectorViewing && (
-                    <div className="p-1.5 bg-navy-900/90 border border-navy-800 rounded text-[8px] text-slate-400 leading-tight">
-                      <div className="font-bold text-slate-300 mb-0.5">Sector Geometry:</div>
+                    <div className="p-1.5 bg-slate-50 border border-slate-200 rounded text-[8px] text-slate-700 leading-tight">
+                      <div className="font-bold text-slate-700 mb-0.5">Sector Geometry:</div>
                       <div>{sectorViewing.viewingAngle}</div>
-                      <div className="text-slate-400 mt-0.5">{sectorViewing.qualityNote}</div>
+                      <div className="text-slate-700 mt-0.5">{sectorViewing.qualityNote}</div>
                     </div>
                   )}
                 </div>
@@ -437,35 +437,35 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
       {/* ========================================================================= */}
       {/* SYSTEM B: FORECAST MAPS — What is likely to happen?                     */}
       {/* ========================================================================= */}
-      <div className="rounded-lg border border-teal-500/30 bg-teal-950/20 overflow-hidden">
+      <div className="rounded-lg border border-teal-500/30 bg-teal-50 overflow-hidden">
         <button
           onClick={() => toggleSection('B')}
-          className="w-full px-2.5 py-1.5 bg-teal-900/30 hover:bg-teal-900/40 border-b border-teal-800/40 flex items-center justify-between text-left transition-colors cursor-pointer"
+          className="w-full px-2.5 py-1.5 bg-teal-50 hover:bg-teal-50 border-b border-teal-800/40 flex items-center justify-between text-left transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-1.5">
-            <CloudRain className="w-3 h-3 text-teal-400" />
+            <CloudRain className="w-3 h-3 text-teal-800" />
             <div>
-              <div className="font-bold text-white text-[11px] tracking-wide">B. FORECAST MAPS</div>
-              <div className="text-[9px] text-teal-300/80 font-normal">NWP models (ECMWF IFS / DWD ICON)</div>
+              <div className="font-bold text-slate-900 text-[11px] tracking-wide">B. FORECAST MAPS</div>
+              <div className="text-[9px] text-teal-800 font-normal">NWP models (ECMWF IFS / DWD ICON)</div>
             </div>
           </div>
-          {isSectionOpen('B') ? <ChevronUp className="w-3.5 h-3.5 text-teal-400" /> : <ChevronDown className="w-3.5 h-3.5 text-teal-400" />}
+          {isSectionOpen('B') ? <ChevronUp className="w-3.5 h-3.5 text-teal-800" /> : <ChevronDown className="w-3.5 h-3.5 text-teal-800" />}
         </button>
 
         {isSectionOpen('B') && (
           <div className="p-2 space-y-1.5">
             {/* Precipitation Rate */}
-            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
-              <span className="text-slate-300 flex items-center gap-1.5">
-                <CloudRain className="w-3 h-3 text-sky-400" />
+            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-slate-50 border border-slate-200">
+              <span className="text-slate-700 flex items-center gap-1.5">
+                <CloudRain className="w-3 h-3 text-sky-800" />
                 <span>Precipitation Rate (NWP)</span>
               </span>
               <button
                 onClick={() => onTogglePrecipLayer(!showPrecipLayer)}
                 className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                   showPrecipLayer
-                    ? 'bg-sky-950/50 text-sky-300 border-sky-500'
-                    : 'bg-navy-800 text-slate-500 border-navy-700'
+                    ? 'bg-sky-50 text-sky-800 border-sky-500'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
                 }`}
               >
                 {showPrecipLayer ? 'ENABLED' : 'DISABLED'}
@@ -473,17 +473,17 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
             </div>
 
             {/* Wind Vectors */}
-            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
-              <span className="text-slate-300 flex items-center gap-1.5">
-                <Wind className="w-3 h-3 text-teal-400" />
+            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-slate-50 border border-slate-200">
+              <span className="text-slate-700 flex items-center gap-1.5">
+                <Wind className="w-3 h-3 text-teal-800" />
                 <span>Surface Wind Vectors</span>
               </span>
               <button
                 onClick={() => onToggleWindLayer(!showWindLayer)}
                 className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                   showWindLayer
-                    ? 'bg-teal-950/50 text-teal-300 border-teal-500'
-                    : 'bg-navy-800 text-slate-500 border-navy-700'
+                    ? 'bg-teal-50 text-teal-800 border-teal-500'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
                 }`}
               >
                 {showWindLayer ? 'ENABLED' : 'DISABLED'}
@@ -491,17 +491,17 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
             </div>
 
             {/* Temperature */}
-            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
-              <span className="text-slate-300 flex items-center gap-1.5">
-                <Thermometer className="w-3 h-3 text-amber-400" />
+            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-slate-50 border border-slate-200">
+              <span className="text-slate-700 flex items-center gap-1.5">
+                <Thermometer className="w-3 h-3 text-amber-800" />
                 <span>2m Air Temperature</span>
               </span>
               <button
                 onClick={() => onToggleTempLayer && onToggleTempLayer(!showTempLayer)}
                 className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                   showTempLayer
-                    ? 'bg-amber-950/50 text-amber-300 border-amber-500'
-                    : 'bg-navy-800 text-slate-500 border-navy-700'
+                    ? 'bg-amber-50 text-amber-800 border-amber-500'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
                 }`}
               >
                 {showTempLayer ? 'ENABLED' : 'DISABLED'}
@@ -509,17 +509,17 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
             </div>
 
             {/* Humidity */}
-            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
-              <span className="text-slate-300 flex items-center gap-1.5">
-                <Droplets className="w-3 h-3 text-blue-400" />
+            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-slate-50 border border-slate-200">
+              <span className="text-slate-700 flex items-center gap-1.5">
+                <Droplets className="w-3 h-3 text-blue-800" />
                 <span>Relative Humidity</span>
               </span>
               <button
                 onClick={() => onToggleHumidityLayer && onToggleHumidityLayer(!showHumidityLayer)}
                 className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                   showHumidityLayer
-                    ? 'bg-blue-950/50 text-blue-300 border-blue-500'
-                    : 'bg-navy-800 text-slate-500 border-navy-700'
+                    ? 'bg-blue-50 text-blue-800 border-blue-500'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
                 }`}
               >
                 {showHumidityLayer ? 'ENABLED' : 'DISABLED'}
@@ -527,17 +527,17 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
             </div>
 
             {/* Pressure */}
-            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
-              <span className="text-slate-300 flex items-center gap-1.5">
-                <Gauge className="w-3 h-3 text-purple-400" />
+            <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-slate-50 border border-slate-200">
+              <span className="text-slate-700 flex items-center gap-1.5">
+                <Gauge className="w-3 h-3 text-purple-800" />
                 <span>Mean Sea Level Pressure</span>
               </span>
               <button
                 onClick={() => onTogglePressureLayer && onTogglePressureLayer(!showPressureLayer)}
                 className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                   showPressureLayer
-                    ? 'bg-purple-950/50 text-purple-300 border-purple-500'
-                    : 'bg-navy-800 text-slate-500 border-navy-700'
+                    ? 'bg-purple-50 text-purple-800 border-purple-500'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
                 }`}
               >
                 {showPressureLayer ? 'ENABLED' : 'DISABLED'}
@@ -546,7 +546,7 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
 
             {/* Pressure Sub-Controls (Interval 2 hPa / 4 hPa) */}
             {showPressureLayer && (
-              <div className="p-1.5 bg-navy-900/80 border border-navy-800 rounded text-[9px] text-slate-400 flex items-center justify-between">
+              <div className="p-1.5 bg-slate-50 border border-slate-200 rounded text-[9px] text-slate-700 flex items-center justify-between">
                 <span>Isobar Interval:</span>
                 <div className="flex gap-1">
                   {[2, 4].map((hpa) => (
@@ -555,8 +555,8 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                       onClick={() => onChangePressureContourInterval && onChangePressureContourInterval(hpa as 2 | 4)}
                       className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold border transition-colors cursor-pointer ${
                         pressureContourInterval === hpa
-                          ? 'bg-purple-900 text-purple-200 border-purple-500'
-                          : 'bg-navy-950 text-slate-400 border-navy-800 hover:text-white'
+                          ? 'bg-purple-50 text-purple-800 border-purple-500'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                       }`}
                     >
                       {hpa} hPa
@@ -568,7 +568,7 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
 
             {/* Wind Sub-Controls (Density Light / Standard / Dense) */}
             {showWindLayer && (
-              <div className="p-1.5 bg-navy-900/80 border border-navy-800 rounded text-[9px] text-slate-400 flex items-center justify-between">
+              <div className="p-1.5 bg-slate-50 border border-slate-200 rounded text-[9px] text-slate-700 flex items-center justify-between">
                 <span>Particle Density:</span>
                 <div className="flex gap-1">
                   {(['light', 'standard', 'dense'] as const).map((d) => (
@@ -577,8 +577,8 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                       onClick={() => onChangeWindParticleDensity && onChangeWindParticleDensity(d)}
                       className={`px-1.5 py-0.5 rounded text-[8px] font-bold border transition-colors cursor-pointer ${
                         windParticleDensity === d
-                          ? 'bg-teal-900 text-teal-200 border-teal-500'
-                          : 'bg-navy-950 text-slate-400 border-navy-800 hover:text-white'
+                          ? 'bg-teal-50 text-teal-800 border-teal-500'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900'
                       }`}
                     >
                       {d.toUpperCase()}
@@ -589,20 +589,20 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
             )}
 
             {/* District Rainfall Hazard Layer Control (Phase 3D-2B) */}
-            <div className="flex items-center justify-between p-1.5 bg-navy-900/80 rounded border border-navy-800">
+            <div className="flex items-center justify-between p-1.5 bg-slate-50 rounded border border-slate-200">
               <div className="flex items-center gap-2">
-                <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                <MapPin className="w-3.5 h-3.5 text-amber-800" />
                 <div>
-                  <div className="text-[11px] font-semibold text-slate-200">District Rainfall Hazard</div>
-                  <div className="text-[9px] text-slate-500">24h IMD Hazard Category Polygons</div>
+                  <div className="text-[11px] font-semibold text-slate-700">District Rainfall Hazard</div>
+                  <div className="text-[9px] text-slate-700">24h IMD Hazard Category Polygons</div>
                 </div>
               </div>
               <button
                 onClick={() => onToggleDistrictImpactLayer && onToggleDistrictImpactLayer(!showDistrictImpactLayer)}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
                   showDistrictImpactLayer
-                    ? 'bg-amber-600/30 text-amber-300 border-amber-500'
-                    : 'bg-navy-800 text-slate-500 border-navy-700'
+                    ? 'bg-amber-600/30 text-amber-800 border-amber-500'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
                 }`}
               >
                 {showDistrictImpactLayer ? 'ENABLED' : 'DISABLED'}
@@ -611,10 +611,10 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
 
             {/* District Impact Opacity Slider */}
             {showDistrictImpactLayer && (
-              <div className="space-y-1 p-1.5 bg-navy-900/60 rounded border border-navy-800/80">
-                <div className="flex justify-between text-[9.5px] text-slate-400">
+              <div className="space-y-1 p-1.5 bg-slate-50 rounded border border-slate-200">
+                <div className="flex justify-between text-[9.5px] text-slate-700">
                   <span>District Fill Opacity:</span>
-                  <span className="font-bold text-amber-300">{districtImpactOpacity}%</span>
+                  <span className="font-bold text-amber-800">{districtImpactOpacity}%</span>
                 </div>
                 <input
                   type="range"
@@ -624,7 +624,7 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                   onChange={(e) =>
                     onChangeDistrictImpactOpacity && onChangeDistrictImpactOpacity(Number(e.target.value))
                   }
-                  className="w-full accent-amber-500 h-1 bg-navy-800 rounded-lg cursor-pointer"
+                  className="w-full accent-amber-500 h-1 bg-slate-50 rounded-lg cursor-pointer"
                 />
               </div>
             )}
@@ -632,9 +632,9 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
             {/* Forecast Opacity Slider (rendered if any forecast layer is on) */}
             {(showPrecipLayer || showWindLayer || showTempLayer || showHumidityLayer || showPressureLayer) && (
               <div className="space-y-1 pt-1 border-t border-teal-900/40">
-                <div className="flex justify-between text-[10px] text-slate-400">
+                <div className="flex justify-between text-[10px] text-slate-700">
                   <span>Forecast Opacity:</span>
-                  <span className="font-bold text-white">{forecastOpacity}%</span>
+                  <span className="font-bold text-slate-900">{forecastOpacity}%</span>
                 </div>
                 <input
                   type="range"
@@ -642,33 +642,33 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                   max="100"
                   value={forecastOpacity}
                   onChange={(e) => onChangeForecastOpacity && onChangeForecastOpacity(Number(e.target.value))}
-                  className="w-full accent-teal-500 h-1 bg-navy-800 rounded-lg cursor-pointer"
+                  className="w-full accent-teal-500 h-1 bg-slate-50 rounded-lg cursor-pointer"
                 />
               </div>
             )}
 
             {/* Forecast NWP Metadata & Model Run Provenance Card */}
             {forecastGrid?.metadata && (
-              <div className="p-1.5 bg-navy-900/90 border border-teal-800/50 rounded text-[8.5px] text-slate-400 space-y-0.5">
-                <div className="flex justify-between text-slate-300">
+              <div className="p-1.5 bg-slate-50 border border-teal-800/50 rounded text-[8.5px] text-slate-700 space-y-0.5">
+                <div className="flex justify-between text-slate-700">
                   <span>Model:</span>
-                  <span className="font-semibold text-teal-300">
+                  <span className="font-semibold text-teal-800">
                     {forecastGrid.metadata.model?.replace(/\s*\([^)]*\)/, '').trim()}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Run Cycle:</span>
-                  <span className="text-amber-300">{forecastGrid.metadata.runCycle} ({forecastGrid.metadata.initializationTime})</span>
+                  <span className="text-amber-800">{forecastGrid.metadata.runCycle} ({forecastGrid.metadata.initializationTime})</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Active Step:</span>
-                  <span className="font-mono text-white font-bold">T+{forecastTimestepIndex.toString().padStart(2, '0')}h</span>
+                  <span className="font-mono text-slate-900 font-bold">T+{forecastTimestepIndex.toString().padStart(2, '0')}h</span>
                 </div>
-                <div className="text-[8px] text-slate-500 pt-0.5 border-t border-navy-800">
+                <div className="text-[8px] text-slate-700 pt-0.5 border-t border-slate-200">
                   Provider: {forecastGrid.metadata.provider}
                 </div>
                 {forecastGrid.metadata.isFallback && (
-                  <div className="text-[8px] text-amber-400 font-bold">
+                  <div className="text-[8px] text-amber-800 font-bold">
                     ⚠️ FAILOVER ACTIVE (NOAA GFS)
                   </div>
                 )}
@@ -684,10 +684,10 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
             {onOpenForecastImpact && (
               <button
                 onClick={onOpenForecastImpact}
-                className="w-full mt-1.5 py-1.5 px-2 bg-gradient-to-r from-teal-900/60 to-blue-900/60 hover:from-teal-800/80 hover:to-blue-800/80 border border-teal-500/50 rounded-lg text-teal-300 font-bold text-[10px] tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                className="w-full mt-1.5 py-1.5 px-2 bg-gradient-to-r from-teal-900/60 to-blue-900/60 hover:from-teal-800/80 hover:to-blue-800/80 border border-teal-500/50 rounded-lg text-teal-800 font-bold text-[10px] tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
                 title="Open District Forecast Impact Intelligence Dashboard"
               >
-                <FileText className="w-3.5 h-3.5 text-teal-400" />
+                <FileText className="w-3.5 h-3.5 text-teal-800" />
                 <span>FORECAST IMPACT DASHBOARD</span>
               </button>
             )}
@@ -698,63 +698,63 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
       {/* ========================================================================= */}
       {/* SYSTEM C: JATAYU INTELLIGENCE — Vulnerabilities & Potential Impacts       */}
       {/* ========================================================================= */}
-      <div className="rounded-lg border border-amber-500/40 bg-amber-950/20 overflow-hidden">
+      <div className="rounded-lg border border-amber-500/40 bg-amber-50 overflow-hidden">
         <button
           onClick={() => toggleSection('C')}
-          className="w-full px-2.5 py-1.5 bg-amber-900/30 hover:bg-amber-900/40 border-b border-amber-800/40 flex items-center justify-between text-left transition-colors cursor-pointer"
+          className="w-full px-2.5 py-1.5 bg-amber-50 hover:bg-amber-50 border-b border-amber-800/40 flex items-center justify-between text-left transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-1.5">
-            <ShieldAlert className="w-3 h-3 text-amber-400" />
+            <ShieldAlert className="w-3 h-3 text-amber-800" />
             <div>
-              <div className="font-bold text-white text-[11px] tracking-wide">C. JATAYU INTELLIGENCE</div>
-              <div className="text-[9px] text-amber-300/80 font-normal">Vulnerability, facilities & SFINCS model</div>
+              <div className="font-bold text-slate-900 text-[11px] tracking-wide">C. JATAYU INTELLIGENCE</div>
+              <div className="text-[9px] text-amber-800 font-normal">Vulnerability, facilities & SFINCS model</div>
             </div>
           </div>
-          {isSectionOpen('C') ? <ChevronUp className="w-3.5 h-3.5 text-amber-400" /> : <ChevronDown className="w-3.5 h-3.5 text-amber-400" />}
+          {isSectionOpen('C') ? <ChevronUp className="w-3.5 h-3.5 text-amber-800" /> : <ChevronDown className="w-3.5 h-3.5 text-amber-800" />}
         </button>
 
         {isSectionOpen('C') && (
           <div className="p-2 space-y-2">
             {/* Hydrodynamic SFINCS Card */}
-            <div className="space-y-1.5 bg-navy-950/70 p-2 rounded-lg border-2 border-amber-400">
-              <div className="flex items-center justify-between pb-1 border-b border-navy-800">
+            <div className="space-y-1.5 bg-slate-50 p-2 rounded-lg border-2 border-amber-400">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-200">
                 <div className="flex items-center gap-1.5">
-                  <Database className="w-3.5 h-3.5 text-amber-400" />
-                  <h3 className="text-xs font-bold text-white">Hydrodynamic Simulation</h3>
+                  <Database className="w-3.5 h-3.5 text-amber-800" />
+                  <h3 className="text-xs font-bold text-slate-900">Hydrodynamic Simulation</h3>
                 </div>
-                <span className="px-1 py-0.2 bg-amber-950 text-amber-300 font-mono text-[9px] font-bold rounded border border-amber-600">
+                <span className="px-1 py-0.2 bg-amber-50 text-amber-800 font-mono text-[9px] font-bold rounded border border-amber-600">
                   RESEARCH S2
                 </span>
               </div>
 
               {/* Amber Warning Header */}
-              <div className="bg-amber-950/80 border border-amber-500/70 rounded p-1.5 text-[9px] font-mono text-amber-200 leading-tight">
+              <div className="bg-amber-50 border border-amber-500/70 rounded p-1.5 text-[9px] font-mono text-amber-800 leading-tight">
                 <div className="font-bold">⚠️ EXPERIMENTAL SIMULATION — NOT VALIDATED FOR OFFICIAL CIVIL DEFENSE</div>
-                <div className="text-slate-400 mt-0.5">Quarantined research layer.</div>
+                <div className="text-slate-700 mt-0.5">Quarantined research layer.</div>
               </div>
 
               {!isAuthorizedForSimulation ? (
-                <div className="bg-navy-900 border border-navy-700 rounded p-2 text-xs space-y-1">
-                  <div className="flex items-center gap-1.5 text-amber-300 font-semibold font-mono text-[10px]">
-                    <Lock className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                <div className="bg-slate-50 border border-slate-200 rounded p-2 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 text-amber-800 font-semibold font-mono text-[10px]">
+                    <Lock className="w-3 h-3 text-amber-800 flex-shrink-0" />
                     <span>ROLE ACCESS QUARANTINE</span>
                   </div>
-                  <p className="text-[9px] text-slate-400 leading-relaxed font-sans">
+                  <p className="text-[9px] text-slate-700 leading-relaxed font-sans">
                     The Adyar Corridor SFINCS 2D hydrodynamic simulation is restricted to RESEARCHER, GOVERNMENT, and ADMIN roles.
                   </p>
-                  <div className="text-[9px] font-mono text-slate-500 pt-1 border-t border-navy-800">
-                    CURRENT TIER: <strong className="text-slate-400">{userRole ? `Role [${userRole}]` : 'Unauthenticated'}</strong>
+                  <div className="text-[9px] font-mono text-slate-700 pt-1 border-t border-slate-200">
+                    CURRENT TIER: <strong className="text-slate-700">{userRole ? `Role [${userRole}]` : 'Unauthenticated'}</strong>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-1.5 pt-0.5 text-[9px]">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-200">Adyar Corridor (S2 Baseline)</span>
+                    <span className="font-bold text-slate-700">Adyar Corridor (S2 Baseline)</span>
                     <button
                       onClick={() => onToggleSimulation(!showSimulation)}
                       className={`px-2 py-0.2 rounded text-[9px] font-mono font-bold border transition-colors cursor-pointer ${
                         showSimulation
-                          ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                          ? 'bg-amber-500 text-slate-900 border-amber-600 shadow-xs'
                           : 'bg-warm-100 text-slate-700 border-slate-300 hover:bg-slate-200'
                       }`}
                     >
@@ -763,55 +763,55 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
                   </div>
 
                   {simulationLoading && (
-                    <div className="text-sky-400 flex items-center gap-1">
+                    <div className="text-sky-800 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" />
                       <span>Loading hydrodynamic vectors...</span>
                     </div>
                   )}
                   {simulationError && (
-                    <div className="text-red-400 font-mono p-1 bg-red-950/60 rounded border border-red-800">
+                    <div className="text-red-800 font-mono p-1 bg-red-50 rounded border border-red-800">
                       {simulationError}
                     </div>
                   )}
                   {showSimulation && simulationData && ((simulationData.geojson?.features?.length ?? simulationData.contours?.features?.length ?? 0) === 0) && !simulationLoading && !simulationError && (
-                    <div className="p-1 bg-amber-950/50 border border-amber-600/40 rounded text-amber-300">
+                    <div className="p-1 bg-amber-50 border border-amber-600/40 rounded text-amber-800">
                       No inundation contour geometries found in simulation dataset.
                     </div>
                   )}
 
                   {/* Depth Band Color Legend */}
-                  <div className="space-y-0.5 pt-1 border-t border-navy-800">
-                    <div className="text-[8px] font-mono font-bold text-slate-400 uppercase">
+                  <div className="space-y-0.5 pt-1 border-t border-slate-200">
+                    <div className="text-[8px] font-mono font-bold text-slate-700 uppercase">
                       HYDRAULIC DEPTH CLASSIFICATION
                     </div>
                     <div className="grid grid-cols-1 gap-0.5 text-[9px]">
-                      <div className="flex items-center justify-between px-1.5 py-0.5 rounded bg-navy-900 border border-navy-800">
+                      <div className="flex items-center justify-between px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200">
                         <div className="flex items-center gap-1">
                           <span className="w-2 h-2 rounded bg-[#FEF08A]" />
                           <span>Shallow Ponding</span>
                         </div>
-                        <span className="text-slate-400">0.10 - 0.50 m</span>
+                        <span className="text-slate-700">0.10 - 0.50 m</span>
                       </div>
-                      <div className="flex items-center justify-between px-1.5 py-0.5 rounded bg-navy-900 border border-navy-800">
+                      <div className="flex items-center justify-between px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200">
                         <div className="flex items-center gap-1">
                           <span className="w-2 h-2 rounded bg-[#FB923C]" />
                           <span>Moderate Depth</span>
                         </div>
-                        <span className="text-slate-400">0.50 - 1.50 m</span>
+                        <span className="text-slate-700">0.50 - 1.50 m</span>
                       </div>
-                      <div className="flex items-center justify-between px-1.5 py-0.5 rounded bg-navy-900 border border-navy-800">
+                      <div className="flex items-center justify-between px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200">
                         <div className="flex items-center gap-1">
                           <span className="w-2 h-2 rounded bg-[#DC2626]" />
                           <span>Critical Hazard</span>
                         </div>
-                        <span className="text-slate-400">&gt; 1.50 m</span>
+                        <span className="text-slate-700">&gt; 1.50 m</span>
                       </div>
                     </div>
                   </div>
 
                   <button
                     onClick={onFocusAdyarReach}
-                    className="w-full mt-1 py-1 px-2 bg-navy-800 hover:bg-navy-700 text-amber-300 rounded text-[9px] font-bold flex items-center justify-center gap-1 cursor-pointer"
+                    className="w-full mt-1 py-1 px-2 bg-slate-50 hover:bg-slate-50 text-amber-800 rounded text-[9px] font-bold flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <ExternalLink className="w-3 h-3" />
                     <span>FOCUS ADYAR REACH</span>
@@ -821,35 +821,35 @@ export const LayerSidebar: React.FC<LayerSidebarProps> = ({
             </div>
 
             {/* Additional Intelligence Overlays */}
-            <div className="space-y-1 pt-1 border-t border-navy-800/80">
-              <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
-                <span className="text-slate-300 flex items-center gap-1.5">
-                  <ShieldAlert className="w-3 h-3 text-amber-400" />
+            <div className="space-y-1 pt-1 border-t border-slate-200">
+              <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-slate-50 border border-slate-200">
+                <span className="text-slate-700 flex items-center gap-1.5">
+                  <ShieldAlert className="w-3 h-3 text-amber-800" />
                   <span>Flood-Prone Risk Points</span>
                 </span>
                 <button
                   onClick={() => onToggleVulnerabilityPoints && onToggleVulnerabilityPoints(!showVulnerabilityPoints)}
                   className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                     showVulnerabilityPoints
-                      ? 'bg-amber-950/50 text-amber-300 border-amber-500'
-                      : 'bg-navy-800 text-slate-500 border-navy-700'
+                      ? 'bg-amber-50 text-amber-800 border-amber-500'
+                      : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
                   {showVulnerabilityPoints ? 'ENABLED' : 'DISABLED'}
                 </button>
               </div>
 
-              <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-navy-950/60 border border-navy-800/80">
-                <span className="text-slate-300 flex items-center gap-1.5">
-                  <Building2 className="w-3 h-3 text-emerald-400" />
+              <div className="flex items-center justify-between text-[10px] p-1.5 rounded bg-slate-50 border border-slate-200">
+                <span className="text-slate-700 flex items-center gap-1.5">
+                  <Building2 className="w-3 h-3 text-emerald-800" />
                   <span>Emergency Facilities & Shelters</span>
                 </span>
                 <button
                   onClick={() => onToggleFacilities && onToggleFacilities(!showFacilities)}
                   className={`px-1.5 py-0.2 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
                     showFacilities
-                      ? 'bg-emerald-950/50 text-emerald-300 border-emerald-500'
-                      : 'bg-navy-800 text-slate-500 border-navy-700'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-500'
+                      : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
                   {showFacilities ? 'ENABLED' : 'DISABLED'}

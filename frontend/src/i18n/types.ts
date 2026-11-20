@@ -1,4 +1,4 @@
-export type SupportedLanguage = 'en' | 'ta' | 'hi';
+export type SupportedLanguage = 'en' | 'ta' | 'hi' | 'te';
 
 export interface LanguageOption {
   code: SupportedLanguage;
@@ -9,10 +9,16 @@ export interface LanguageOption {
 export const SUPPORTED_LANGUAGES: LanguageOption[] = [
   { code: 'en', label: 'English', nativeLabel: 'English' },
   { code: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்' },
+  { code: 'te', label: 'Telugu', nativeLabel: 'తెలుగు' },
   { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी' },
 ];
 
 export type TranslationKey =
+  | 'theme.light'
+  | 'theme.dark'
+  | 'facilities.filterTrauma'
+  | 'facilities.filterAmbulance'
+  | 'facilities.directoryListing'
   | 'brand.name'
   | 'brand.tagline'
   | 'brand.network'
@@ -92,6 +98,8 @@ export type TranslationKey =
   | 'role.researcher'
   | 'role.government'
   | 'role.admin'
+  | 'ai.unavailableTitle'
+  | 'ai.unavailableNotice'
   | 'ai.title'
   | 'ai.subtitle'
   | 'ai.badge'
@@ -197,6 +205,8 @@ export type TranslationKey =
   | 'home.activeWarning'
   | 'home.noActiveWarning'
   | 'home.noActiveWarningNote'
+  | 'home.cachedWarnings'
+  | 'home.cachedWarningsNote'
   | 'home.feedUnavailable'
   | 'home.feedUnavailableNote'
   | 'home.noLocationPrompt'

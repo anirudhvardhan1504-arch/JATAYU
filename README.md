@@ -100,7 +100,7 @@ JATAYU uses a human-designed, operational aesthetic built for continuous shift u
 ## 4. Setup & Running Instructions
 
 ### Prerequisites
-- Node.js `v20.0.0` or higher (`v24.x` verified)
+- Node.js `v22.13.0` or higher (`v24.x` verified)
 - npm `v10.x` or higher (`v11.x` verified)
 
 ### Step 1: Install Dependencies

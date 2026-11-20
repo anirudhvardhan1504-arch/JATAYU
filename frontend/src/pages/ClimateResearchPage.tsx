@@ -398,9 +398,9 @@ ${historicalData.daily.time
                     <YAxis tick={{ fontSize: 11, fill: '#B5C5BF' }} unit="mm" stroke="rgba(255,255,255,0.15)" />
                     <Tooltip
                       formatter={(val: any) => [`${val} mm`, 'Rainfall']}
-                      contentStyle={{ backgroundColor: '#101A17', borderColor: 'rgba(255,255,255,0.15)', color: '#F0F7F4', borderRadius: '12px', fontSize: '11px' }}
+                      contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.15)', color: '#304F60', borderRadius: '12px', fontSize: '11px' }}
                     />
-                    <Bar dataKey="precipitation" fill="#42F5B0" radius={[4, 4, 0, 0]} name="Precipitation (mm)" />
+                    <Bar dataKey="precipitation" fill="#88B3AA" radius={[4, 4, 0, 0]} name="Precipitation (mm)" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

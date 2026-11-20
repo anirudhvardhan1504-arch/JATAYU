@@ -1,0 +1,32 @@
+/* Imagery-first globe, compact floating controls, unobstructed planet. */
+.app-root .globe-workspace { background:#071421; --globe-surface:#fffffff2; --globe-text:#223f4b; --globe-muted:#496471; --globe-border:#cadbe2; }
+.app-root .globe-workspace .globe-overlay { padding:14px; gap:12px; }
+.app-root .globe-workspace :is(.globe-topbar,.globe-playback) { background:var(--globe-surface)!important; color:var(--globe-text)!important; border:1px solid var(--globe-border); box-shadow:0 8px 30px #05121c26; padding:10px 12px; border-radius:16px; }
+.app-root .globe-workspace .globe-topbar { gap:12px; align-items:center; }
+.app-root .globe-workspace .globe-topbar>div:first-child { flex-shrink:1; }
+.app-root .globe-workspace .globe-topbar>div:nth-child(2) { min-width:180px; }
+.app-root .globe-workspace [class*="bg-slate-"] { background-color:var(--globe-surface)!important; border-color:var(--globe-border)!important; }
+.app-root .globe-workspace :is([class*="text-slate-"],.text-white,[class*="text-cyan-"],[class*="text-teal-"]) { color:var(--globe-text)!important; }
+.app-root .globe-workspace :is(.text-amber-400,.text-amber-300) { color:#8c5a18!important; }
+.app-root .globe-workspace button { min-height:34px; font-size:11px; line-height:1.4; }
+.app-root .globe-workspace button:hover { border-color:#4b8e7b; }
+.app-root .globe-workspace .globe-panels { margin-top:0; margin-bottom:auto; overflow:visible; align-items:flex-start; }
+.app-root .globe-workspace .globe-panels>div { max-width:calc(50% - 6px); }
+.app-root .globe-workspace .globe-playback { flex-wrap:wrap; gap:12px; }
+.app-root .globe-workspace .globe-playback input { accent-color:#277b69; min-height:24px; }
+.app-root .globe-workspace .globe-playback button { min-width:34px; }
+.app-root .globe-workspace .cesium-viewer-bottom { bottom:3px; }
+.app-root .app-shell[data-theme=dark] .globe-workspace { --globe-surface:#152832f2; --globe-text:#dfedf0; --globe-muted:#b3cad1; --globe-border:#49636f; }
+.app-root .app-shell[data-theme=dark] .globe-workspace .text-amber-400,.app-root .app-shell[data-theme=dark] .globe-workspace .text-amber-300 { color:#f4d99e!important; }
+@media(max-width:767px) {
+ .app-root .globe-workspace .globe-overlay { padding:9px; gap:8px; }
+ .app-root .globe-workspace .globe-topbar { padding:8px; gap:8px; }
+ .app-root .globe-workspace .globe-topbar>div:nth-child(2) { order:3; flex:1 0 100%; max-width:none; margin:0; }
+ .app-root .globe-workspace .globe-topbar>div:first-child>div:last-child { flex-wrap:wrap; gap:4px; }
+ .app-root .globe-workspace .globe-panels>div { max-width:100%; }
+ .app-root .globe-workspace .globe-panels .w-72 { width:min(310px,calc(100vw - 32px)); }
+ .app-root .globe-workspace .globe-panels [class*="max-h-"] { max-height:32vh; }
+ .app-root .globe-workspace .globe-playback { padding:8px; flex-direction:row; gap:6px; }
+ .app-root .globe-workspace .globe-playback>div:nth-child(2) { order:3; flex:1 0 100%; }
+ .app-root .globe-workspace .globe-playback>div:last-child { margin-left:auto; }
+}

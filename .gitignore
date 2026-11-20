@@ -56,3 +56,6 @@ scratch/
 *.sw?
 .DS_Store
 Thumbs.db
+
+# Local background service logs
+.runtime/

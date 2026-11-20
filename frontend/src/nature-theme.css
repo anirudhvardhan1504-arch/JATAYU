@@ -1,0 +1,88 @@
+:root { --color-bg-base:#f3f7f0; --color-bg-secondary:#f8fbf5; --color-bg-elevated:#fff; --color-text-primary:#142c20; --color-text-secondary:#476052; --color-text-muted:#536a5d; --color-primary-accent:#176b50; }
+body { background:#e9f2e8; }
+.app-root .app-shell { font-family:'IBM Plex Sans','Segoe UI',sans-serif; color:#142c20; }
+.app-shell[data-weather] { --landscape:url('/landscapes/sunny.png'); --nature-tint:#eef6e8; background:radial-gradient(ellipse at 95% 0,#cbf3e8aa,transparent 50%),linear-gradient(130deg,#fafcf5,var(--nature-tint)); }
+.app-shell[data-weather=sunny] { --nature-tint:#fff0d0; }
+.app-shell[data-weather=rain],.app-shell[data-weather=monsoon],.app-shell[data-weather=storm] { --landscape:url('/landscapes/rain.png'); --nature-tint:#dcecf3; }
+.app-shell[data-weather=night],.app-shell[data-weather=sunset] { --landscape:url('/landscapes/dusk.png'); --nature-tint:#e7e8ee; }
+.app-shell[data-weather=sunrise] { --landscape:url('/landscapes/dusk.png'); --nature-tint:#f9e9d9; }
+.app-shell[data-weather=cloudy],.app-shell[data-weather=mist],.app-shell[data-weather=snow] { --nature-tint:#e7f0ed; }
+.landscape-backdrop { position:absolute; bottom:0; right:0; width:100%; height:min(64vh,620px); background-image:linear-gradient(to bottom,var(--nature-tint),transparent 48%),var(--landscape); background-size:cover; background-position:center bottom; opacity:.38; }
+.atmosphere-wash { background:linear-gradient(180deg,#ffffff44,transparent); }
+.atmosphere-clouds { opacity:.2; }.atmosphere-sunhalo { opacity:.2; }
+.app-root .app-sidebar { background:#fbfdf8f5; border-color:#dce7dc; width:220px; }
+.app-root .app-topbar { background:#fcfdf9f0; border-color:#dce7dc; }
+.app-root .app-statusbar { background:#eef5ec; color:#425b4b; border-color:#dce7dc; }
+.app-root .sidebar-brand-name { color:#123c2b; font-family:Manrope,sans-serif; font-weight:800; letter-spacing:-.04em; }
+.app-root .sidebar-nav-item { color:#466052; border-radius:12px; }
+.app-root .sidebar-nav-item.active { background:#e2f1e4; color:#164c35; }
+.app-root .page-content { padding:26px 30px; }
+.app-root h1,.app-root h2,.app-root h3,.app-root .workspace-heading { font-family:Manrope,'IBM Plex Sans',sans-serif; }
+.app-root .workspace-heading { position:relative; isolation:isolate; overflow:hidden; padding:34px; min-height:265px; border:1px solid #dde7d7; border-radius:24px; background:#f5f9ed; align-items:flex-start; }
+.app-root .workspace-heading::before { content:''; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(90deg,#f9fcf2 0%,#f9fcf2e8 35%,#f9fcf218 75%),var(--landscape); background-size:cover; background-position:center 68%; }
+.app-root .workspace-heading h1 { font-size:clamp(32px,3.5vw,52px); max-width:550px; margin:18px 0 14px; color:#103521; font-weight:800; letter-spacing:-.055em; line-height:1.08; }
+.app-root .workspace-subtitle { max-width:370px; font-size:14px; line-height:1.65; color:#3e5748; }
+.app-root .workspace-eyebrow { color:#43624d; font-size:10px; font-weight:600; letter-spacing:.1em; }
+.app-root .workspace-heading-actions { align-self:flex-start; }
+.app-root .workspace-heading-actions .workspace-button { background:#153d28; color:white; border-color:#153d28; box-shadow:0 4px 12px #173e2815; }
+.app-root .workspace-button,.app-root .location-search { background:#fffffff2; border-color:#d3e1d4; border-radius:12px; color:#284b36; }
+.app-root .location-presets button[aria-pressed=true] { background:#dff0da; color:#214b32; border-color:#cadfc4; }
+.app-root .workspace-panel,.app-root .bento-card,.app-root .operational-panel,.app-root .glass-surface,.app-root .glass-surface-elevated { background:#fffffff5; border-color:#dce5d9; border-radius:20px; box-shadow:0 8px 25px -20px #26452c30; }
+.app-root .weather-hero { border-color:#d3e3ce; background:radial-gradient(ellipse at 100% 0,#d9f1dc88,transparent 60%),#f6faed; border-radius:22px; }
+.app-root .weather-temperature { color:#163d2a; font-weight:500; }
+.app-root .weather-condition,.app-root .weather-hero-metrics strong { color:#284d38; }
+.app-root .weather-hero-top,.app-root .weather-feels,.app-root .weather-hero-metrics { color:#4b6453; }
+.app-root .workspace-map { border-color:#d9e4d5; border-radius:22px; }
+.app-root .workspace-detail-grid { gap:20px; }
+.app-root .official-note { background:#f7fbf2f5; border-color:#d8e6d0; border-radius:14px; }
+.app-root .official-note-warning { background:#fff5e6; border-color:#ead6b6; }
+.app-root .workspace-panel h2 { font-size:20px; font-weight:600; color:#193a28; letter-spacing:-.04em; }
+.app-root .workspace-panel .workspace-eyebrow { color:#49634f; }
+.app-root .recharts-text { fill:#4c6255; }
+.app-root .workspace-chart-tabs button[aria-pressed=true] { background:#1b5c40; color:white; }
+.app-root button:focus-visible,.app-root a:focus-visible { outline:3px solid #188f69; outline-offset:3px; }
+.app-root .workspace-button:hover { transform:translateY(-1px); }
+.app-root .tactical-workspace { --landscape:none; }
+@media(min-width:1600px) { .app-root .page-content { padding:32px 42px; } }
+@media(max-width:1000px) { .app-root .page-content { padding:20px; }.app-root .workspace-heading { padding:26px; min-height:240px; }.app-root .workspace-heading h1 { max-width:410px; } }
+@media(max-width:639px) {
+ .app-root .page-content { padding:12px; }
+ .app-root .workspace-heading { padding:24px 20px 110px; min-height:320px; border-radius:20px; flex-direction:column; gap:18px; }
+ .app-root .workspace-heading::before { background-image:linear-gradient(180deg,#f9fcf2 0%,#f9fcf2dd 38%,#f9fcf200 85%),var(--landscape); background-position:70% bottom; }
+ .app-root .workspace-heading h1 { font-size:36px; max-width:290px; margin:12px 0; }
+ .app-root .workspace-subtitle { font-size:13px; max-width:280px; }
+ .app-root .workspace-heading-actions { align-self:initial; }
+ .app-root .workspace-heading-actions > button { font-size:11px; width:auto; padding:8px 12px; gap:8px; }
+ .app-root .workspace-panel { padding:18px; }
+ .landscape-backdrop { height:50vh; opacity:.25; }
+}
+@media(prefers-reduced-motion:reduce) { .app-root .workspace-button { transition:none; transform:none; } }
+
+/* Readable small type, with the established layout and palette preserved. */
+.app-root .sidebar-navigation nav button > span:not(.sidebar-active-dot) { font-size:13px; font-weight:500; color:#294d3e; }
+.app-root .sidebar-group-label { font-size:11px; font-weight:600; color:#385746; letter-spacing:.055em; }
+.app-root .sidebar-wordmark small { font-size:10px; font-weight:500; color:#385746; }
+.app-root .sidebar-fieldnote strong { font-size:14px; font-weight:600; color:#294d3e; }
+.app-root .sidebar-fieldnote :is(p,button) { font-size:12px; font-weight:500; color:#385746; line-height:1.6; }
+.app-root .sidebar-access small { font-size:10px; font-weight:600; color:#385746; }
+.app-root :is(.workspace-eyebrow,.workspace-footer,.chart-caption,.weather-hero-source) { font-size:11px; font-weight:500; }
+.app-root :is(.weather-feels,.weather-hero-top,.weather-hero-metrics > div,.workspace-panel-heading > span) { font-size:12px; font-weight:500; color:#365244; }
+.app-root .hourly-strip > div > span { font-size:12px; font-weight:600; color:#365244; }
+.app-root .hourly-strip strong { font-size:23px; font-weight:600; color:#1f3e2c; }
+.app-root .hourly-strip small { font-size:12px; font-weight:600; color:#365244; }
+.app-root .hourly-strip .condition-icon { stroke-width:2; }
+.app-root .condition-icon-sun { color:#b27606; fill:#ffd66b; }
+.app-root .condition-icon-moon { color:#5e65a4; fill:#dce0fa; }
+.app-root :is(.condition-icon-cloud-sun,.condition-icon-cloud-moon,.condition-icon-cloud) { color:#54768b; fill:#e5edf4; }
+.app-root .condition-icon-rain { color:#2673b6; fill:#e3f1ff; }
+.app-root .condition-icon-storm { color:#7056a6; fill:#eee8fa; }
+.app-root :is(.condition-icon-snow,.condition-icon-fog,.condition-icon-unknown) { color:#476d83; }
+/* Night has priority over rainy/cloudy visual moods; the cards stay light. */
+.app-shell[data-time-of-day=night] { --landscape:url('/landscapes/night.png'); --nature-tint:#dce4ee; }
+.app-root .app-shell[data-time-of-day=night] .workspace-heading { background:#152738; border-color:#354b5d; }
+.app-root .app-shell[data-time-of-day=night] .workspace-heading::before { background-image:linear-gradient(90deg,#142638f5 0%,#142638d9 35%,#14263814 78%),var(--landscape); }
+.app-root .app-shell[data-time-of-day=night] .workspace-heading :is(h1,.workspace-eyebrow,.workspace-subtitle) { color:#f4f7fa; }
+.app-root .app-shell[data-time-of-day=night] .workspace-heading-actions .workspace-button { background:#f1f7f2; color:#163d2a; border-color:#d6e7dc; }
+@media(max-width:639px) {
+ .app-root .app-shell[data-time-of-day=night] .workspace-heading::before { background-image:linear-gradient(180deg,#142638f5 0%,#142638d9 38%,#14263800 85%),var(--landscape); }
+}

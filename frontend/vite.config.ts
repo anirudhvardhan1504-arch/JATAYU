@@ -1,4 +1,5 @@
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig, Plugin, loadEnv } from 'vite';
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import cesium from 'vite-plugin-cesium';
 
@@ -18,9 +19,13 @@ function cesiumDeferredLoaderPlugin(): Plugin {
   };
 }
 
-const backendTarget = process.env.VITE_BACKEND_URL || (process.env.PORT ? `http://localhost:${process.env.PORT}` : 'http://localhost:5001');
-
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Read only the backend port; never expose backend credentials to the browser.
+  const backendEnv = loadEnv(mode, fileURLToPath(new URL('../backend/', import.meta.url)), 'PORT');
+  const rootEnv = loadEnv(mode, fileURLToPath(new URL('../', import.meta.url)), 'VITE_BACKEND_URL');
+  const backendPort = process.env.PORT || backendEnv.PORT || '5000';
+  const backendTarget = process.env.VITE_BACKEND_URL || rootEnv.VITE_BACKEND_URL || `http://localhost:${backendPort}`;
+  return {
   envDir: '../',
   plugins: [
     react(),
@@ -57,4 +62,5 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
   },
+  };
 });

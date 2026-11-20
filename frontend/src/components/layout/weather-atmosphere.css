@@ -1,0 +1,42 @@
+.app-shell[data-weather] { --atmosphere-base:#e6eef3; --atmosphere-top:#d9e9f1; position:relative; isolation:isolate; background:linear-gradient(155deg,var(--atmosphere-top),var(--atmosphere-base) 78%); transition:background-color 1.5s; }
+.app-shell[data-weather=sunny] { --atmosphere-base:#ffe0ad; --atmosphere-top:#ffd099; }
+.app-shell[data-weather=sunrise] { --atmosphere-base:#ffe4c4; --atmosphere-top:#f6c7ba; }
+.app-shell[data-weather=sunset] { --atmosphere-base:#f8cbb5; --atmosphere-top:#e9c1d0; }
+.app-shell[data-weather=rain],.app-shell[data-weather=monsoon] { --atmosphere-base:#c6def3; --atmosphere-top:#aacde9; }
+.app-shell[data-weather=storm] { --atmosphere-base:#c0d2e8; --atmosphere-top:#a7b9d4; }
+.app-shell[data-weather=cloudy] { --atmosphere-base:#e4edf2; --atmosphere-top:#d5e2e9; }
+.app-shell[data-weather=mist] { --atmosphere-base:#e3e9e7; --atmosphere-top:#d3dfdc; }
+.app-shell[data-weather=night] { --atmosphere-base:#d2ddf1; --atmosphere-top:#bacbe8; }
+.app-shell[data-weather=snow] { --atmosphere-base:#eaf3f9; --atmosphere-top:#cfdfea; }
+.weather-atmosphere { position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none; contain:strict; }
+.app-shell > .app-statusbar,.app-shell > .flex { position:relative; z-index:1; }
+.atmosphere-wash { position:absolute; inset:0; background:radial-gradient(ellipse at 20% 5%,#ffffff55,transparent 60%); }
+.atmosphere-sun { position:absolute; right:4%; top:5%; width:260px; height:260px; border-radius:50%; background:radial-gradient(circle,#fff5d8 0,#ffcc6d80 40%,#f6ae4933 60%,transparent 72%); animation:atmosphere-breathe 16s ease-in-out infinite; }
+.atmosphere-sunhalo { position:absolute; top:-180px; right:-150px; width:850px; height:850px; background:repeating-conic-gradient(from 0deg,#fff0b622 0deg,transparent 9deg,transparent 18deg); border-radius:50%; animation:atmosphere-turn 180s linear infinite; opacity:.65; }
+.atmosphere-sunrise .atmosphere-sun,.atmosphere-sunset .atmosphere-sun { top:auto; bottom:-100px; right:9%; width:480px; height:480px; }
+.atmosphere-horizon { position:absolute; bottom:-15%; left:-10%; right:-10%; height:45%; background:radial-gradient(ellipse at 80% 90%,#ffac4033,transparent 72%); }
+.atmosphere-clouds { position:absolute; inset:0; opacity:.5; }
+.atmosphere-clouds i { position:absolute; width:520px; height:180px; border-radius:50%; background:radial-gradient(ellipse,#ffffffa0,transparent 70%); filter:blur(15px); left:-35%; top:10%; animation:atmosphere-cloud 65s linear infinite; }
+.atmosphere-clouds i:nth-child(2) { top:53%; width:650px; animation-duration:85s; animation-delay:-30s; }
+.atmosphere-clouds i:nth-child(3) { top:28%; width:370px; animation-duration:75s; animation-delay:-53s; }
+.atmosphere-rain,.atmosphere-snow,.atmosphere-leaves,.atmosphere-stars { position:absolute; inset:0; }
+.atmosphere-rain i { position:absolute; left:var(--x); top:-10%; width:1px; height:52px; border-radius:2px; background:linear-gradient(transparent,#3e78a17a); animation:atmosphere-rain var(--duration) linear infinite; animation-delay:var(--delay); opacity:.38; }
+.atmosphere-storm .atmosphere-rain i { height:72px; opacity:.5; }
+.atmosphere-tree { position:absolute; right:-24px; bottom:-20px; width:280px; height:560px; color:#ae773d; opacity:.2; }
+.atmosphere-leaves i { position:absolute; top:-30px; left:var(--x); width:15px; height:8px; background:linear-gradient(135deg,#dc9d4e,#bf6e32); border-radius:90% 5% 85% 10%; opacity:.55; animation:atmosphere-leaf var(--duration) linear infinite; animation-delay:var(--delay); }
+.atmosphere-leaves i::after { content:''; position:absolute; width:12px; height:1px; background:#975f37; top:4px; left:1px; transform:rotate(-22deg); }
+.atmosphere-moon { position:absolute; right:10%; top:8%; width:100px; height:100px; border-radius:50%; background:#f2f6ff80; box-shadow:0 0 80px #f2f6ff60; }
+.atmosphere-stars i { width:3px; height:3px; background:#fff; border-radius:50%; position:absolute; animation:atmosphere-breathe 8s ease-in-out infinite; }
+.atmosphere-snow i { position:absolute; left:var(--x); top:-10px; width:5px; height:5px; background:#fff; border-radius:50%; opacity:.7; animation:atmosphere-snow var(--duration) linear infinite; animation-delay:var(--delay); }
+@keyframes atmosphere-breathe { 0%,100% { opacity:.55; transform:scale(.96); } 50% { opacity:.9; transform:scale(1.04); } }
+@keyframes atmosphere-turn { to { transform:rotate(360deg); } }
+@keyframes atmosphere-cloud { from { transform:translate3d(-100px,0,0); } to { transform:translate3d(180vw,20px,0); } }
+@keyframes atmosphere-rain { from { transform:translate3d(0,-60px,0) rotate(14deg); } to { transform:translate3d(-180px,110vh,0) rotate(14deg); } }
+@keyframes atmosphere-leaf { 0% { transform:translate3d(0,-20px,0) rotate(0deg); } 35% { transform:translate3d(-45px,38vh,0) rotate(110deg); } 70% { transform:translate3d(var(--drift),75vh,0) rotate(250deg); } 100% { transform:translate3d(var(--drift),110vh,0) rotate(390deg); } }
+@keyframes atmosphere-snow { to { transform:translate3d(80px,110vh,0) rotate(120deg); } }
+.app-shell[data-motion=paused] .weather-atmosphere * { animation-play-state:paused!important; }
+@media(prefers-reduced-motion:reduce) { .weather-atmosphere * { animation:none!important; } .atmosphere-rain,.atmosphere-leaves,.atmosphere-snow { display:none; } }
+@media(max-width:639px) { .atmosphere-rain i:nth-child(n+17),.atmosphere-leaves i:nth-child(n+8),.atmosphere-snow i:nth-child(n+13) { display:none; } .atmosphere-sunhalo { width:550px; height:550px; }.atmosphere-tree { right:-70px; width:210px; height:430px; } }
+
+.atmosphere-leaves i { top:calc(100% - 470px); }
+@media(max-width:639px) { .atmosphere-leaves i { top:calc(100% - 350px); } }

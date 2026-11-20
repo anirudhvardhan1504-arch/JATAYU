@@ -13,7 +13,7 @@ export interface SitrepGeneratorOptions {
   alertFeed: AlertFeedResponse | null;
   alertsError?: string | null;
   weatherError?: string | null;
-  language: 'en' | 'ta' | 'hi';
+  language: 'en' | 'ta' | 'hi' | 'te';
   user?: { displayName?: string; username?: string; role?: string } | null;
 }
 
@@ -44,6 +44,31 @@ export function generateTacticalSitrep(options: SitrepGeneratorOptions): string 
 
   const officialAlerts = alertFeed?.officialAlerts || [];
   const alertsCount = officialAlerts.length;
+
+  if (language === 'te') {
+    const metric = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? String(value) : 'అందుబాటులో లేదు';
+    return `# జటాయు పరిస్థితి నివేదిక
+
+ప్రాంతం: ${location.name}
+సమయం: ${isoTime}
+స్థానం: ${location.lat}, ${location.lon}
+
+## వాతావరణం
+ఉష్ణోగ్రత: ${metric(weather?.temperatureC)} °C
+వర్షపాతం: ${metric(weather?.precipitationMm)} mm/h
+గాలి: ${metric(weather?.windSpeedKmh)} km/h
+ఆధారం: ${weather?.sourceAttribution || 'అందుబాటులో లేదు'}
+సమాచార సమయం: ${weather?.timestamp || 'అందుబాటులో లేదు'}
+${weather?.isStale ? 'జాగ్రత్త: పాత వాతావరణ సమాచారం.' : ''}
+
+## అధికారిక హెచ్చరికలు
+${alertsError || !alertFeed ? 'అధికారిక హెచ్చరికల స్థితి నిర్ధారించలేకపోయాము.' : officialAlerts.map(a => a.headline).join('\n') || 'ఈ జిల్లాకు ప్రస్తుతం హెచ్చరికలు లేవు.'}
+
+## సూచనాత్మక ప్రమాదం
+${riskAssessment ? `${riskAssessment.overallRiskLevel} (${riskAssessment.riskScore}/100)` : 'అందుబాటులో లేదు'}
+
+ఇది సూచనాత్మక సారాంశం మాత్రమే. అధికారిక అత్యవసర సూచనలు పాటించండి. మార్గ భద్రత లేదా సేవల అందుబాటుకు హామీ కాదు.`;
+  }
 
   if (language === 'ta') {
     return generateTamilSitrep({
@@ -169,7 +194,7 @@ function generateEnglishSitrep(ctx: any): string {
       ? `\n⚠️ **STALE TELEMETRY ADVISORY:** Observation age exceeds 90 minutes. Telemetry latency detected.`
       : '';
     weatherContent =
-      `- **Observation Status:** ${weather.isStale ? 'STALE (>90m)' : 'LIVE (OBSERVED)'}${staleAdvisory}\n` +
+      `- **Observation Status:** ${weather.isStale ? 'STALE (>90m)' : `CURRENT (${weather.sourceType})`}${staleAdvisory}\n` +
       `- **Observation Timestamp:** ${weather.timestamp || 'N/A'}\n` +
       `- **Telemetry Fetched At:** ${new Date(weather.fetchedAt).toISOString()}\n` +
       `- **Observed Temperature:** ${weather.temperatureC !== undefined ? `${weather.temperatureC}°C (Feels like: ${weather.apparentTemperatureC}°C)` : 'Sensor Offline'}\n` +

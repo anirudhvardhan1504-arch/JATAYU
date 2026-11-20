@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Building2,
   MapPin,
@@ -18,6 +18,7 @@ import {
 import { EmergencyFacility, FacilityCategory } from '../types';
 import { getEmergencyFacilities } from '../services/route';
 import { useLanguage } from '../context/LanguageContext';
+import { FacilityDetails } from '../components/route/FacilityDetails';
 import { TacticalMap } from '../components/map/TacticalMap';
 
 interface FacilitiesPageProps {
@@ -30,6 +31,7 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
   onPlanRouteToFacility,
 }) => {
   const { t } = useLanguage();
+  const requestSequence = useRef(0);
   const [facilities, setFacilities] = useState<EmergencyFacility[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [radiusKm, setRadiusKm] = useState<number>(25);
@@ -38,6 +40,8 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
   const [searchFilter, setSearchFilter] = useState<string>('');
 
   const loadFacilities = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    setFacilities([]);
     setIsLoading(true);
     setError(null);
     try {
@@ -47,24 +51,32 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
         selectedCategory === 'ALL' ? undefined : selectedCategory,
         radiusKm * 1000
       );
-      setFacilities(res.facilities || []);
+      if (sequence === requestSequence.current) setFacilities(res.facilities || []);
     } catch (err: any) {
+      if (sequence !== requestSequence.current) return;
       setError(err.message || 'Failed to retrieve emergency facilities.');
     } finally {
-      setIsLoading(false);
+      if (sequence === requestSequence.current) setIsLoading(false);
     }
   }, [location.lat, location.lon, selectedCategory, radiusKm]);
 
   useEffect(() => {
     loadFacilities();
+    return () => { requestSequence.current++; };
   }, [loadFacilities]);
 
   const filteredList = facilities.filter((f) => {
-    if (selectedCategory !== 'ALL' && f.category !== selectedCategory) return false;
+    if (selectedCategory !== 'ALL' && f.category !== selectedCategory) {
+      const medical = selectedCategory === 'HOSPITAL' && ['TRAUMA_CENTRE', 'ORR_TRAUMA_CENTRE'].includes(f.category);
+      const trauma = selectedCategory === 'TRAUMA_CENTRE' && (f.category === 'ORR_TRAUMA_CENTRE' || f.capabilities?.includes('Trauma care'));
+      const ambulance = selectedCategory === 'AMBULANCE_SERVICE' && f.capabilities?.includes('Ambulance service');
+      if (!medical && !trauma && !ambulance) return false;
+    }
     if (!searchFilter.trim()) return true;
     const q = searchFilter.toLowerCase();
     return (
       f.name.toLowerCase().includes(q) ||
+      f.capabilities?.some((capability) => capability.toLowerCase().includes(q)) ||
       (f.address && f.address.toLowerCase().includes(q)) ||
       (f.district && f.district.toLowerCase().includes(q))
     );
@@ -112,7 +124,7 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="facilities-directory space-y-4">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-4">
         <div>
@@ -128,7 +140,7 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* View Mode Switcher */}
           <div className="flex items-center bg-obsidian/70 p-1 rounded-xl border border-white/10 text-xs shadow-inner">
             <button
@@ -214,9 +226,9 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
       </div>
 
       {/* Controls: Search, Category Filters, Radius */}
-      <div className="bento-card p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bento-card p-4 flex flex-wrap items-center justify-between gap-3">
         {/* Search */}
-        <div className="relative w-full md:w-80">
+        <div className="relative w-full lg:w-72">
           <Search className="w-4 h-4 text-jatayu-muted absolute left-3 top-2.5 pointer-events-none" />
           <input
             type="text"
@@ -232,12 +244,15 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
           {[
             { id: 'ALL', label: t('facilities.filterAll') },
             { id: 'HOSPITAL', label: t('facilities.filterHospitals') },
+            { id: 'TRAUMA_CENTRE', label: t('facilities.filterTrauma') },
+            { id: 'AMBULANCE_SERVICE', label: t('facilities.filterAmbulance') },
             { id: 'SHELTER', label: t('facilities.filterShelters') },
             { id: 'EMERGENCY_OPS', label: t('facilities.filterOps') },
           ].map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
+              aria-pressed={selectedCategory === cat.id}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                 selectedCategory === cat.id
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_12px_rgba(0,217,154,0.2)] font-semibold'
@@ -266,8 +281,8 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
       </div>
 
       {/* Facilities Count & Status */}
-      <div className="flex items-center justify-between text-xs font-mono text-jatayu-muted px-1">
-        <span>Found {filteredList.length} emergency facilities near {location.name}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-jatayu-muted px-1">
+        <span>{isLoading ? `Finding facilities near ${location.name}` : `Found ${filteredList.length} emergency facilities near ${location.name}`}</span>
         {isLoading && <span className="text-emerald-400">Querying registry...</span>}
       </div>
 
@@ -287,13 +302,15 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
         </div>
       )}
 
+      {isLoading && <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3" role="status" aria-label="Loading facilities">{[0,1,2].map((id) => <div key={id} className="bento-card p-5 h-48 animate-pulse"><div className="h-4 bg-slate-200/50 rounded w-3/4 mb-4"/><div className="h-3 bg-slate-200/30 rounded w-full mb-2"/><div className="h-3 bg-slate-200/30 rounded w-2/3"/></div>)}</div>}
+
       {/* Empty State */}
       {!isLoading && !error && filteredList.length === 0 && (
         <div className="p-12 text-center bento-card space-y-3">
           <Building2 className="w-10 h-10 text-jatayu-muted mx-auto" />
           <h4 className="text-sm font-bold text-jatayu-primary">No Facilities Found In Range</h4>
           <p className="text-xs text-jatayu-secondary max-w-md mx-auto font-sans">
-            No verified civil defense facilities matched the current category or search radius. Try increasing the search radius to 50 km or 100 km.
+            No directory entries matched the current category or search radius. Try increasing the search radius to 50 km or 100 km.
           </p>
           <button
             onClick={() => {
@@ -324,11 +341,11 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
         </div>
       ) : (
         /* Facility Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
           {filteredList.map((f) => (
             <div
               key={f.id}
-              className="p-5 bento-card flex flex-col justify-between space-y-4 group hover:border-emerald-500/40"
+              className="p-4 bento-card min-w-0 flex flex-col justify-between space-y-4 group hover:border-emerald-500/40"
             >
               <div className="space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
@@ -380,7 +397,7 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
                       ? 'OFFICIALLY VERIFIED'
                       : f.verificationStatus === 'PENDING_VERIFICATION'
                       ? 'PENDING VERIFICATION'
-                      : 'COMMUNITY MAPPED'}
+                      : f.sourceProvenance === 'COMMUNITY_MAPPED' ? t('saferoute.communityMapped') : t('facilities.directoryListing')}
                   </span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-300 border border-amber-500/40">
                     VACANCY: UNKNOWN
@@ -392,11 +409,13 @@ export const FacilitiesPage: React.FC<FacilitiesPageProps> = ({
                   )}
                 </div>
 
+                <FacilityDetails facility={f} />
+
                 {/* Phone */}
                 {f.phone && (
                   <div className="flex items-center gap-1.5 text-xs text-jatayu-secondary font-mono pt-1">
                     <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                    <a href={`tel:${f.phone}`} className="hover:text-mint font-semibold">
+                    <a href={`tel:${f.phone.replace(/[^+\d]/g, '')}`} className="min-h-[44px] inline-flex items-center hover:text-mint font-semibold">
                       {f.phone}
                     </a>
                   </div>

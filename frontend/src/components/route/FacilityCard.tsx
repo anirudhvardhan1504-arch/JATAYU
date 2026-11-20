@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, Cross, Shield, Phone, MapPin, CheckCircle, ArrowRight, Flame } from 'lucide-react';
+import { FacilityDetails } from './FacilityDetails';
 import { EmergencyFacility } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -30,6 +31,9 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
           label: t('saferoute.filterRelief') || 'Relief Camp',
           badgeClass: 'bg-mint/20 text-mint border-emerald-500/40',
         };
+      case 'TRAUMA_CENTRE':
+      case 'ORR_TRAUMA_CENTRE':
+      case 'AMBULANCE_SERVICE':
       case 'HOSPITAL':
         return {
           icon: <Cross className="w-3.5 h-3.5 text-red-400" />,
@@ -68,9 +72,9 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
             {cat.icon}
             <span>{cat.label}</span>
           </span>
-          {facility.sourceProvenance === 'COMMUNITY_MAPPED' ? (
+          {facility.sourceProvenance === 'COMMUNITY_MAPPED' || !['VERIFIED', 'OFFICIALLY_VERIFIED'].includes(facility.verificationStatus) ? (
             <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-0.5">
-              <span>{t('saferoute.communityMapped')}</span>
+              <span>{facility.sourceProvenance === 'COMMUNITY_MAPPED' ? t('saferoute.communityMapped') : t('facilities.directoryListing')}</span>
             </span>
           ) : (
             <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-0.5 shadow-[0_0_6px_rgba(0,217,154,0.15)]">
@@ -97,10 +101,12 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
         {facility.phone && (
           <div className="flex items-center gap-1.5 text-jatayu-primary font-mono text-[10px]">
             <Phone className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-            <span>{facility.phone}</span>
+            <a href={`tel:${facility.phone.replace(/[^+\d]/g, '')}`} className="min-h-[44px] inline-flex items-center underline">{facility.phone}</a>
           </div>
         )}
       </div>
+
+      <FacilityDetails facility={facility} />
 
       <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between gap-2">
         <span className="text-[9px] font-mono text-amber-400/90 italic">
@@ -109,7 +115,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
         <button
           type="button"
           onClick={() => onSelectAsDestination(facility)}
-          className="text-[11px] font-mono font-semibold text-emerald-400 hover:text-mint flex items-center gap-1 transition-colors cursor-pointer"
+          className="min-h-[44px] text-xs font-semibold text-emerald-400 hover:text-mint flex items-center gap-1 transition-colors cursor-pointer"
         >
           <span>{t('saferoute.setAsDestination')}</span>
           <ArrowRight className="w-3 h-3" />

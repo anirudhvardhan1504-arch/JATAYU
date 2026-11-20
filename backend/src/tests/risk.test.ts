@@ -1,3 +1,4 @@
+import { completeWeatherFixture } from './weather-fixture.js';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { app } from '../app.js';
@@ -306,7 +307,7 @@ describe('Risk API Integration Route (/api/risk/assessment)', () => {
   beforeEach(() => {
     fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
       return new Response(
-        JSON.stringify({
+        JSON.stringify(completeWeatherFixture({
           latitude: 19.076,
           longitude: 72.8777,
           elevation: 14,
@@ -340,7 +341,7 @@ describe('Risk API Integration Route (/api/risk/assessment)', () => {
             soil_moisture_0_to_7cm: [0.32, 0.35, 0.38],
             soil_moisture_7_to_28cm: [0.28, 0.29, 0.30],
           },
-        }),
+        })),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     });

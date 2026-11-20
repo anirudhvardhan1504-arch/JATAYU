@@ -1,3 +1,4 @@
+import { weatherNumber } from './weather-integrity.js';
 /**
  * Forecast Grid Service for JATAYU Tactical Map 2.0 (Phase 3B)
  *
@@ -483,7 +484,7 @@ export class ForecastGridService {
         'hourly',
         'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m'
       );
-      url.searchParams.set('forecast_days', '3');
+      url.searchParams.set('forecast_hours', '72');
       url.searchParams.set('timezone', 'UTC');
 
       const res = await fetch(url.toString(), {
@@ -500,6 +501,11 @@ export class ForecastGridService {
       }
 
       const json = await res.json();
+      // Validate before accepting a provider, so incomplete input triggers GFS/stale fallback.
+      for (const raw of Array.isArray(json) ? json : [json]) {
+        const points = this.parseHourlyTimeseries(raw.hourly);
+        if (points.length !== 72) throw new Error('Incomplete 72-hour forecast grid.');
+      }
       if (Array.isArray(json)) {
         allResults.push(...json);
       } else {
@@ -515,30 +521,30 @@ export class ForecastGridService {
    */
   private parseHourlyTimeseries(hourly: any): HourlyGridDataPoint[] {
     if (!hourly || !Array.isArray(hourly.time)) {
-      return [];
+      throw new Error('Open-Meteo grid hourly series unavailable.');
     }
 
     const times: string[] = hourly.time;
     const points: HourlyGridDataPoint[] = [];
 
     for (let t = 0; t < times.length; t++) {
-      const speed = hourly.wind_speed_10m?.[t] ?? 0;
-      const dir = hourly.wind_direction_10m?.[t] ?? 0;
+      const speed = weatherNumber(hourly.wind_speed_10m?.[t], `wind_speed_10m[${t}]`);
+      const dir = weatherNumber(hourly.wind_direction_10m?.[t], `wind_direction_10m[${t}]`);
       const { uMs, vMs } = calculateWindVelocityVectors(speed, dir);
 
       points.push({
         time: times[t],
-        precipitationMm: hourly.precipitation?.[t] ?? 0,
-        rainMm: hourly.rain?.[t] ?? 0,
-        showersMm: hourly.showers?.[t] ?? 0,
-        temperatureC: hourly.temperature_2m?.[t] ?? 0,
-        apparentTemperatureC: hourly.apparent_temperature?.[t] ?? hourly.temperature_2m?.[t] ?? 0,
-        relativeHumidityPercent: hourly.relative_humidity_2m?.[t] ?? 0,
-        pressureMslHpa: hourly.pressure_msl?.[t] ?? 1013.25,
-        surfacePressureHpa: hourly.surface_pressure?.[t] ?? 1013.25,
+        precipitationMm: weatherNumber(hourly.precipitation?.[t], `precipitation[${t}]`),
+        rainMm: weatherNumber(hourly.rain?.[t], `rain[${t}]`),
+        showersMm: weatherNumber(hourly.showers?.[t], `showers[${t}]`),
+        temperatureC: weatherNumber(hourly.temperature_2m?.[t], `temperature_2m[${t}]`),
+        apparentTemperatureC: weatherNumber(hourly.apparent_temperature?.[t], `apparent_temperature[${t}]`),
+        relativeHumidityPercent: weatherNumber(hourly.relative_humidity_2m?.[t], `relative_humidity_2m[${t}]`),
+        pressureMslHpa: weatherNumber(hourly.pressure_msl?.[t], `pressure_msl[${t}]`),
+        surfacePressureHpa: weatherNumber(hourly.surface_pressure?.[t], `surface_pressure[${t}]`),
         windSpeedKmh: speed,
         windDirectionDegrees: dir,
-        windGustsKmh: hourly.wind_gusts_10m?.[t] ?? speed,
+        windGustsKmh: weatherNumber(hourly.wind_gusts_10m?.[t], `wind_gusts_10m[${t}]`),
         uMs,
         vMs,
       });

@@ -11,13 +11,13 @@ describe('Backend Health & API Gateway', () => {
     expect(res.body.phase).toBe('Phase 1 Scaffolding');
     expect(res.body.services).toBeDefined();
     expect(res.body.services.ai).toBeDefined();
-    expect(res.body.services.ai.provider).toBe('OpenRouter');
+    expect(res.body.services.ai.provider).toBe('Ollama');
   });
 
   it('GET /api/ai/status should report configuration status gracefully without erroring', async () => {
     const res = await request(app).get('/api/ai/status');
     expect(res.status).toBe(200);
-    expect(res.body.provider).toBe('OpenRouter');
+    expect(res.body.provider).toBe('Ollama');
     expect(typeof res.body.configured).toBe('boolean');
   });
 });

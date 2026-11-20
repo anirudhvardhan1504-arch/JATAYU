@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { OperationalStatusBar } from './OperationalStatusBar';
-import { NavigationTab } from '../../types';
+import { WeatherAtmosphere } from './WeatherAtmosphere';
+import { getWeatherMood, isNightAt } from '../../utils/weatherMood';
+import { CurrentWeatherObservation, NavigationTab } from '../../types';
 
 interface AppShellProps {
+  weather?: CurrentWeatherObservation | null;
   activeTab: NavigationTab;
   onSelectTab: (tab: NavigationTab) => void;
   selectedLocation: { name: string; lat: number; lon: number };
@@ -18,6 +21,7 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
+  weather,
   activeTab,
   onSelectTab,
   selectedLocation,
@@ -32,6 +36,38 @@ export const AppShell: React.FC<AppShellProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isMobileMenuOpen]);
+
+  const [colorTheme, setColorTheme] = useState<'light' | 'dark'>(() => {
+    try { return localStorage.getItem('jatayu-color-theme') === 'dark' ? 'dark' : 'light'; } catch { return 'light'; }
+  });
+  const toggleColorTheme = () => setColorTheme(current => current === 'light' ? 'dark' : 'light');
+  useEffect(() => {
+    document.documentElement.dataset.theme = colorTheme;
+    try { localStorage.setItem('jatayu-color-theme', colorTheme); } catch { /* Optional preference storage. */ }
+  }, [colorTheme]);
+
+  const [clock, setClock] = useState(() => new Date());
+  const [motionEnabled, setMotionEnabled] = useState(() => {
+    try { return localStorage.getItem('jatayu-weather-motion') !== 'paused'; } catch { return true; }
+  });
+  useEffect(() => {
+    const timer = setInterval(() => setClock(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  const mood = getWeatherMood(weather, selectedLocation.lat, selectedLocation.lon, clock);
+  const toggleMotion = () => setMotionEnabled((current) => {
+    try { localStorage.setItem('jatayu-weather-motion', current ? 'paused' : 'playing'); } catch { /* Storage may be unavailable. */ }
+    return !current;
+  });
+
   // Operational status bar is displayed on tactical dashboard tabs
   const isOperatorTab = [
     'overview',
@@ -43,7 +79,8 @@ export const AppShell: React.FC<AppShellProps> = ({
   ].includes(activeTab);
 
   return (
-    <div className="flex flex-col h-screen w-full max-w-full overflow-hidden bg-obsidian text-jatayu-primary font-sans">
+    <div data-theme={colorTheme} data-time-of-day={isNightAt(clock, selectedLocation.lat, selectedLocation.lon) ? 'night' : 'day'} data-weather={mood} data-motion={motionEnabled ? 'playing' : 'paused'} className="app-shell flex flex-col h-screen w-full max-w-full overflow-hidden bg-obsidian text-jatayu-primary font-sans">
+      <WeatherAtmosphere mood={mood} />
       {/* Top Banner / Operational Status Bar */}
       {isOperatorTab && (
         <OperationalStatusBar
@@ -81,6 +118,10 @@ export const AppShell: React.FC<AppShellProps> = ({
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Top Navigation Bar */}
           <Topbar
+            colorTheme={colorTheme}
+            onToggleColorTheme={toggleColorTheme}
+            motionEnabled={motionEnabled}
+            onToggleMotion={toggleMotion}
             activeTab={activeTab}
             onSelectTab={onSelectTab}
             selectedLocation={selectedLocation}
@@ -97,14 +138,14 @@ export const AppShell: React.FC<AppShellProps> = ({
             className={`flex-1 ${
               activeTab === 'map' || activeTab === 'command3d'
                 ? 'overflow-hidden p-0 relative bg-obsidian'
-                : 'overflow-y-auto p-4 sm:p-6 lg:p-8 bg-transparent'
+                : 'page-content overflow-y-auto p-3 sm:p-4 lg:p-5 bg-transparent'
             }`}
           >
             <div
               className={
                 activeTab === 'map' || activeTab === 'command3d'
                   ? 'w-full h-full'
-                  : 'max-w-7xl mx-auto space-y-6'
+                  : 'max-w-[1600px] mx-auto space-y-4'
               }
             >
               {children}

@@ -1,0 +1,48 @@
+/* User-selected appearance is independent from weather and local day/night art. */
+.app-root .app-shell[data-theme=dark] { color-scheme:dark; --color-bg-base:#101c22; --color-bg-secondary:#17282e; --color-bg-elevated:#1b2e35; --color-text-primary:#e6f0ed; --color-text-secondary:#bed0d0; --color-text-muted:#acbfc4; --nature-tint:#101c22; background:#101c22!important; color:#e6f0ed!important; }
+.app-root .app-shell[data-theme=dark] :is(h1,h2,h3,h4,strong) { color:#e6f0ed!important; }
+.app-root .app-shell[data-theme=dark] :is(.app-sidebar,.refined-topbar,.app-topbar,.app-statusbar,.sidebar-fieldnote,.sidebar-access) { background:#142329f5!important; border-color:#33484e!important; }
+.app-root .app-shell[data-theme=dark] :is(.workspace-panel,.bento-card,.operational-panel,.operational-panel-dark,.glass-surface,.glass-surface-elevated,.weather-hero,.official-note,.workspace-actions>button,.workspace-map-caption,.workspace-map-bottom,.location-search,.workspace-button,.forecast-metric-grid>div) { background:#1a2c33f5!important; border-color:#3b5158!important; color:#dce8e7!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="bg-navy-"],[class*="bg-slate-"],[class*="bg-charcoal"],[class*="bg-surface"],[class*="bg-obsidian"],[class*="bg-white/"]) { background-color:#1a2c33!important; border-color:#3b5158!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="text-slate-"],[class*="text-jatayu-"],[class*="text-navy-"],.workspace-eyebrow,.workspace-subtitle,.workspace-footer,.workspace-disclosure,.chart-caption,.weather-hero-source,.weather-hero-top,.weather-feels,.weather-hero-metrics,.weather-hero-metrics small,.hourly-strip small,.hourly-strip>div>span,.workspace-panel-heading>span,.sidebar-group-label,.sidebar-wordmark small,.sidebar-fieldnote p,.sidebar-fieldnote button,.sidebar-access small) { color:#bdd0d2!important; }
+.app-root .app-shell[data-theme=dark] :is(.sidebar-navigation nav button,.sidebar-navigation nav button>span,.workspace-actions small,.workspace-text-button,.weather-temperature,.weather-condition,.hourly-strip strong) { color:#e1eeea!important; }
+.app-root .app-shell[data-theme=dark] :is(.sidebar-navigation nav button[aria-current=page],.location-presets button[aria-pressed=true],.hourly-current) { background:#28463e!important; border-color:#496b5f!important; }
+.app-root .app-shell[data-theme=dark] :is(input,select,textarea) { background-color:#14252c!important; color:#ecf5f3!important; border-color:#4c646c!important; }
+.app-root .app-shell[data-theme=dark] :is(input,textarea)::placeholder { color:#b8cbd0!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="bg-emerald-9"],[class*="bg-teal-9"]) { background-color:#193c34!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="bg-sky-9"],[class*="bg-blue-9"],[class*="bg-cyan-9"]) { background-color:#19384a!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="bg-red-9"],[class*="bg-rose-9"]) { background-color:#492c34!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="bg-amber-9"],[class*="bg-orange-9"],.official-note-warning) { background-color:#443a27!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="text-emerald-"],[class*="text-teal-"],.text-mint) { color:#a3e0c3!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="text-blue-"],[class*="text-cyan-"],[class*="text-sky-"]) { color:#a7d9f2!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="text-amber-"],[class*="text-orange-"]) { color:#f2d28e!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="text-red-"],[class*="text-rose-"]) { color:#ffbdc6!important; }
+.app-root .app-shell[data-theme=dark] :is(.earth-place,.earth-basemaps,.earth-actions,.earth-toolrail,[aria-label="Map Visual Legends"],[aria-label="Map Animation Timeline"],aside[aria-label],.map-basemap-credit,.maplibregl-ctrl-group,.maplibregl-popup-content) { background:#182b32f5!important; color:#e0eeeb!important; border-color:#47616b!important; }
+.app-root .app-shell[data-theme=dark] :is(.earth-toolbar,.earth-toolrail,[aria-label="Map Visual Legends"],[aria-label="Map Animation Timeline"],aside[aria-label],.map-basemap-credit,.maplibregl-popup-content) :is(button,span,strong,p,small,a,div) { color:#d9e8e5!important; }
+.app-root .app-shell[data-theme=dark] :is(.earth-basemaps button[aria-pressed=true],.earth-actions button[aria-pressed=true],.earth-toolrail button[aria-pressed=true]) { background:#2f5d51!important; }
+.app-root .app-shell[data-theme=dark] .maplibregl-ctrl-icon { filter:invert(1); }
+.app-root .app-shell[data-theme=dark] .workspace-heading { background:#142638!important; border-color:#3b5158; }
+.app-root .app-shell[data-theme=dark] .workspace-heading::before { background-image:linear-gradient(90deg,#142638f5 0%,#142638cf 38%,#14263820 85%),var(--landscape)!important; }
+.app-root .app-shell[data-theme=dark] .workspace-heading-actions .workspace-button { background:#dcece2!important; color:#163d2a!important; }
+.app-root .app-shell[data-theme=dark] .recharts-text { fill:#c1d3d4!important; }
+.app-root .app-shell[data-theme=dark] .recharts-cartesian-axis-tick text { fill:#c1d3d4!important; }
+.app-root .app-shell[data-theme=dark] .recharts-cartesian-grid line { stroke:#3a5057; }
+.app-root .app-shell[data-theme=dark] .recharts-default-tooltip { background:#15282f!important; border-color:#526c75!important; }
+.app-root .app-shell[data-theme=dark] .recharts-tooltip-wrapper :is(p,span,li),.app-root .app-shell[data-theme=dark] .recharts-legend-item-text { color:#d7e8e5!important; }
+.app-root .app-shell[data-theme=dark] .workspace-map-bottom { background:linear-gradient(0deg,#1a2c33,transparent)!important; }
+.app-root .app-shell[data-theme=dark] :focus-visible { outline-color:#9de1c0!important; }
+@media(max-width:639px) { .app-root .app-shell[data-theme=dark] .workspace-heading::before { background-image:linear-gradient(180deg,#142638f5,#142638cf 40%,#14263800 85%),var(--landscape)!important; } }
+
+.app-root .app-shell[data-theme=dark] .atmosphere-wash { opacity:.1; }
+.app-root .app-shell[data-theme=dark] .landscape-backdrop { opacity:.18; }
+.app-root .app-shell[data-theme=dark] :is(.topbar-breadcrumb,.topbar-breadcrumb span,.topbar-icon,.sidebar-fieldnote>svg,.location-presets button,.official-note p,.official-note svg,.weather-hero-metrics>div,.weather-hero-metrics span,.workspace-map-caption *,.readiness-description,.readiness-caveat,.readiness-footer,.readiness-footer span) { color:#c3d8d5!important; }
+.app-root .app-shell[data-theme=dark] .location-presets button[aria-pressed=true] { color:#143c2d!important; }
+.app-root .app-shell[data-theme=dark] :is(.city-presets button,.readiness-stat span) { color:#c3d8d5!important; }
+.app-root .app-shell[data-theme=dark] :is(.text-white,[class*="text-white/"],.readiness-stat,.telemetry-metric,.telemetry-label) { color:#e1eeea!important; }
+.app-root .app-shell[data-theme=dark] :is([class*="bg-dark-emerald"],[class*="bg-black/"],.city-presets button[aria-pressed=true]) { background:#28463e!important; color:#e1eeea!important; }
+/* Keep interactive chrome readable throughout dark-mode hover and focus states. */
+.app-root .app-shell[data-theme=dark] :is(.sidebar-navigation nav button:hover,.sidebar-navigation nav button:focus-visible,.topbar-icon:hover,.topbar-icon:focus-visible,.refined-search-results>button:hover,.refined-search-results>button:focus-visible) { background:#28463e!important; color:#e1eeea!important; }
+.app-root .app-shell[data-theme=dark] :is(.refined-place-input,.refined-search-results) { background:#14252c!important; border-color:#4c646c!important; color:#dce8e7!important; }
+.app-root .app-shell[data-theme=dark] .refined-place-input input { background:transparent!important; color:#ecf5f3!important; box-shadow:none; }
+.app-root .app-shell[data-theme=dark] .refined-place-input:focus-within { border-color:#9de1c0!important; box-shadow:0 0 0 2px #9de1c033; }
+.app-root .app-shell[data-theme=dark] .refined-search-results :is(button,p) { color:#dce8e7!important; }

@@ -1,4 +1,4 @@
-export type SupportedLanguage = 'en' | 'ta' | 'hi';
+export type SupportedLanguage = 'en' | 'ta' | 'hi' | 'te';
 
 export interface AIChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -27,7 +27,7 @@ export interface AIChatResponse {
 
 export interface AIStatusResponse {
   configured: boolean;
-  provider: 'OpenRouter';
+  provider: 'OpenRouter' | 'Ollama';
   model: string;
   message: string;
 }
